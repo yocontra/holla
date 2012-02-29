@@ -41,10 +41,11 @@ Vein = (function() {
   };
 
   Vein.prototype.setup = function() {
-    var service, services, _base, _fn, _i, _len;
+    var service, services, _base, _fn, _i, _len,
+      _this = this;
     services = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
     _fn = function(service) {
-      return this[service] = function() {
+      return _this[service] = function() {
         var args, cb, id, _j;
         args = 2 <= arguments.length ? __slice.call(arguments, 0, _j = arguments.length - 1) : (_j = 0, []), cb = arguments[_j++];
         id = getId();
