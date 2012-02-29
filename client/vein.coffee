@@ -22,7 +22,7 @@ class Vein
 
   setup: (services...) =>
     for service in services
-      do (service) ->
+      do (service) =>
         @[service] = (args..., cb) -> # wrap socket send
           id = getId()
           @callbacks[id] = cb
