@@ -13,12 +13,21 @@ class Vein
       return unless id and @callbacks[id]
       @callbacks[id] args...
       delete @callbacks[id]
-
-    @socket.onclose = => @callbacks['close']?()
+      return
     return
 
-  ready: (cb) -> @callbacks['ready'] = cb
-  close: (cb) -> @callbacks['close'] = cb
+    @socket.onclose = =>
+      @callbacks['close']?()
+      return
+    return
+
+  ready: (cb) ->
+    @callbacks['ready'] = cb
+    return
+
+  close: (cb) ->
+    @callbacks['close'] = cb
+    return
 
   setup: (services...) =>
     for service in services
@@ -27,6 +36,8 @@ class Vein
           id = getId()
           @callbacks[id] = cb
           @socket.send JSON.stringify id: id, service: service, args: args
+          return
+        return
 
     @callbacks['ready']? services
     # Clean up
@@ -38,4 +49,5 @@ class Vein
 
 window.Vein = Vein
 # AMD compatibility
-window.define ["https://d1fxtkz8shb9d2.cloudfront.net/sockjs-0.2.js"], window.Vein if window.define?
+if typeof window.define is 'function'
+  window.define ["https://d1fxtkz8shb9d2.cloudfront.net/sockjs-0.2.js"], window.Vein
