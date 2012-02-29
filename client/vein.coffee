@@ -22,10 +22,11 @@ class Vein
 
   setup: (services...) =>
     for service in services
-      @[service] = (args..., cb) -> # wrap socket send
-        id = getId()
-        @callbacks[id] = cb
-        @socket.send JSON.stringify id: id, service: service, args: args
+      do (service) ->
+        @[service] = (args..., cb) -> # wrap socket send
+          id = getId()
+          @callbacks[id] = cb
+          @socket.send JSON.stringify id: id, service: service, args: args
 
     @callbacks['ready']? services
     # Clean up
