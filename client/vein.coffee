@@ -35,5 +35,6 @@ class Vein
 
   callbacks: {}
 
+window.Vein = Vein
 # AMD compatibility
-window.define ["https://d1fxtkz8shb9d2.cloudfront.net/sockjs-0.2.js"], Vein if window.define?
+window.define ["https://d1fxtkz8shb9d2.cloudfront.net/sockjs-0.2.js"], window.Vein if window.define?

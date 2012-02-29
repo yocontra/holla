@@ -70,6 +70,8 @@ Vein = (function() {
 
 })();
 
+window.Vein = Vein;
+
 if (window.define != null) {
-  window.define(["https://d1fxtkz8shb9d2.cloudfront.net/sockjs-0.2.js"], Vein);
+  window.define(["https://d1fxtkz8shb9d2.cloudfront.net/sockjs-0.2.js"], window.Vein);
 }
