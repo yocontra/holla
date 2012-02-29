@@ -1,17 +1,15 @@
 {
-   "name":"APPNAME",
+   "name":"vein",
    "description":"Nothing here yet",
    "version":"0.0.1",
-   "homepage":"http://github.com/wearefractal/APPNAME",
-   "repository":"git://github.com/wearefractal/APPNAME.git",
+   "homepage":"http://github.com/wearefractal/vein",
+   "repository":"git://github.com/wearefractal/vein.git",
    "author":"Fractal <contact@wearefractal.com> (http://wearefractal.com/)",
    "main":"./index.js",
-   
+
    "dependencies":{
-      "coffee-script":"*"
-   },
-   "devDependencies":{
-      "node-log":"*"
+      "coffee-script":"*",
+      "sockjs":"*"
    },
    "engines":{
       "node":">= 0.4.0"
@@ -19,7 +17,7 @@
    "licenses":[
       {
          "type":"MIT",
-         "url":"http://github.com/wearefractal/APPNAME/raw/master/LICENSE"
+         "url":"http://github.com/wearefractal/vein/raw/master/LICENSE"
       }
    ]
 }

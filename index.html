@@ -1,0 +1,26 @@
+<html>
+<head>
+<title>Test</title>
+<script src="https://d1fxtkz8shb9d2.cloudfront.net/sockjs-0.2.js"></script>
+<script src="vein.js"></script>
+<script>
+var vein = new Vein();
+vein.ready(function(services) {
+  console.log("Vein opened");
+
+  vein.test('hello world', function(res) {
+    console.log("Response: " + res);
+  });
+  vein.othertest('hello world', function(res) {
+    console.log("Response 2: " + res);
+  });
+});
+
+vein.close(function(){
+  console.log("Vein closed");
+});
+</script>
+</head>
+<body>
+</body>
+</html>

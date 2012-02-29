@@ -1,12 +1,12 @@
 ## Information
 
 <table>
-<tr> 
-<td>Package</td><td>APPNAME</td>
+<tr>
+<td>Package</td><td>vein</td>
 </tr>
 <tr>
 <td>Description</td>
-<td>NOTHING HERE YET</td>
+<td>RPC over WebSockets</td>
 </tr>
 <tr>
 <td>Node Version</td>
@@ -16,13 +16,39 @@
 
 ## Usage
 
+### Server
 ```coffee-script
-NOTHING HERE YET
+http = require 'http'
+Vein = require 'vein'
+
+server = http.createServer().listen 8080
+vein = new Vein server
+vein.add 'test', (reply, socket, hello) -> reply "Hello #{socket.remoteAddress}! You said '#{hello}'"
+vein.add 'othertest', (reply, socket, hello) -> reply "Hello #{socket.remoteAddress} -  You said '#{hello}'"
+```
+
+### Client
+```javascript
+var vein = new Vein();
+vein.ready(function(services) {
+  console.log("Vein opened");
+
+  vein.test('hello world', function(res) {
+    console.log("Response: " + res);
+  });
+  vein.othertest('hi service', function(res) {
+    console.log("Response 2: " + res);
+  });
+});
+
+vein.close(function(){
+  console.log("Vein closed");
+});
 ```
 
 ## Examples
 
-You can view further examples in the [example folder.](https://github.com/wearefractal/APPNAME/tree/master/examples)
+You can view further examples in the [example folder.](https://github.com/wearefractal/vein/tree/master/examples)
 
 ## LICENSE
 
