@@ -23,8 +23,12 @@ Vein = require 'vein'
 
 server = http.createServer().listen 8080
 vein = new Vein server
-vein.add 'test', (reply, socket, hello) -> reply "Hello #{socket.remoteAddress}! You said '#{hello}'"
-vein.add 'othertest', (reply, socket, hello) -> reply "Hello #{socket.remoteAddress} -  You said '#{hello}'"
+
+vein.add 'test', (reply, socket, hello) ->
+  reply "Hello #{socket.remoteAddress}! You said '#{hello}'"
+
+vein.add 'othertest', (reply, socket, hello) ->
+  reply "Hello #{socket.remoteAddress} -  You said '#{hello}'"
 ```
 
 ### Client
