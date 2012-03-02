@@ -39,17 +39,16 @@
     Vein.prototype.handleMessage = function(e) {
       var args, fn, id, service, _i, _len, _ref, _ref2, _ref3;
       _ref = JSON.parse(e.data), id = _ref.id, service = _ref.service, args = _ref.args;
-      if (this.subscribe[service] && this.subscribe[service].listeners && !id) {
+      if (this.subscribe[service] && this.subscribe[service].listeners) {
         _ref2 = this.subscribe[service].listeners;
         for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
           fn = _ref2[_i];
           fn.apply(null, args);
         }
-      } else {
-        if (!this.callbacks[id]) return;
-        (_ref3 = this.callbacks)[id].apply(_ref3, args);
-        delete this.callbacks[id];
       }
+      if (!this.callbacks[id]) return;
+      (_ref3 = this.callbacks)[id].apply(_ref3, args);
+      delete this.callbacks[id];
     };
 
     Vein.prototype.handleInitial = function() {

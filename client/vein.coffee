@@ -17,12 +17,11 @@ class Vein
 
   handleMessage: (e) =>
     {id, service, args} = JSON.parse e.data
-    if @subscribe[service] and @subscribe[service].listeners and not id
+    if @subscribe[service] and @subscribe[service].listeners
       fn args... for fn in @subscribe[service].listeners
-    else
-      return unless @callbacks[id]
-      @callbacks[id] args...
-      delete @callbacks[id]
+    return unless @callbacks[id]
+    @callbacks[id] args...
+    delete @callbacks[id]
     return
 
   handleInitial: (services...) =>
