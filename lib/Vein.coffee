@@ -2,24 +2,25 @@
 sockjs = require 'sockjs'
 
 class Vein extends EventEmitter
+
   constructor: (server, opts) ->
     @server = sockjs.createServer opts
     @server.on 'connection', (socket) =>
+      @clients.push socket
       socket.write JSON.stringify id: 'services', args: Object.keys @routes
       socket.on 'data', (msg) => @route socket, msg
+      socket.on 'close', =>
+        idx = @clients.indexOf socket
+        @clients.splice idx, idx
+
     @server.installHandlers server, prefix: '/vein'
 
-  add: (route, fn) ->
-    if typeof route is 'object'
-      @routes[rt] = f for rt, f of route
-    else
-      @routes[route] = fn
+  clients: [] # TODO: optional redis here
 
-  remove: (route) -> delete @routes[route]
-
-  removeAll: -> routes = {}
-
+  # Routing
   routes: {}
+  add: (route, fn) -> @routes[route] = fn
+  remove: (route) -> delete @routes[route]
 
   route: (socket, msg) ->
     return unless typeof msg is 'string' and socket?
@@ -28,8 +29,11 @@ class Vein extends EventEmitter
     catch err
       return
     return unless service? and args? and id? and @routes[service]?
-    reply = (args...) -> socket.write JSON.stringify id: id, args: args
 
-    @routes[service] reply, socket, args...
+    write = (sock, args...) -> sock.write JSON.stringify id: id, service: service, args: args
+    send = (args...) -> write socket, args...
+    send.all = (args...) => write sock, args... for sock in @clients
+
+    @routes[service] send, socket, args...
 
 module.exports = Vein

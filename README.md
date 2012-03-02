@@ -6,7 +6,7 @@
 </tr>
 <tr>
 <td>Description</td>
-<td>RPC over WebSockets</td>
+<td>WebSocket RPC and PubSub</td>
 </tr>
 <tr>
 <td>Node Version</td>
@@ -22,37 +22,43 @@ http = require 'http'
 Vein = require 'vein'
 
 server = http.createServer().listen 8080
+
 vein = new Vein server
+vein.add 'test', (send, socket, hello) ->
+  send "test - #{hello}"
 
-vein.add 'test', (reply, socket, hello) ->
-  reply "Hello #{socket.remoteAddress}! You said '#{hello}'"
+# send data... will send a response to the socket that made the request
+# send.all data... will send a message to every socket currently connected
+vein.add 'pubtest', (send, socket, hello) ->
+  send.all "pubtest - #{hello}"
 
-vein.add 'othertest', (reply, socket, hello) ->
-  reply "Hello #{socket.remoteAddress} -  You said '#{hello}'"
+vein.add 'subtest', (send, socket, hello) ->
+  send "subtest - #{hello}"
+  send "subtest - #{hello}"
 ```
 
 ### Client
-```javascript
-var vein = new Vein();
-vein.ready(function(services) {
-  console.log("Vein opened");
+```coffee-script
+vein = new Vein
 
-  vein.test('hello world', function(res) {
-    console.log("Response: " + res);
-  });
-  vein.othertest('hi service', function(res) {
-    console.log("Response 2: " + res);
-  });
-});
+vein.ready (services) ->
+  console.log "Vein opened"
+  vein.test "success", (res) ->
+    console.log res
 
-vein.close(function(){
-  console.log("Vein closed");
-});
+  vein.pubtest "success", (res) ->
+    console.log res
+
+  # Listen for unsolicited messages with .subscribe
+  # this callback will be called as many times as the server wants
+  vein.subscribe.subtest (res) -> console.log res
+
+vein.close -> console.log "Vein closed"
 ```
 
 ## Examples
 
-You can view further examples in the [example folder.](https://github.com/wearefractal/vein/tree/master/examples)
+You can view a web chat example in the [example folder.](https://github.com/wearefractal/vein/tree/master/examples)
 
 ## LICENSE
 
