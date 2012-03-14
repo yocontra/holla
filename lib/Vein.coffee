@@ -10,7 +10,6 @@ class Vein extends EventEmitter
     @server.on 'connection', (socket) =>
       socket.write JSON.stringify id: 'services', args: Object.keys @routes # send down list of services
       socket.on 'data', (msg) => @route socket, msg
-      # TODO: Allow people to disable this
       unless @opts.noTrack
         @clients[socket.id] = socket
         socket.on 'close', => delete @clients[socket.id]
@@ -28,7 +27,7 @@ class Vein extends EventEmitter
   route: (socket, msg) ->
     return unless typeof msg is 'string' and socket?
     try
-      {id, service, args} = JSON.parse msg
+      {id, service, args, session} = JSON.parse msg
     catch err
       return
     return unless service? and args? and id? and @routes[service]?
@@ -40,7 +39,7 @@ class Vein extends EventEmitter
     send.session = (sess) => 
       socket.session = sess
       socket.write JSON.stringify id: 'session', args: [sess]
-
+    socket.session = session if session?
     @routes[service] send, socket, args...
 
 module.exports = Vein
