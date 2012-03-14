@@ -16,6 +16,8 @@
 
 ## Usage
 
+Documentation is horrible. Will update later.
+
 ### Server
 ```coffee-script
 http = require 'http'

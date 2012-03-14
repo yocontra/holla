@@ -78,4 +78,7 @@ class Vein
     rand = -> (((1 + Math.random()) * 0x10000000) | 0).toString 16
     rand()+rand()+rand()
 
-window.Vein = Vein
+if typeof define is 'function'
+  define Vein
+else
+  window.Vein = Vein

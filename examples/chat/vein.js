@@ -152,6 +152,10 @@
 
   })();
 
-  window.Vein = Vein;
+  if (typeof define === 'function') {
+    define(Vein);
+  } else {
+    window.Vein = Vein;
+  }
 
 }).call(this);
