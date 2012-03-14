@@ -1,7 +1,6 @@
 class Vein
   constructor: (@url=location.origin, @options={}) ->
     @options.prefix ?= '/vein'
-    @options.cookie ?= true
     #@options.sessionExpires ?= -1
     @options.sessionName ?= 'VSESSID'
 
@@ -66,7 +65,7 @@ class Vein
           date.setTime date.getTime() + (options.expires * 24 * 60 * 60 * 1000)
         else if @options.sessionExpires.toUTCString
           date = @options.sessionExpires
-      expires = ";expires=#{date.toUTCString()}" if date
+      expires = (if date then ";expires=#{date.toUTCString()}" else "")
       document.cookie = "#{name}=#{encodeURIComponent(sess)}#{expires}"
     else
       if document.cookie and document.cookie.length isnt 0

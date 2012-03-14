@@ -6,7 +6,7 @@
   Vein = (function() {
 
     function Vein(url, options) {
-      var _base, _base2, _base3;
+      var _base, _base2;
       this.url = url != null ? url : location.origin;
       this.options = options != null ? options : {};
       this.getSender = __bind(this.getSender, this);
@@ -16,9 +16,8 @@
       this.handleMessage = __bind(this.handleMessage, this);
       this.handleClose = __bind(this.handleClose, this);
       if ((_base = this.options).prefix == null) _base.prefix = '/vein';
-      if ((_base2 = this.options).cookie == null) _base2.cookie = true;
-      if ((_base3 = this.options).sessionName == null) {
-        _base3.sessionName = 'VSESSID';
+      if ((_base2 = this.options).sessionName == null) {
+        _base2.sessionName = 'VSESSID';
       }
       this.socket = new SockJS("" + this.url + this.options.prefix, null, this.options);
       this.callbacks['services'] = this.handleServices;
@@ -125,7 +124,7 @@
             date = this.options.sessionExpires;
           }
         }
-        if (date) expires = ";expires=" + (date.toUTCString());
+        expires = (date ? ";expires=" + (date.toUTCString()) : "");
         return document.cookie = "" + name + "=" + (encodeURIComponent(sess)) + expires;
       } else {
         if (document.cookie && document.cookie.length !== 0) {
