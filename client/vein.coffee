@@ -28,8 +28,8 @@ class Vein
     if @subscribe[service] and @subscribe[service].listeners
       fn args... for fn in @subscribe[service].listeners
     return unless @callbacks[id]
-    @callbacks[id] args...
-    delete @callbacks[id]
+    keep = @callbacks[id] args...
+    delete @callbacks[id] unless keep
     return
 
   handleServices: (services...) =>
@@ -42,6 +42,7 @@ class Vein
   handleSession: (sess) =>
     @session = sess
     @cookie sess
+    true # keep this callback open - session can be changed multiple times
 
   # Utilities
   getListener: (service) => (cb) =>

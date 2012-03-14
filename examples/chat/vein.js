@@ -49,7 +49,7 @@
     };
 
     Vein.prototype.handleMessage = function(e) {
-      var args, fn, id, service, _i, _len, _ref, _ref2, _ref3;
+      var args, fn, id, keep, service, _i, _len, _ref, _ref2, _ref3;
       _ref = JSON.parse(e.data), id = _ref.id, service = _ref.service, args = _ref.args;
       if (this.subscribe[service] && this.subscribe[service].listeners) {
         _ref2 = this.subscribe[service].listeners;
@@ -59,8 +59,8 @@
         }
       }
       if (!this.callbacks[id]) return;
-      (_ref3 = this.callbacks)[id].apply(_ref3, args);
-      delete this.callbacks[id];
+      keep = (_ref3 = this.callbacks)[id].apply(_ref3, args);
+      if (!keep) delete this.callbacks[id];
     };
 
     Vein.prototype.handleServices = function() {
@@ -82,7 +82,8 @@
 
     Vein.prototype.handleSession = function(sess) {
       this.session = sess;
-      return this.cookie(sess);
+      this.cookie(sess);
+      return true;
     };
 
     Vein.prototype.getListener = function(service) {
