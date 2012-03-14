@@ -122,7 +122,7 @@
       var cookie, date, expires, expiry, name, _i, _len, _ref;
       if (del == null) del = false;
       name = this.options.sessionName;
-      expiry = (del ? -1 : this.options.sessionExpires);
+      expiry = (del ? new Date('Thu, 01-Jan-1970 00:00:01 GMT') : this.options.sessionExpires);
       if (sess) {
         if (expiry) {
           if (typeof expiry === 'number') {

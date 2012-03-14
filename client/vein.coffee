@@ -62,7 +62,7 @@ class Vein
 
   cookie: (sess, del=false) ->
     name = @options.sessionName
-    expiry = (if del then -1 else @options.sessionExpires)
+    expiry = (if del then new Date('Thu, 01-Jan-1970 00:00:01 GMT') else @options.sessionExpires)
     if sess
       if expiry
         if typeof expiry is 'number'
