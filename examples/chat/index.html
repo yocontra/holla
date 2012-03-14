@@ -18,11 +18,13 @@ var vein = new Vein();
 vein.ready(function (services) {
   console.log("Connected");
 
-  var name = '';
+  var name = vein.session;
 
   //Listeners
   vein.subscribe.join(function (name, all) {
-    appendMessage('Server', name + ' has joined the room');
+    if (!name.error){
+      appendMessage('Server', name + ' has joined the room');
+    }
   });
   vein.subscribe.leave(function (name, all) {
     appendMessage('Server', name + ' has left the room');
@@ -40,7 +42,9 @@ vein.ready(function (services) {
   });
 
   $("#chatrooms li a").click(function () {
-    name = prompt("Enter your name", "");
+    if (!name){
+      name = prompt("Enter your name", "");
+    }
     vein.join(name, function (res) {
       $(location).attr('href', "#chatPage");
       if (res.error) {

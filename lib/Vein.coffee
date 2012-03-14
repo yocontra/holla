@@ -3,22 +3,24 @@ sockjs = require 'sockjs'
 
 class Vein extends EventEmitter
 
-  constructor: (server, opts) ->
+  constructor: (server, opts={}) ->
+    opts.prefix ?= '/vein'
+
     @server = sockjs.createServer opts
     @server.on 'connection', (socket) =>
-      @clients.push socket
-      socket.write JSON.stringify id: 'services', args: Object.keys @routes
+      socket.write JSON.stringify id: 'services', args: Object.keys @routes # send down list of services
       socket.on 'data', (msg) => @route socket, msg
-      socket.on 'close', =>
-        idx = @clients.indexOf socket
-        @clients.splice idx, idx
+      # TODO: Allow people to disable this
+      @clients[socket.id] = socket
+      socket.on 'close', => delete @clients[socket.id]
 
-    @server.installHandlers server, prefix: '/vein'
+    @server.installHandlers server, opts
 
-  clients: [] # TODO: optional redis here
+  clients: {} # TODO: optional redis here
 
   # Routing
   routes: {}
+
   add: (route, fn) -> @routes[route] = fn
   remove: (route) -> delete @routes[route]
 
@@ -32,7 +34,10 @@ class Vein extends EventEmitter
 
     write = (sock, args...) -> sock.write JSON.stringify id: id, service: service, args: args
     send = (args...) -> write socket, args...
-    send.all = (args...) => write sock, args... for sock in @clients
+    send.all = (args...) => write sock, args... for id, sock of @clients
+    send.session = (sess) => 
+      socket.session = sess
+      socket.write JSON.stringify id: 'session', args: [sess]
 
     @routes[service] send, socket, args...
 

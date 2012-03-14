@@ -14,8 +14,9 @@ vein = new Vein server
 vein.add 'join', (send, socket, name) ->
   return unless name
   return send error: 'Invalid name' unless typeof name is 'string' and name.length > 0 and name.length < 10
-  return send error: 'Name already in use' if users[name] and vein.clients.indexOf(users[name]) > -1
+  return send error: 'Name already in use' if users[name] and vein.clients[users[name].id]
   users[name] = socket
+  send.session name
   send.all name, Object.keys users
 
 vein.add 'leave', (send, socket, name) ->

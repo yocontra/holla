@@ -6,7 +6,7 @@
   Vein = (function() {
 
     function Vein(url, options) {
-      var _base, _base2, _base3;
+      var _base;
       this.url = url != null ? url : location.origin;
       this.options = options != null ? options : {};
       this.getSender = __bind(this.getSender, this);
@@ -15,17 +15,12 @@
       this.handleServices = __bind(this.handleServices, this);
       this.handleMessage = __bind(this.handleMessage, this);
       this.handleClose = __bind(this.handleClose, this);
-      if ((_base = this.options).prefix == null) _base.prefix = '/vein';
-      if ((_base2 = this.options).cookie == null) _base2.cookie = true;
-      if ((_base3 = this.options).sessionName == null) {
-        _base3.sessionName = 'VSESSID';
-      }
-      this.socket = new SockJS("" + this.url + this.options.prefix, null, this.options);
+      if ((_base = this.options).prefix == null) _base.prefix = 'vein';
+      this.socket = new SockJS("" + this.url + "/" + this.options.prefix, null, this.options);
       this.callbacks['services'] = this.handleServices;
       this.callbacks['session'] = this.handleSession;
       this.socket.onmessage = this.handleMessage;
       this.socket.onclose = this.handleClose;
-      this.session = this.cookie();
       return;
     }
 
@@ -80,9 +75,12 @@
       delete this.callbacks['ready'];
     };
 
-    Vein.prototype.handleSession = function(sess) {
-      this.session = sess;
-      return this.cookie(sess);
+    Vein.prototype.handleSession = function(sess, obj) {
+      this.session = {
+        id: sess,
+        data: obj
+      };
+      return this.setCookie;
     };
 
     Vein.prototype.getListener = function(service) {
@@ -106,37 +104,9 @@
         _this.socket.send(JSON.stringify({
           id: id,
           service: service,
-          args: args,
-          session: _this.session
+          args: args
         }));
       };
-    };
-
-    Vein.prototype.cookie = function(sess) {
-      var cookie, date, expires, name, _i, _len, _ref;
-      name = this.options.sessionName;
-      if (sess) {
-        if (this.options.sessionExpires) {
-          if (typeof this.options.sessionExpires === 'number') {
-            date = new Date;
-            date.setTime(date.getTime() + (options.expires * 24 * 60 * 60 * 1000));
-          } else if (this.options.sessionExpires.toUTCString) {
-            date = this.options.sessionExpires;
-          }
-        }
-        if (date) expires = ";expires=" + (date.toUTCString());
-        return document.cookie = "" + name + "=" + (encodeURIComponent(sess)) + expires;
-      } else {
-        if (document.cookie && document.cookie.length !== 0) {
-          _ref = document.cookie.split(";");
-          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-            cookie = _ref[_i];
-            if (cookie.substring(0, name.length + 1) === ("" + name + "=")) {
-              return decodeURIComponent(cookie.substring(name.length + 1));
-            }
-          }
-        }
-      }
     };
 
     Vein.prototype.getId = function() {
