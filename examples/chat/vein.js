@@ -127,7 +127,7 @@
         if (expiry) {
           if (typeof expiry === 'number') {
             date = new Date;
-            date.setTime(date.getTime() + (options.expires * 24 * 60 * 60 * 1000));
+            date.setTime(date.getTime() + (expiry * 24 * 60 * 60 * 1000));
           } else if (expiry.toUTCString) {
             date = expiry;
           }
