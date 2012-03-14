@@ -15,6 +15,7 @@
       this.handleServices = __bind(this.handleServices, this);
       this.handleMessage = __bind(this.handleMessage, this);
       this.handleClose = __bind(this.handleClose, this);
+      this.clearSession = __bind(this.clearSession, this);
       if ((_base = this.options).prefix == null) _base.prefix = '/vein';
       if ((_base2 = this.options).sessionName == null) {
         _base2.sessionName = 'VSESSID';
@@ -33,6 +34,11 @@
     Vein.prototype.subscribe = {};
 
     Vein.prototype.session = null;
+
+    Vein.prototype.clearSession = function() {
+      this.session = null;
+      return this.cookie('bye', true);
+    };
 
     Vein.prototype.ready = function(cb) {
       return this.callbacks['ready'] = cb;
@@ -112,16 +118,18 @@
       };
     };
 
-    Vein.prototype.cookie = function(sess) {
-      var cookie, date, expires, name, _i, _len, _ref;
+    Vein.prototype.cookie = function(sess, del) {
+      var cookie, date, expires, expiry, name, _i, _len, _ref;
+      if (del == null) del = false;
       name = this.options.sessionName;
+      expiry = (del ? -1 : this.options.sessionExpires);
       if (sess) {
-        if (this.options.sessionExpires) {
-          if (typeof this.options.sessionExpires === 'number') {
+        if (expiry) {
+          if (typeof expiry === 'number') {
             date = new Date;
             date.setTime(date.getTime() + (options.expires * 24 * 60 * 60 * 1000));
-          } else if (this.options.sessionExpires.toUTCString) {
-            date = this.options.sessionExpires;
+          } else if (expiry.toUTCString) {
+            date = expiry;
           }
         }
         expires = (date ? ";expires=" + (date.toUTCString()) : "");

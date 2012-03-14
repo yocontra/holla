@@ -16,6 +16,10 @@ class Vein
   subscribe: {}
   session: null
 
+  clearSession: =>
+    @session = null
+    @cookie 'bye', true
+
   ready: (cb) -> @callbacks['ready'] = cb
   close: (cb) -> @callbacks['close'] = cb
 
@@ -56,15 +60,16 @@ class Vein
       @socket.send JSON.stringify id: id, service: service, args: args, session: @session
       return
 
-  cookie: (sess) ->
+  cookie: (sess, del=false) ->
     name = @options.sessionName
+    expiry = (if del then -1 else @options.sessionExpires)
     if sess
-      if @options.sessionExpires
-        if typeof @options.sessionExpires is 'number'
+      if expiry
+        if typeof expiry is 'number'
           date = new Date
           date.setTime date.getTime() + (options.expires * 24 * 60 * 60 * 1000)
-        else if @options.sessionExpires.toUTCString
-          date = @options.sessionExpires
+        else if expiry.toUTCString
+          date = expiry
       expires = (if date then ";expires=#{date.toUTCString()}" else "")
       document.cookie = "#{name}=#{encodeURIComponent(sess)}#{expires}"
     else
