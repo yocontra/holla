@@ -56,7 +56,6 @@
       this.callbacks['session'] = this.setSession;
       this.socket.onmessage = this.handleMessage;
       this.socket.onclose = this.handleClose;
-      this.session = this.cookie();
       return;
     }
 

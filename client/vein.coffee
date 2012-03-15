@@ -37,7 +37,6 @@ class Vein
     @callbacks['session'] = @setSession
     @socket.onmessage = @handleMessage
     @socket.onclose = @handleClose
-    @session = @cookie()
     return
 
   callbacks: {}
