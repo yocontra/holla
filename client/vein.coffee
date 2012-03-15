@@ -1,26 +1,25 @@
 cookies =
   getItem: (sKey) ->
     return unless cookies.hasItem sKey
-    unescape document.cookie.replace(new RegExp("(?:^|.*;\\s*)" + escape(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*((?:[^;](?!;))*[^;]?).*"), "$1")
+    return unescape document.cookie.replace(new RegExp("(?:^|.*;\\s*)" + escape(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*((?:[^;](?!;))*[^;]?).*"), "$1")
 
-  setItem: (sKey, sValue, vEnd, sPath, sDomain, bSecure) ->
+  setItem: (sKey, sValue, vEnd) ->
     if vEnd
       sExpires = "; max-age=#{vEnd}" if typeof vEnd is 'number'
       sExpires = "; expires=#{vEnd}" if typeof vEnd is 'string'
       sExpires = "; expires=#{vEnd.toGMTString()}" if vEnd.hasOwnProperty("toGMTString") if typeof vEnd is 'object'
-    sDomain = (if sDomain then "; domain=" + sDomain else "")
-    sPath = (if sPath then "; path=" + sPath else "")
     sExpires = (if sExpires then sExpires else "")
-    bSecure = (if bSecure then "; secure" else "")
-    console.log "Setting cookie to #{escape(sKey)}=#{escape(sValue)}#{sExpires}#{sDomain}#{sPath}#{bSecure}"
-    document.cookie = "#{escape(sKey)}=#{escape(sValue)}#{sExpires}#{sDomain}#{sPath}#{bSecure}"
+    console.log "Setting cookie to #{escape(sKey)}=#{escape(sValue)}#{sExpires}"
+    document.cookie = "#{escape(sKey)}=#{escape(sValue)}#{sExpires}"
+    return
 
   removeItem: (sKey) ->
     console.log "Deleting cookie #{sKey}"
     document.cookie = "#{escape(sKey)}=; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/"
+    return
 
   hasItem: (sKey) ->
-    (new RegExp("(?:^|;\\s*)" + escape(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=")).test document.cookie
+    return (new RegExp("(?:^|;\\s*)" + escape(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=")).test document.cookie
 
 class Vein
   constructor: (@url=location.origin, @options={}) ->
@@ -43,9 +42,11 @@ class Vein
   subscribe: {}
 
   getSession: => cookies.getItem @options.sessionName
-  setSession: (sess) => 
+  setSession: (sess) =>
+    console.log "Setting session to #{sess}"
     cookies.setItem @options.sessionName, sess, @options.sessionLength
     return true
+
   clearSession: => 
     cookies.removeItem @options.sessionName
     return
@@ -62,7 +63,7 @@ class Vein
       fn args... for fn in @subscribe[service].listeners
     return unless @callbacks[id]
     keep = @callbacks[id] args...
-    delete @callbacks[id] unless keep
+    delete @callbacks[id] unless keep is true
     return
 
   handleServices: (services...) =>

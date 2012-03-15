@@ -8,7 +8,7 @@
       if (!cookies.hasItem(sKey)) return;
       return unescape(document.cookie.replace(new RegExp("(?:^|.*;\\s*)" + escape(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*((?:[^;](?!;))*[^;]?).*"), "$1"));
     },
-    setItem: function(sKey, sValue, vEnd, sPath, sDomain, bSecure) {
+    setItem: function(sKey, sValue, vEnd) {
       var sExpires;
       if (vEnd) {
         if (typeof vEnd === 'number') sExpires = "; max-age=" + vEnd;
@@ -17,16 +17,13 @@
           sExpires = "; expires=" + (vEnd.toGMTString());
         }
       }
-      sDomain = (sDomain ? "; domain=" + sDomain : "");
-      sPath = (sPath ? "; path=" + sPath : "");
       sExpires = (sExpires ? sExpires : "");
-      bSecure = (bSecure ? "; secure" : "");
-      console.log("Setting cookie to " + (escape(sKey)) + "=" + (escape(sValue)) + sExpires + sDomain + sPath + bSecure);
-      return document.cookie = "" + (escape(sKey)) + "=" + (escape(sValue)) + sExpires + sDomain + sPath + bSecure;
+      console.log("Setting cookie to " + (escape(sKey)) + "=" + (escape(sValue)) + sExpires);
+      document.cookie = "" + (escape(sKey)) + "=" + (escape(sValue)) + sExpires;
     },
     removeItem: function(sKey) {
       console.log("Deleting cookie " + sKey);
-      return document.cookie = "" + (escape(sKey)) + "=; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/";
+      document.cookie = "" + (escape(sKey)) + "=; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/";
     },
     hasItem: function(sKey) {
       return (new RegExp("(?:^|;\\s*)" + escape(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=")).test(document.cookie);
@@ -68,6 +65,7 @@
     };
 
     Vein.prototype.setSession = function(sess) {
+      console.log("Setting session to " + sess);
       cookies.setItem(this.options.sessionName, sess, this.options.sessionLength);
       return true;
     };
@@ -101,7 +99,7 @@
       }
       if (!this.callbacks[id]) return;
       keep = (_ref3 = this.callbacks)[id].apply(_ref3, args);
-      if (!keep) delete this.callbacks[id];
+      if (keep !== true) delete this.callbacks[id];
     };
 
     Vein.prototype.handleServices = function() {
