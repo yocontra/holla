@@ -27,7 +27,6 @@ class Vein
   constructor: (@url=location.origin, @options={}) ->
     @options.prefix ?= 'vein'
     @options.sessionName ?= "VEINSESSID-#{@options.prefix}"
-    @options.sessionExpires ?= 1 # one day default expiry
 
     @socket = new SockJS "#{@url}/#{@options.prefix}", null, @options
     @callbacks['services'] = @handleServices
@@ -71,7 +70,7 @@ class Vein
   handleSession: (sess) =>
     @session = sess
     @cookie sess
-    true # keep this callback open - session can be changed multiple times
+    return true # keep this callback open - session can be changed multiple times
 
   # Utilities
   getListener: (service) => (cb) =>
