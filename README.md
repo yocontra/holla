@@ -6,7 +6,7 @@
 </tr>
 <tr>
 <td>Description</td>
-<td>WebSocket RPC and PubSub</td>
+<td>WebSocket RPC</td>
 </tr>
 <tr>
 <td>Node Version</td>
@@ -38,16 +38,20 @@ var vein = new Vein(server, {
 // A service is a function that gets called every time a client calls it
 // The format is function (send, socket, args...)
 // args can be any JSON-friendly data sent from the client
+// You can pass any JSON-friendly objects as arguments to the send
+// and they will be applied to the callback on the client.
 vein.add('someService', function (send, socket, name, num) {
   send("Hey there " + name + " I got your number " + num);
 });
 
-// You can manage sessions from the server using send.session
-// If a socket has a session attached already it can be accessed via socket.session
+// The server can assign a session to the client via send.session.
+// Any services called will have access to the session value via socket.session
+// This session will persist between page loads/connects based on your settings
+// send.session is a simple way to set a tracking cookie not a session store
 vein.add('login', function (send, socket, username, password) {
   if (username === 'username' && password === 'pass123') {
     send.session('success! (some unique key)');
-    send(); // Call the login callback
+    send(); // Call the login callback with no error
   } else {
     send('Invalid username or password');
   }
@@ -55,12 +59,13 @@ vein.add('login', function (send, socket, username, password) {
 
 // If you have tracking enabled (noTrack=false) you can use send.all
 // to broadcast a message to all currently connected clients that are subscribed to the service
+// A hash of clients is available in vein.clients
 vein.add('someOtherService', function (send, socket, msg) {
   send.all(msg);
 });
 ```
 
-### Client
+### Browser Client
 
 ```javascript
 var vein = new Vein({
@@ -77,24 +82,21 @@ var vein = new Vein({
 
 //When the vein is ready this function will be called
 vein.ready(function (services) {
-  // Services is an array of service names available to use
+  // services is an array of service names available to use
   // Any code using vein should be kicked off here
   // When calling a service the format is vein.<service name>(args..., callback)
   // You can pass any JSON-friendly objects as arguments and they will be applied to the
-  // service on the server. You can pass any JSON-friendly objects as arguments to the callback
-  // from the service on the server as well.
+  // service on the server.
   vein.someService('john', 2, function (err, result) {
     console.log(result);
   });
 
   // Prefixing a service with .subscribe allows the server to send unsolicited messages
-  // to the client. Subscribing to a service does not communicate to the server.
+  // to the client. Subscribing to a service does not communicate to the server in any way.
   vein.subscribe.someOtherService(function (message) {
     console.log(message);
   });
 
-  // The server can assign a session to the client via send.session.
-  // Any services called will have access to the session value via socket.session
   // When the server assigns a session it is saved as a cookie with the client preferences.
   // Make sure the client and server cookie preferences match.
   // Session data can be accessed via .getSession() and .clearSession()
