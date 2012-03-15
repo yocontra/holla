@@ -25,7 +25,6 @@
       return document.cookie = "" + (escape(sKey)) + "=" + (escape(sValue)) + sExpires + sDomain + sPath + bSecure;
     },
     removeItem: function(sKey) {
-      if (!cookies.hasItem(sKey)) return;
       console.log("Deleting cookie " + sKey);
       return document.cookie = "" + (escape(sKey)) + "=; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/";
     },
@@ -37,26 +36,24 @@
   Vein = (function() {
 
     function Vein(url, options) {
-      var _base, _base2, _base3;
+      var _base, _base2;
       this.url = url != null ? url : location.origin;
       this.options = options != null ? options : {};
       this.getSender = __bind(this.getSender, this);
       this.getListener = __bind(this.getListener, this);
-      this.handleSession = __bind(this.handleSession, this);
       this.handleServices = __bind(this.handleServices, this);
       this.handleMessage = __bind(this.handleMessage, this);
       this.handleClose = __bind(this.handleClose, this);
       this.clearSession = __bind(this.clearSession, this);
+      this.setSession = __bind(this.setSession, this);
+      this.getSession = __bind(this.getSession, this);
       if ((_base = this.options).prefix == null) _base.prefix = 'vein';
       if ((_base2 = this.options).sessionName == null) {
         _base2.sessionName = "VEINSESSID-" + this.options.prefix;
       }
-      if ((_base3 = this.options).sessionExpires == null) {
-        _base3.sessionExpires = new Date(new Date().getTime() + 1 * 24 * 60 * 60 * 1000);
-      }
       this.socket = new SockJS("" + this.url + "/" + this.options.prefix, null, this.options);
       this.callbacks['services'] = this.handleServices;
-      this.callbacks['session'] = this.handleSession;
+      this.callbacks['session'] = this.setSession;
       this.socket.onmessage = this.handleMessage;
       this.socket.onclose = this.handleClose;
       this.session = this.cookie();
@@ -67,11 +64,17 @@
 
     Vein.prototype.subscribe = {};
 
-    Vein.prototype.session = void 0;
+    Vein.prototype.getSession = function() {
+      return cookies.getItem(this.options.sessionName);
+    };
+
+    Vein.prototype.setSession = function(sess) {
+      cookies.setItem(this.options.sessionName, sess, this.options.sessionLength);
+      return true;
+    };
 
     Vein.prototype.clearSession = function() {
-      this.session = void 0;
-      this.cookie('', true);
+      cookies.removeItem(this.options.sessionName);
     };
 
     Vein.prototype.ready = function(cb) {
@@ -119,12 +122,6 @@
       delete this.callbacks['ready'];
     };
 
-    Vein.prototype.handleSession = function(sess) {
-      this.session = sess;
-      this.cookie(sess);
-      return true;
-    };
-
     Vein.prototype.getListener = function(service) {
       var _this = this;
       return function(cb) {
@@ -149,17 +146,6 @@
           args: args
         }));
       };
-    };
-
-    Vein.prototype.cookie = function(sess, del) {
-      var name;
-      name = this.options.sessionName;
-      if (del) return cookies.removeItem(name);
-      if (sess) {
-        return cookies.setItem(name, sess, this.options.sessionExpires);
-      } else {
-        return cookies.getItem(name);
-      }
     };
 
     Vein.prototype.getId = function() {

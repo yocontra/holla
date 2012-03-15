@@ -16,7 +16,6 @@ cookies =
     document.cookie = "#{escape(sKey)}=#{escape(sValue)}#{sExpires}#{sDomain}#{sPath}#{bSecure}"
 
   removeItem: (sKey) ->
-    return unless cookies.hasItem sKey
     console.log "Deleting cookie #{sKey}"
     document.cookie = "#{escape(sKey)}=; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/"
 
@@ -25,12 +24,17 @@ cookies =
 
 class Vein
   constructor: (@url=location.origin, @options={}) ->
+    # Valid options:
+    # host - server running vein (default: location.origin)
+    # prefix - vein endpoint (default: "vein")
+    # sessionName - cookie name (default: "VEINSESSID-[prefix]")
+    # sessionLength - time before cookie expires (default: session)
+
     @options.prefix ?= 'vein'
     @options.sessionName ?= "VEINSESSID-#{@options.prefix}"
-    @options.sessionExpires ?= new Date new Date().getTime() + 1 * 24 * 60 * 60 * 1000
     @socket = new SockJS "#{@url}/#{@options.prefix}", null, @options
     @callbacks['services'] = @handleServices
-    @callbacks['session'] = @handleSession
+    @callbacks['session'] = @setSession
     @socket.onmessage = @handleMessage
     @socket.onclose = @handleClose
     @session = @cookie()
@@ -38,11 +42,13 @@ class Vein
 
   callbacks: {}
   subscribe: {}
-  session: undefined
 
-  clearSession: =>
-    @session = undefined
-    @cookie '', true
+  getSession: => cookies.getItem @options.sessionName
+  setSession: (sess) => 
+    cookies.setItem @options.sessionName, sess, @options.sessionLength
+    return true
+  clearSession: => 
+    cookies.removeItem @options.sessionName
     return
 
   ready: (cb) -> @callbacks['ready'] = cb
@@ -67,11 +73,6 @@ class Vein
     delete @callbacks['ready']
     return
 
-  handleSession: (sess) =>
-    @session = sess
-    @cookie sess
-    return true # keep this callback open - session can be changed multiple times
-
   # Utilities
   getListener: (service) => (cb) =>
     @subscribe[service].listeners ?= []
@@ -84,14 +85,6 @@ class Vein
       @callbacks[id] = cb
       @socket.send JSON.stringify id: id, service: service, args: args
       return
-
-  cookie: (sess, del) ->
-    name = @options.sessionName
-    return cookies.removeItem name if del
-    if sess
-      return cookies.setItem name, sess, @options.sessionExpires
-    else
-      return cookies.getItem name
 
   getId: ->
     rand = -> (((1 + Math.random()) * 0x10000000) | 0).toString 16
