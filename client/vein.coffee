@@ -1,28 +1,26 @@
 cookies =
-  getItem: (sKey) ->
-    return unless cookies.hasItem sKey
-    return unescape document.cookie.replace(new RegExp("(?:^|.*;\\s*)" + escape(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*((?:[^;](?!;))*[^;]?).*"), "$1")
+  getItem: (key) ->
+    return unless cookies.hasItem key
+    return unescape document.cookie.replace(new RegExp("(?:^|.*;\\s*)" + escape(key).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*((?:[^;](?!;))*[^;]?).*"), "$1")
 
-  setItem: (sKey, sValue, vEnd) ->
-    if vEnd
-      sExpires = "; max-age=#{vEnd}" if typeof vEnd is 'number'
-      sExpires = "; expires=#{vEnd}" if typeof vEnd is 'string'
-      sExpires = "; expires=#{vEnd.toGMTString()}" if vEnd.hasOwnProperty("toGMTString") if typeof vEnd is 'object'
-    sExpires = (if sExpires then sExpires else "")
-    console.log "Setting cookie to #{escape(sKey)}=#{escape(sValue)}#{sExpires}"
-    document.cookie = "#{escape(sKey)}=#{escape(sValue)}#{sExpires}"
+  setItem: (key, val, expires) ->
+    sExpires = ""
+    sExpires = "; max-age=#{expires}" if typeof expires is 'number'
+    sExpires = "; expires=#{expires}" if typeof expires is 'string'
+    sExpires = "; expires=#{expires.toGMTString()}" if expires.toGMTString if typeof expires is 'object'
+    document.cookie = "#{escape(key)}=#{escape(val)}#{sExpires}"
     return
 
-  removeItem: (sKey) ->
-    console.log "Deleting cookie #{sKey}"
-    document.cookie = "#{escape(sKey)}=; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/"
+  removeItem: (key) ->
+    document.cookie = "#{escape(key)}=; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/"
     return
 
-  hasItem: (sKey) ->
-    return (new RegExp("(?:^|;\\s*)" + escape(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=")).test document.cookie
+  hasItem: (key) ->
+    ep = new RegExp "(?:^|;\\s*)" + (escape(key).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=")
+    return ep.test document.cookie
 
 class Vein
-  constructor: (@url=location.origin, @options={}) ->
+  constructor: (@options={}) ->
     # Valid options:
     # host - server running vein (default: location.origin)
     # prefix - vein endpoint (default: "vein")
@@ -30,8 +28,10 @@ class Vein
     # sessionLength - time before cookie expires (default: session)
 
     @options.prefix ?= 'vein'
+    @options.host ?= location.origin
     @options.sessionName ?= "VEINSESSID-#{@options.prefix}"
-    @socket = new SockJS "#{@url}/#{@options.prefix}", null, @options
+
+    @socket = new SockJS "#{@options.host}/#{@options.prefix}", null, @options
     @callbacks['services'] = @handleServices
     @callbacks['session'] = @setSession
     @socket.onmessage = @handleMessage
@@ -43,7 +43,6 @@ class Vein
 
   getSession: => cookies.getItem @options.sessionName
   setSession: (sess) =>
-    console.log "Setting session to #{sess}"
     cookies.setItem @options.sessionName, sess, @options.sessionLength
     return true
 

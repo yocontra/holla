@@ -4,37 +4,34 @@
     __slice = Array.prototype.slice;
 
   cookies = {
-    getItem: function(sKey) {
-      if (!cookies.hasItem(sKey)) return;
-      return unescape(document.cookie.replace(new RegExp("(?:^|.*;\\s*)" + escape(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*((?:[^;](?!;))*[^;]?).*"), "$1"));
+    getItem: function(key) {
+      if (!cookies.hasItem(key)) return;
+      return unescape(document.cookie.replace(new RegExp("(?:^|.*;\\s*)" + escape(key).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*((?:[^;](?!;))*[^;]?).*"), "$1"));
     },
-    setItem: function(sKey, sValue, vEnd) {
+    setItem: function(key, val, expires) {
       var sExpires;
-      if (vEnd) {
-        if (typeof vEnd === 'number') sExpires = "; max-age=" + vEnd;
-        if (typeof vEnd === 'string') sExpires = "; expires=" + vEnd;
-        if (typeof vEnd === 'object' ? vEnd.hasOwnProperty("toGMTString") : void 0) {
-          sExpires = "; expires=" + (vEnd.toGMTString());
-        }
+      sExpires = "";
+      if (typeof expires === 'number') sExpires = "; max-age=" + expires;
+      if (typeof expires === 'string') sExpires = "; expires=" + expires;
+      if (typeof expires === 'object' ? expires.toGMTString : void 0) {
+        sExpires = "; expires=" + (expires.toGMTString());
       }
-      sExpires = (sExpires ? sExpires : "");
-      console.log("Setting cookie to " + (escape(sKey)) + "=" + (escape(sValue)) + sExpires);
-      document.cookie = "" + (escape(sKey)) + "=" + (escape(sValue)) + sExpires;
+      document.cookie = "" + (escape(key)) + "=" + (escape(val)) + sExpires;
     },
-    removeItem: function(sKey) {
-      console.log("Deleting cookie " + sKey);
-      document.cookie = "" + (escape(sKey)) + "=; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/";
+    removeItem: function(key) {
+      document.cookie = "" + (escape(key)) + "=; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/";
     },
-    hasItem: function(sKey) {
-      return (new RegExp("(?:^|;\\s*)" + escape(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=")).test(document.cookie);
+    hasItem: function(key) {
+      var ep;
+      ep = new RegExp("(?:^|;\\s*)" + (escape(key).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\="));
+      return ep.test(document.cookie);
     }
   };
 
   Vein = (function() {
 
-    function Vein(url, options) {
-      var _base, _base2;
-      this.url = url != null ? url : location.origin;
+    function Vein(options) {
+      var _base, _base2, _base3;
       this.options = options != null ? options : {};
       this.getSender = __bind(this.getSender, this);
       this.getListener = __bind(this.getListener, this);
@@ -45,10 +42,11 @@
       this.setSession = __bind(this.setSession, this);
       this.getSession = __bind(this.getSession, this);
       if ((_base = this.options).prefix == null) _base.prefix = 'vein';
-      if ((_base2 = this.options).sessionName == null) {
-        _base2.sessionName = "VEINSESSID-" + this.options.prefix;
+      if ((_base2 = this.options).host == null) _base2.host = location.origin;
+      if ((_base3 = this.options).sessionName == null) {
+        _base3.sessionName = "VEINSESSID-" + this.options.prefix;
       }
-      this.socket = new SockJS("" + this.url + "/" + this.options.prefix, null, this.options);
+      this.socket = new SockJS("" + this.options.host + "/" + this.options.prefix, null, this.options);
       this.callbacks['services'] = this.handleServices;
       this.callbacks['session'] = this.setSession;
       this.socket.onmessage = this.handleMessage;
@@ -65,7 +63,6 @@
     };
 
     Vein.prototype.setSession = function(sess) {
-      console.log("Setting session to " + sess);
       cookies.setItem(this.options.sessionName, sess, this.options.sessionLength);
       return true;
     };

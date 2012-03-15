@@ -19,48 +19,104 @@
 Documentation is horrible. Will update later.
 
 ### Server
-```coffee-script
-http = require 'http'
-Vein = require 'vein'
+```javascript
+var http = require('http');
+var Vein = require('vein');
+var server = http.createServer().listen(8080);
 
-server = http.createServer().listen 8080
+var vein = new Vein(server, {
+  //options go here
+});
+/*
+  Valid options:
+  prefix - vein endpoint (default: "vein")
+  sessionName - cookie name (default: "VEINSESSID-[prefix]")
+  noTrack - disable pubsub for performance (default: false)
+  response_limit - reopen socket after this much data (default: 128k)
+*/
 
-vein = new Vein server
-vein.add 'test', (send, socket, hello) ->
-  send "test - #{hello}"
+// A service is a function that gets called every time a client calls it
+// The format is function (send, socket, args...)
+// args can be any JSON-friendly data sent from the client
+vein.add('someService', function (send, socket, name, num) {
+  send("Hey there " + name + " I got your number " + num);
+});
 
-# send data... will send a response to the socket that made the request
-# send.all data... will send a message to every socket currently connected
-vein.add 'pubtest', (send, socket, hello) ->
-  send.all "pubtest - #{hello}"
+// You can manage sessions from the server using send.session
+// If a socket has a session attached already it can be accessed via socket.session
+vein.add('login', function (send, socket, username, password) {
+  if (username === 'username' && password === 'pass123') {
+    send.session('success! (some unique key)');
+    send(); // Call the login callback
+  } else {
+    send('Invalid username or password');
+  }
+});
 
-vein.add 'subtest', (send, socket, hello) ->
-  send "subtest - #{hello}"
-  send "subtest - #{hello}"
+// If you have tracking enabled (noTrack=false) you can use send.all
+// to broadcast a message to all currently connected clients that are subscribed to the service
+vein.add('someOtherService', function (send, socket, msg) {
+  send.all(msg);
+});
 ```
 
 ### Client
-```coffee-script
-vein = new Vein
 
-vein.ready (services) ->
-  console.log "Vein opened"
-  vein.test "success", (res) ->
-    console.log res
+```javascript
+var vein = new Vein({
+  //options go here
+});
+/*
+  Valid options:
+  host - server running vein (default: location.origin)
+  prefix - vein endpoint (default: "vein")
+  sessionName - cookie name (default: "VEINSESSID-[prefix]")
+  sessionLength - time before cookie expires (default: session)
+  debug - extra information (default: false)
+*/
 
-  vein.pubtest "success", (res) ->
-    console.log res
+//When the vein is ready this function will be called
+vein.ready(function (services) {
+  // Services is an array of service names available to use
+  // Any code using vein should be kicked off here
+  // When calling a service the format is vein.<service name>(args..., callback)
+  // You can pass any JSON-friendly objects as arguments and they will be applied to the
+  // service on the server. You can pass any JSON-friendly objects as arguments to the callback
+  // from the service on the server as well.
+  vein.someService('john', 2, function (err, result) {
+    console.log(result);
+  });
 
-  # Listen for unsolicited messages with .subscribe
-  # this callback will be called as many times as the server wants
-  vein.subscribe.subtest (res) -> console.log res
+  // Prefixing a service with .subscribe allows the server to send unsolicited messages
+  // to the client. Subscribing to a service does not communicate to the server.
+  vein.subscribe.someOtherService(function (message) {
+    console.log(message);
+  });
 
-vein.close -> console.log "Vein closed"
+  // The server can assign a session to the client via send.session.
+  // Any services called will have access to the session value via socket.session
+  // When the server assigns a session it is saved as a cookie with the client preferences.
+  // Make sure the client and server cookie preferences match.
+  // Session data can be accessed via .getSession() and .clearSession()
+  vein.login('username', 'pass123', function (err) {
+    if (err) {
+      alert(err);
+    } else {
+      console.log(vein.getSession());
+      console.log(vein.clearSession());
+    }
+  });
+});
+
+//If the vein is closed this function will be called
+vein.close(function () {
+  console.log("Connection lost!");
+});
 ```
 
 ## Examples
 
-You can view a web chat example in the [example folder.](https://github.com/wearefractal/vein/tree/master/examples)
+You can view a web-based chat example in the [example folder.](https://github.com/wearefractal/vein/tree/master/examples)
 
 ## LICENSE
 
