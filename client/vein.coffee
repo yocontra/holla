@@ -1,8 +1,8 @@
 class Vein
   constructor: (@url=location.origin, @options={}) ->
     @options.prefix ?= 'vein'
-    #@options.sessionExpires ?= -1
     @options.sessionName ?= "VEINSESSID-#{@options.prefix}"
+    @options.sessionExpires ?= 1 # one day default expiry
 
     @socket = new SockJS "#{@url}/#{@options.prefix}", null, @options
     @callbacks['services'] = @handleServices
@@ -71,8 +71,7 @@ class Vein
           date.setTime date.getTime() + (expiry * 24 * 60 * 60 * 1000)
         else if expiry.toUTCString
           date = expiry
-      expires = (if date then ";expires=#{date.toUTCString()}" else "")
-      document.cookie = "#{name}=#{encodeURIComponent(sess)}#{expires}"
+      document.cookie = "#{name}=#{encodeURIComponent(sess)};expires=#{date.toUTCString()}"
     else
       if document.cookie and document.cookie.length isnt 0
         for cookie in document.cookie.split ";"

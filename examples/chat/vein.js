@@ -6,7 +6,7 @@
   Vein = (function() {
 
     function Vein(url, options) {
-      var _base, _base2;
+      var _base, _base2, _base3;
       this.url = url != null ? url : location.origin;
       this.options = options != null ? options : {};
       this.getSender = __bind(this.getSender, this);
@@ -19,6 +19,9 @@
       if ((_base = this.options).prefix == null) _base.prefix = 'vein';
       if ((_base2 = this.options).sessionName == null) {
         _base2.sessionName = "VEINSESSID-" + this.options.prefix;
+      }
+      if ((_base3 = this.options).sessionExpires == null) {
+        _base3.sessionExpires = 1;
       }
       this.socket = new SockJS("" + this.url + "/" + this.options.prefix, null, this.options);
       this.callbacks['services'] = this.handleServices;
@@ -118,7 +121,7 @@
     };
 
     Vein.prototype.cookie = function(sess, del) {
-      var cookie, date, expires, expiry, name, _i, _len, _ref;
+      var cookie, date, expiry, name, _i, _len, _ref;
       if (del == null) del = false;
       name = this.options.sessionName;
       expiry = (del ? new Date('Thu, 01-Jan-1970 00:00:01 GMT') : this.options.sessionExpires);
@@ -131,8 +134,7 @@
             date = expiry;
           }
         }
-        expires = (date ? ";expires=" + (date.toUTCString()) : "");
-        return document.cookie = "" + name + "=" + (encodeURIComponent(sess)) + expires;
+        return document.cookie = "" + name + "=" + (encodeURIComponent(sess)) + ";expires=" + (date.toUTCString());
       } else {
         if (document.cookie && document.cookie.length !== 0) {
           _ref = document.cookie.split(";");
