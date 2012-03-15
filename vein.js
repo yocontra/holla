@@ -38,7 +38,7 @@
   Vein = (function() {
 
     function Vein(url, options) {
-      var _base, _base2;
+      var _base, _base2, _base3;
       this.url = url != null ? url : location.origin;
       this.options = options != null ? options : {};
       this.getSender = __bind(this.getSender, this);
@@ -51,6 +51,9 @@
       if ((_base = this.options).prefix == null) _base.prefix = 'vein';
       if ((_base2 = this.options).sessionName == null) {
         _base2.sessionName = "VEINSESSID-" + this.options.prefix;
+      }
+      if ((_base3 = this.options).sessionExpires == null) {
+        _base3.sessionExpires = new Date(new Date().getTime() + 1 * 24 * 60 * 60 * 1000);
       }
       this.socket = new SockJS("" + this.url + "/" + this.options.prefix, null, this.options);
       this.callbacks['services'] = this.handleServices;

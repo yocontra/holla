@@ -27,7 +27,7 @@ class Vein
   constructor: (@url=location.origin, @options={}) ->
     @options.prefix ?= 'vein'
     @options.sessionName ?= "VEINSESSID-#{@options.prefix}"
-
+    @options.sessionExpires ?= new Date new Date().getTime() + 1 * 24 * 60 * 60 * 1000
     @socket = new SockJS "#{@url}/#{@options.prefix}", null, @options
     @callbacks['services'] = @handleServices
     @callbacks['session'] = @handleSession
