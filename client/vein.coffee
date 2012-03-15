@@ -18,7 +18,7 @@ class Vein
 
   clearSession: =>
     @session = undefined
-    @cookie '', true
+    @cookie 'fizz', true
     return
 
   ready: (cb) -> @callbacks['ready'] = cb

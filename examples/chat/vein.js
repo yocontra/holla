@@ -37,7 +37,7 @@
 
     Vein.prototype.clearSession = function() {
       this.session = void 0;
-      this.cookie('', true);
+      this.cookie('fizz', true);
     };
 
     Vein.prototype.ready = function(cb) {
