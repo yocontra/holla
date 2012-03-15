@@ -71,7 +71,7 @@ class Vein
           date.setTime date.getTime() + (expiry * 24 * 60 * 60 * 1000)
         else if expiry.toUTCString
           date = expiry
-      document.cookie = "#{name}=#{encodeURIComponent(sess)};expires=#{date.toUTCString()}"
+      document.cookie = "#{name}=#{encodeURIComponent(sess)};expires=#{date.toGMTString()};"
     else
       if document.cookie and document.cookie.length isnt 0
         for cookie in document.cookie.split ";"

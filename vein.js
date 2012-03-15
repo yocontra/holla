@@ -134,7 +134,7 @@
             date = expiry;
           }
         }
-        return document.cookie = "" + name + "=" + (encodeURIComponent(sess)) + ";expires=" + (date.toUTCString());
+        return document.cookie = "" + name + "=" + (encodeURIComponent(sess)) + ";expires=" + (date.toGMTString()) + ";";
       } else {
         if (document.cookie && document.cookie.length !== 0) {
           _ref = document.cookie.split(";");
