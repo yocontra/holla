@@ -13,6 +13,5 @@ module.exports =
         try
           obj[key] = decodeURIComponent val
         catch err
-          if err instanceof URIError
-            obj[key] = val
+          obj[key] = val
     return obj

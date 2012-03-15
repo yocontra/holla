@@ -12,13 +12,13 @@ cookies =
     sPath = (if sPath then "; path=" + sPath else "")
     sExpires = (if sExpires then sExpires else "")
     bSecure = (if bSecure then "; secure" else "")
+    console.log "Setting cookie to #{escape(sKey)}=#{escape(sValue)}#{sExpires}#{sDomain}#{sPath}#{bSecure}"
     document.cookie = "#{escape(sKey)}=#{escape(sValue)}#{sExpires}#{sDomain}#{sPath}#{bSecure}"
 
   removeItem: (sKey) ->
     return unless cookies.hasItem sKey
-    oExpDate = new Date()
-    oExpDate.setDate oExpDate.getDate() - 1
-    document.cookie = "#{escape(sKey)}=; expires=#{oExpDate.toGMTString()}; path=/"
+    console.log "Deleting cookie #{sKey}"
+    document.cookie = "#{escape(sKey)}=; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/"
 
   hasItem: (sKey) ->
     (new RegExp("(?:^|;\\s*)" + escape(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=")).test document.cookie

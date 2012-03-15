@@ -21,14 +21,13 @@
       sPath = (sPath ? "; path=" + sPath : "");
       sExpires = (sExpires ? sExpires : "");
       bSecure = (bSecure ? "; secure" : "");
+      console.log("Setting cookie to " + (escape(sKey)) + "=" + (escape(sValue)) + sExpires + sDomain + sPath + bSecure);
       return document.cookie = "" + (escape(sKey)) + "=" + (escape(sValue)) + sExpires + sDomain + sPath + bSecure;
     },
     removeItem: function(sKey) {
-      var oExpDate;
       if (!cookies.hasItem(sKey)) return;
-      oExpDate = new Date();
-      oExpDate.setDate(oExpDate.getDate() - 1);
-      return document.cookie = "" + (escape(sKey)) + "=; expires=" + (oExpDate.toGMTString()) + "; path=/";
+      console.log("Deleting cookie " + sKey);
+      return document.cookie = "" + (escape(sKey)) + "=; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/";
     },
     hasItem: function(sKey) {
       return (new RegExp("(?:^|;\\s*)" + escape(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=")).test(document.cookie);
