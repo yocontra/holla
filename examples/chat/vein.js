@@ -16,11 +16,11 @@
       this.handleMessage = __bind(this.handleMessage, this);
       this.handleClose = __bind(this.handleClose, this);
       this.clearSession = __bind(this.clearSession, this);
-      if ((_base = this.options).prefix == null) _base.prefix = '/vein';
+      if ((_base = this.options).prefix == null) _base.prefix = 'vein';
       if ((_base2 = this.options).sessionName == null) {
-        _base2.sessionName = 'VSESSID';
+        _base2.sessionName = "VEINSESSID-" + this.options.prefix;
       }
-      this.socket = new SockJS("" + this.url + this.options.prefix, null, this.options);
+      this.socket = new SockJS("" + this.url + "/" + this.options.prefix, null, this.options);
       this.callbacks['services'] = this.handleServices;
       this.callbacks['session'] = this.handleSession;
       this.socket.onmessage = this.handleMessage;
@@ -33,11 +33,11 @@
 
     Vein.prototype.subscribe = {};
 
-    Vein.prototype.session = null;
+    Vein.prototype.session = void 0;
 
     Vein.prototype.clearSession = function() {
-      this.session = null;
-      this.cookie('bye', true);
+      this.session = void 0;
+      this.cookie('', true);
     };
 
     Vein.prototype.ready = function(cb) {
@@ -112,8 +112,7 @@
         _this.socket.send(JSON.stringify({
           id: id,
           service: service,
-          args: args,
-          session: _this.session
+          args: args
         }));
       };
     };

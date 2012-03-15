@@ -1,10 +1,10 @@
 class Vein
   constructor: (@url=location.origin, @options={}) ->
-    @options.prefix ?= '/vein'
+    @options.prefix ?= 'vein'
     #@options.sessionExpires ?= -1
-    @options.sessionName ?= 'VSESSID'
+    @options.sessionName ?= "VEINSESSID-#{@options.prefix}"
 
-    @socket = new SockJS "#{@url}#{@options.prefix}", null, @options
+    @socket = new SockJS "#{@url}/#{@options.prefix}", null, @options
     @callbacks['services'] = @handleServices
     @callbacks['session'] = @handleSession
     @socket.onmessage = @handleMessage
@@ -14,11 +14,11 @@ class Vein
 
   callbacks: {}
   subscribe: {}
-  session: null
+  session: undefined
 
   clearSession: =>
-    @session = null
-    @cookie 'bye', true
+    @session = undefined
+    @cookie '', true
     return
 
   ready: (cb) -> @callbacks['ready'] = cb
@@ -58,7 +58,7 @@ class Vein
     (args..., cb) =>
       id = @getId()
       @callbacks[id] = cb
-      @socket.send JSON.stringify id: id, service: service, args: args, session: @session
+      @socket.send JSON.stringify id: id, service: service, args: args
       return
 
   cookie: (sess, del=false) ->

@@ -1,13 +1,19 @@
 {EventEmitter} = require 'events'
 sockjs = require 'sockjs'
+{parseCookie} = require './util'
 
 class Vein extends EventEmitter
 
   constructor: (server, @opts={}) ->
-    @opts.prefix ?= '/vein'
+    @opts.prefix ?= 'vein'
+    @opts.sessionName ?= "VEINSESSID-#{@opts.prefix}"
+    @opts.prefix = "/#{@opts.prefix}"
 
     @server = sockjs.createServer @opts
     @server.on 'connection', (socket) =>
+      socket.cookie = socket._session.recv.ws.request.headers.cookie
+      socket.session = parseCookie(socket.cookie)[@opts.sessionName]
+
       socket.write JSON.stringify id: 'services', args: Object.keys @routes # send down list of services
       socket.on 'data', (msg) => @route socket, msg
       unless @opts.noTrack
@@ -27,7 +33,7 @@ class Vein extends EventEmitter
   route: (socket, msg) ->
     return unless typeof msg is 'string' and socket?
     try
-      {id, service, args, session} = JSON.parse msg
+      {id, service, args} = JSON.parse msg
     catch err
       return
     return unless service? and args? and id? and @routes[service]?
@@ -39,7 +45,6 @@ class Vein extends EventEmitter
     send.session = (sess) => 
       socket.session = sess
       socket.write JSON.stringify id: 'session', args: [sess]
-    socket.session = session if session?
     @routes[service] send, socket, args...
 
 module.exports = Vein
