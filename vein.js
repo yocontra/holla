@@ -37,7 +37,7 @@
 
     Vein.prototype.clearSession = function() {
       this.session = null;
-      return this.cookie('bye', true);
+      this.cookie('bye', true);
     };
 
     Vein.prototype.ready = function(cb) {
@@ -160,7 +160,9 @@
   })();
 
   if (typeof define === 'function') {
-    define(Vein);
+    define(function() {
+      return Vein;
+    });
   } else {
     window.Vein = Vein;
   }

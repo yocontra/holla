@@ -19,6 +19,7 @@ class Vein
   clearSession: =>
     @session = null
     @cookie 'bye', true
+    return
 
   ready: (cb) -> @callbacks['ready'] = cb
   close: (cb) -> @callbacks['close'] = cb
@@ -83,6 +84,6 @@ class Vein
     rand()+rand()+rand()
 
 if typeof define is 'function'
-  define Vein
+  define -> Vein
 else
   window.Vein = Vein
