@@ -12,7 +12,7 @@ class Vein extends EventEmitter
     @server = sockjs.createServer @opts
     @server.on 'connection', (socket) =>
       socket.cookie = socket._session.recv.ws.request.headers.cookie
-      socket.session = parseCookie(socket.cookie)[@opts.sessionName]
+      socket.session = parseCookie(socket.cookie)[@opts.sessionName] if socket.cookie?
 
       socket.write JSON.stringify id: 'services', args: Object.keys @routes # send down list of services
       socket.on 'data', (msg) => @route socket, msg
