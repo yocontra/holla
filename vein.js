@@ -1,7 +1,39 @@
 (function() {
-  var Vein,
+  var Vein, cookies,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __slice = Array.prototype.slice;
+
+  cookies = {
+    getItem: function(sKey) {
+      if (!cookies.hasItem(sKey)) return;
+      return unescape(document.cookie.replace(new RegExp("(?:^|.*;\\s*)" + escape(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*((?:[^;](?!;))*[^;]?).*"), "$1"));
+    },
+    setItem: function(sKey, sValue, vEnd, sPath, sDomain, bSecure) {
+      var sExpires;
+      if (vEnd) {
+        if (typeof vEnd === 'number') sExpires = "; max-age=" + vEnd;
+        if (typeof vEnd === 'string') sExpires = "; expires=" + vEnd;
+        if (typeof vEnd === 'object' ? vEnd.hasOwnProperty("toGMTString") : void 0) {
+          sExpires = "; expires=" + (vEnd.toGMTString());
+        }
+      }
+      sDomain = (sDomain ? "; domain=" + sDomain : "");
+      sPath = (sPath ? "; path=" + sPath : "");
+      sExpires = (sExpires ? sExpires : "");
+      bSecure = (bSecure ? "; secure" : "");
+      return document.cookie = "" + (escape(sKey)) + "=" + (escape(sValue)) + sExpires + sDomain + sPath + bSecure;
+    },
+    removeItem: function(sKey) {
+      var oExpDate;
+      if (!cookies.hasItem(sKey)) return;
+      oExpDate = new Date();
+      oExpDate.setDate(oExpDate.getDate() - 1);
+      return document.cookie = "" + (escape(sKey)) + "=; expires=" + (oExpDate.toGMTString()) + "; path=/";
+    },
+    hasItem: function(sKey) {
+      return (new RegExp("(?:^|;\\s*)" + escape(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=")).test(document.cookie);
+    }
+  };
 
   Vein = (function() {
 
@@ -40,7 +72,7 @@
 
     Vein.prototype.clearSession = function() {
       this.session = void 0;
-      this.cookie('fizz', true);
+      this.cookie('', true);
     };
 
     Vein.prototype.ready = function(cb) {
@@ -121,30 +153,13 @@
     };
 
     Vein.prototype.cookie = function(sess, del) {
-      var cookie, date, expiry, name, _i, _len, _ref;
-      if (del == null) del = false;
+      var name;
       name = this.options.sessionName;
-      expiry = (del ? new Date('Thu, 01-Jan-1970 00:00:01 GMT') : this.options.sessionExpires);
+      if (del) return cookies.removeItem(name);
       if (sess) {
-        if (expiry) {
-          if (typeof expiry === 'number') {
-            date = new Date;
-            date.setTime(date.getTime() + (expiry * 24 * 60 * 60 * 1000));
-          } else if (expiry.toUTCString) {
-            date = expiry;
-          }
-        }
-        return document.cookie = "" + name + "=" + (encodeURIComponent(sess)) + ";expires=" + (date.toGMTString()) + ";";
+        return cookies.setItem(name, sess, this.options.sessionExpires);
       } else {
-        if (document.cookie && document.cookie.length !== 0) {
-          _ref = document.cookie.split(";");
-          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-            cookie = _ref[_i];
-            if (cookie.substring(0, name.length + 1) === ("" + name + "=")) {
-              return decodeURIComponent(cookie.substring(name.length + 1));
-            }
-          }
-        }
+        return cookies.getItem(name);
       }
     };
 

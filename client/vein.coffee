@@ -1,3 +1,28 @@
+cookies =
+  getItem: (sKey) ->
+    return unless cookies.hasItem sKey
+    unescape document.cookie.replace(new RegExp("(?:^|.*;\\s*)" + escape(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*((?:[^;](?!;))*[^;]?).*"), "$1")
+
+  setItem: (sKey, sValue, vEnd, sPath, sDomain, bSecure) ->
+    if vEnd
+      sExpires = "; max-age=#{vEnd}" if typeof vEnd is 'number'
+      sExpires = "; expires=#{vEnd}" if typeof vEnd is 'string'
+      sExpires = "; expires=#{vEnd.toGMTString()}" if vEnd.hasOwnProperty("toGMTString") if typeof vEnd is 'object'
+    sDomain = (if sDomain then "; domain=" + sDomain else "")
+    sPath = (if sPath then "; path=" + sPath else "")
+    sExpires = (if sExpires then sExpires else "")
+    bSecure = (if bSecure then "; secure" else "")
+    document.cookie = "#{escape(sKey)}=#{escape(sValue)}#{sExpires}#{sDomain}#{sPath}#{bSecure}"
+
+  removeItem: (sKey) ->
+    return unless cookies.hasItem sKey
+    oExpDate = new Date()
+    oExpDate.setDate oExpDate.getDate() - 1
+    document.cookie = "#{escape(sKey)}=; expires=#{oExpDate.toGMTString()}; path=/"
+
+  hasItem: (sKey) ->
+    (new RegExp("(?:^|;\\s*)" + escape(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=")).test document.cookie
+
 class Vein
   constructor: (@url=location.origin, @options={}) ->
     @options.prefix ?= 'vein'
@@ -18,7 +43,7 @@ class Vein
 
   clearSession: =>
     @session = undefined
-    @cookie 'fizz', true
+    @cookie '', true
     return
 
   ready: (cb) -> @callbacks['ready'] = cb
@@ -61,22 +86,13 @@ class Vein
       @socket.send JSON.stringify id: id, service: service, args: args
       return
 
-  cookie: (sess, del=false) ->
+  cookie: (sess, del) ->
     name = @options.sessionName
-    expiry = (if del then new Date('Thu, 01-Jan-1970 00:00:01 GMT') else @options.sessionExpires)
+    return cookies.removeItem name if del
     if sess
-      if expiry
-        if typeof expiry is 'number'
-          date = new Date
-          date.setTime date.getTime() + (expiry * 24 * 60 * 60 * 1000)
-        else if expiry.toUTCString
-          date = expiry
-      document.cookie = "#{name}=#{encodeURIComponent(sess)};expires=#{date.toGMTString()};"
+      return cookies.setItem name, sess, @options.sessionExpires
     else
-      if document.cookie and document.cookie.length isnt 0
-        for cookie in document.cookie.split ";"
-          if cookie.substring(0, (name.length + 1)) is "#{name}="
-            return decodeURIComponent cookie.substring name.length + 1
+      return cookies.getItem name
 
   getId: ->
     rand = -> (((1 + Math.random()) * 0x10000000) | 0).toString 16
