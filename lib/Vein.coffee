@@ -11,8 +11,9 @@ class Vein extends EventEmitter
 
     @server = sockjs.createServer @opts
     @server.on 'connection', (socket) =>
-      socket.cookie = socket._session.recv.ws.request.headers.cookie
-      socket.session = parseCookie(socket.cookie)[@opts.sessionName] if socket.cookie?
+      try
+        socket.cookie = socket._session.recv.ws.request.headers.cookie
+        socket.session = parseCookie(socket.cookie)[@opts.sessionName] if socket.cookie?
 
       socket.write JSON.stringify id: 'services', args: Object.keys @routes # send down list of services
       socket.on 'data', (msg) => @route socket, msg
@@ -42,7 +43,7 @@ class Vein extends EventEmitter
     send = (args...) -> write socket, args...
     unless @opts.noTrack
       send.all = (args...) => write sock, args... for id, sock of @clients
-    send.session = (sess) => 
+    send.session = (sess) =>
       socket.session = sess
       socket.write JSON.stringify id: 'session', args: [sess]
     @routes[service] send, socket, args...
