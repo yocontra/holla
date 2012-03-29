@@ -18,7 +18,7 @@ var vein = new Vein();
 vein.ready(function (services) {
   console.log("Connected");
 
-  var name = vein.session;
+  var name = vein.getSession();
 
   //Listeners
   vein.subscribe.join(function (name, all) {

@@ -137,7 +137,8 @@
         _this.socket.send(JSON.stringify({
           id: id,
           service: service,
-          args: args
+          args: args,
+          session: _this.getSession()
         }));
       };
     };

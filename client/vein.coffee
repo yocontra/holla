@@ -46,7 +46,7 @@ class Vein
     cookies.setItem @options.sessionName, sess, @options.sessionLength
     return true
 
-  clearSession: => 
+  clearSession: =>
     cookies.removeItem @options.sessionName
     return
 
@@ -82,7 +82,7 @@ class Vein
     (args..., cb) =>
       id = @getId()
       @callbacks[id] = cb
-      @socket.send JSON.stringify id: id, service: service, args: args
+      @socket.send JSON.stringify id: id, service: service, args: args, session: @getSession()
       return
 
   getId: ->
