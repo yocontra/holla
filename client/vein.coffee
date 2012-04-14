@@ -32,7 +32,7 @@ class Vein
     @options.sessionName ?= "VEINSESSID-#{@options.prefix}"
 
     @socket = new SockJS "#{@options.host}/#{@options.prefix}", null, @options
-    @callbacks['services'] = @handleServices
+    @callbacks['methods'] = @handleMethods
     @callbacks['session'] = @setSession
     @socket.onmessage = @handleMessage
     @socket.onclose = @handleClose
@@ -57,32 +57,33 @@ class Vein
   handleClose: => @callbacks['close']?()
 
   handleMessage: (e) =>
-    {id, service, args} = JSON.parse e.data
-    if @subscribe[service] and @subscribe[service].listeners
-      fn args... for fn in @subscribe[service].listeners
+    {id, method, params, err} = JSON.parse e.data
+    params = [params] unless Array.isArray params
+    if @subscribe[method] and @subscribe[method].listeners
+      fn params... for fn in @subscribe[method].listeners
     return unless @callbacks[id]
-    keep = @callbacks[id] args...
+    keep = @callbacks[id] params...
     delete @callbacks[id] unless keep is true
     return
 
-  handleServices: (services...) =>
-    @[service] = @getSender service for service in services
-    @subscribe[service] = @getListener service for service in services
-    @callbacks['ready']? services
+  handleMethods: (methods...) =>
+    @[method] = @getSender method for method in methods
+    @subscribe[method] = @getListener method for method in methods
+    @callbacks['ready']? methods
     delete @callbacks['ready']
     return
 
   # Utilities
-  getListener: (service) => (cb) =>
-    @subscribe[service].listeners ?= []
-    @subscribe[service].listeners.push cb
+  getListener: (method) => (cb) =>
+    @subscribe[method].listeners ?= []
+    @subscribe[method].listeners.push cb
     return
 
-  getSender: (service) =>
-    (args..., cb) =>
+  getSender: (method) =>
+    (params..., cb) =>
       id = @getId()
       @callbacks[id] = cb
-      @socket.send JSON.stringify id: id, service: service, args: args, session: @getSession()
+      @socket.send JSON.stringify id: id, method: method, params: params, session: @getSession()
       return
 
   getId: ->

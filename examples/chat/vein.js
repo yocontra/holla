@@ -35,7 +35,7 @@
       this.options = options != null ? options : {};
       this.getSender = __bind(this.getSender, this);
       this.getListener = __bind(this.getListener, this);
-      this.handleServices = __bind(this.handleServices, this);
+      this.handleMethods = __bind(this.handleMethods, this);
       this.handleMessage = __bind(this.handleMessage, this);
       this.handleClose = __bind(this.handleClose, this);
       this.clearSession = __bind(this.clearSession, this);
@@ -47,7 +47,7 @@
         _base3.sessionName = "VEINSESSID-" + this.options.prefix;
       }
       this.socket = new SockJS("" + this.options.host + "/" + this.options.prefix, null, this.options);
-      this.callbacks['services'] = this.handleServices;
+      this.callbacks['methods'] = this.handleMethods;
       this.callbacks['session'] = this.setSession;
       this.socket.onmessage = this.handleMessage;
       this.socket.onclose = this.handleClose;
@@ -85,59 +85,60 @@
     };
 
     Vein.prototype.handleMessage = function(e) {
-      var args, fn, id, keep, service, _i, _len, _ref, _ref2, _ref3;
-      _ref = JSON.parse(e.data), id = _ref.id, service = _ref.service, args = _ref.args;
-      if (this.subscribe[service] && this.subscribe[service].listeners) {
-        _ref2 = this.subscribe[service].listeners;
+      var err, fn, id, keep, method, params, _i, _len, _ref, _ref2, _ref3;
+      _ref = JSON.parse(e.data), id = _ref.id, method = _ref.method, params = _ref.params, err = _ref.err;
+      if (!Array.isArray(params)) params = [params];
+      if (this.subscribe[method] && this.subscribe[method].listeners) {
+        _ref2 = this.subscribe[method].listeners;
         for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
           fn = _ref2[_i];
-          fn.apply(null, args);
+          fn.apply(null, params);
         }
       }
       if (!this.callbacks[id]) return;
-      keep = (_ref3 = this.callbacks)[id].apply(_ref3, args);
+      keep = (_ref3 = this.callbacks)[id].apply(_ref3, params);
       if (keep !== true) delete this.callbacks[id];
     };
 
-    Vein.prototype.handleServices = function() {
-      var service, services, _base, _i, _j, _len, _len2;
-      services = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      for (_i = 0, _len = services.length; _i < _len; _i++) {
-        service = services[_i];
-        this[service] = this.getSender(service);
+    Vein.prototype.handleMethods = function() {
+      var method, methods, _base, _i, _j, _len, _len2;
+      methods = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      for (_i = 0, _len = methods.length; _i < _len; _i++) {
+        method = methods[_i];
+        this[method] = this.getSender(method);
       }
-      for (_j = 0, _len2 = services.length; _j < _len2; _j++) {
-        service = services[_j];
-        this.subscribe[service] = this.getListener(service);
+      for (_j = 0, _len2 = methods.length; _j < _len2; _j++) {
+        method = methods[_j];
+        this.subscribe[method] = this.getListener(method);
       }
       if (typeof (_base = this.callbacks)['ready'] === "function") {
-        _base['ready'](services);
+        _base['ready'](methods);
       }
       delete this.callbacks['ready'];
     };
 
-    Vein.prototype.getListener = function(service) {
+    Vein.prototype.getListener = function(method) {
       var _this = this;
       return function(cb) {
         var _base;
-        if ((_base = _this.subscribe[service]).listeners == null) {
+        if ((_base = _this.subscribe[method]).listeners == null) {
           _base.listeners = [];
         }
-        _this.subscribe[service].listeners.push(cb);
+        _this.subscribe[method].listeners.push(cb);
       };
     };
 
-    Vein.prototype.getSender = function(service) {
+    Vein.prototype.getSender = function(method) {
       var _this = this;
       return function() {
-        var args, cb, id, _i;
-        args = 2 <= arguments.length ? __slice.call(arguments, 0, _i = arguments.length - 1) : (_i = 0, []), cb = arguments[_i++];
+        var cb, id, params, _i;
+        params = 2 <= arguments.length ? __slice.call(arguments, 0, _i = arguments.length - 1) : (_i = 0, []), cb = arguments[_i++];
         id = _this.getId();
         _this.callbacks[id] = cb;
         _this.socket.send(JSON.stringify({
           id: id,
-          service: service,
-          args: args,
+          method: method,
+          params: params,
           session: _this.getSession()
         }));
       };
