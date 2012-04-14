@@ -14,6 +14,32 @@
 </tr>
 </table>
 
+## Example
+
+### Server
+
+```javascript
+var Vein = require('vein');
+var server = http.createServer().listen(8080);
+var rpc = new Vein(server);
+
+rpc.add('greetings', function (send, socket, first, last){
+  send("Hey there " + first + " " + last!");
+});
+```
+
+### Client
+
+```javascript
+var vein = new Vein();
+vein.ready(function (){
+  vein.greetings("John", "Foobar", function (res){
+     // res === "Hey there John Foobar!"
+    console.log(res);
+  });
+});
+```
+
 ## Usage
 
 Documentation is horrible. Will update later.
@@ -116,7 +142,7 @@ vein.close(function () {
 });
 ```
 
-## Examples
+## More Examples
 
 You can view a web-based chat example in the [example folder.](https://github.com/wearefractal/vein/tree/master/examples)
 
