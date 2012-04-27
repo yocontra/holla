@@ -38,6 +38,7 @@ class Vein
     @socket.onclose = @handleClose
     return
 
+  connected: null
   callbacks:
     ready:[]
     close:[]
@@ -53,13 +54,19 @@ class Vein
     cookies.removeItem @options.sessionName
     return
 
-  ready: (cb) -> @callbacks['ready'].push cb
-  close: (cb) -> @callbacks['close'].push cb
+  ready: (cb) ->
+    @callbacks['ready'].push cb
+    cb @methods if @connected is true
+  close: (cb) -> 
+    @callbacks['close'].push cb
+    cb @methods if @connected is false
 
   # Event handlers
-  handleReady: => 
-    cb() for cb in @callbacks['ready']
-  handleClose: => 
+  handleReady: (@methods) =>
+    @connected = true
+    cb methods for cb in @callbacks['ready']
+  handleClose: =>
+    @connected = false
     cb() for cb in @callbacks['close']
 
   handleMessage: (e) =>

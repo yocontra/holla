@@ -77,6 +77,8 @@
       return;
     }
 
+    Vein.prototype.connected = null;
+
     Vein.prototype.callbacks = {
       ready: [],
       close: []
@@ -98,26 +100,35 @@
     };
 
     Vein.prototype.ready = function(cb) {
-      return this.callbacks['ready'].push(cb);
+      this.callbacks['ready'].push(cb);
+      if (this.connected === true) {
+        return cb(this.methods);
+      }
     };
 
     Vein.prototype.close = function(cb) {
-      return this.callbacks['close'].push(cb);
+      this.callbacks['close'].push(cb);
+      if (this.connected === false) {
+        return cb(this.methods);
+      }
     };
 
-    Vein.prototype.handleReady = function() {
+    Vein.prototype.handleReady = function(methods) {
       var cb, _i, _len, _ref, _results;
+      this.methods = methods;
+      this.connected = true;
       _ref = this.callbacks['ready'];
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         cb = _ref[_i];
-        _results.push(cb());
+        _results.push(cb(methods));
       }
       return _results;
     };
 
     Vein.prototype.handleClose = function() {
       var cb, _i, _len, _ref, _results;
+      this.connected = false;
       _ref = this.callbacks['close'];
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
