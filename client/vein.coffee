@@ -38,7 +38,10 @@ class Vein
     @socket.onclose = @handleClose
     return
 
-  callbacks: {}
+  callbacks:
+    ready:[]
+    close:[]
+
   subscribe: {}
 
   getSession: => cookies.getItem @options.sessionName
@@ -50,11 +53,14 @@ class Vein
     cookies.removeItem @options.sessionName
     return
 
-  ready: (cb) -> @callbacks['ready'] = cb
-  close: (cb) -> @callbacks['close'] = cb
+  ready: (cb) -> @callbacks['ready'].push cb
+  close: (cb) -> @callbacks['close'].push cb
 
   # Event handlers
-  handleClose: => @callbacks['close']?()
+  handleReady: => 
+    cb() for cb in @callbacks['ready']
+  handleClose: => 
+    cb() for cb in @callbacks['close']
 
   handleMessage: (e) =>
     {id, method, params, err} = JSON.parse e.data
@@ -69,8 +75,7 @@ class Vein
   handleMethods: (methods...) =>
     @[method] = @getSender method for method in methods
     @subscribe[method] = @getListener method for method in methods
-    @callbacks['ready']? methods
-    delete @callbacks['ready']
+    @handleReady methods
     return
 
   # Utilities
