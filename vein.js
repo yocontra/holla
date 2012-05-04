@@ -154,6 +154,7 @@
       if (!this.callbacks[id]) {
         return;
       }
+      console.log("[Vein] Incoming message: " + id + "-" + method + " " + (JSON.stringify(params)));
       keep = (_ref2 = this.callbacks)[id].apply(_ref2, params);
       if (keep !== true) {
         delete this.callbacks[id];
@@ -192,6 +193,7 @@
         params = 2 <= arguments.length ? __slice.call(arguments, 0, _i = arguments.length - 1) : (_i = 0, []), cb = arguments[_i++];
         id = _this.getId();
         _this.callbacks[id] = cb;
+        console.log("[Vein] Outgoing message: " + (_this.getSession()) + "-" + id + "-" + method + " " + (JSON.stringify(params)));
         _this.socket.send(JSON.stringify({
           id: id,
           method: method,

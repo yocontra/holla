@@ -75,6 +75,7 @@ class Vein
     if @subscribe[method] and @subscribe[method].listeners
       fn params... for fn in @subscribe[method].listeners
     return unless @callbacks[id]
+    console.log "[Vein] Incoming message: #{id}-#{method} #{JSON.stringify(params)}"
     keep = @callbacks[id] params...
     delete @callbacks[id] unless keep is true
     return
@@ -95,6 +96,7 @@ class Vein
     (params..., cb) =>
       id = @getId()
       @callbacks[id] = cb
+      console.log "[Vein] Outgoing message: #{@getSession()}-#{id}-#{method} #{JSON.stringify(params)}"
       @socket.send JSON.stringify id: id, method: method, params: params, session: @getSession()
       return
 
