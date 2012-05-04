@@ -41,6 +41,7 @@ class Vein extends EventEmitter
       socket.session = sess
       socket.write JSON.stringify id: 'session', params: [sess]
     socket.session = session
+    console.log method, JSON.stringify(params) 
     @routes[method] send, socket, params...
 
 module.exports = Vein
