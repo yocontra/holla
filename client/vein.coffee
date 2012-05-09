@@ -19,6 +19,10 @@ cookies =
     ep = new RegExp "(?:^|;\\s*)" + (escape(key).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=")
     return ep.test document.cookie
 
+class ServerError extends Error
+  name: "ServerError"
+  constructor: (msg) -> @message = msg
+
 class Vein
   constructor: (@options={}) ->
     # Valid options:
@@ -45,12 +49,13 @@ class Vein
 
   subscribe: {}
 
-  getSession: => cookies.getItem @options.sessionName
+  getSession: -> cookies.getItem @options.sessionName
   setSession: (sess) =>
+    console.log "[Vein] Setting session to #{sess}"
     cookies.setItem @options.sessionName, sess, @options.sessionLength
     return true
 
-  clearSession: =>
+  clearSession: ->
     cookies.removeItem @options.sessionName
     return
 
@@ -62,20 +67,22 @@ class Vein
     cb @methods if @connected is false
 
   # Event handlers
-  handleReady: (@methods) =>
+  handleReady: (methods) ->
+    @methods = methods
     @connected = true
-    cb methods for cb in @callbacks['ready']
+    cb methods for cb in @callbacks.ready
   handleClose: =>
     @connected = false
-    cb() for cb in @callbacks['close']
+    cb() for cb in @callbacks.close
 
   handleMessage: (e) =>
-    {id, method, params, err} = JSON.parse e.data
+    {id, method, params, error} = JSON.parse e.data
     params = [params] unless Array.isArray params
+    console.log "[Vein] Incoming message: Id=#{id} Method=#{method} Arguments=#{JSON.stringify(params)} Error=#{error}"
+    throw new ServerError error if error?
     if @subscribe[method] and @subscribe[method].listeners
       fn params... for fn in @subscribe[method].listeners
     return unless @callbacks[id]
-    console.log "[Vein] Incoming message: #{id}-#{method} #{JSON.stringify(params)}"
     keep = @callbacks[id] params...
     delete @callbacks[id] unless keep is true
     return
@@ -87,16 +94,17 @@ class Vein
     return
 
   # Utilities
-  getListener: (method) => (cb) =>
-    @subscribe[method].listeners ?= []
-    @subscribe[method].listeners.push cb
-    return
+  getListener: (method) -> 
+    (cb) =>
+      @subscribe[method].listeners ?= []
+      @subscribe[method].listeners.push cb
+      return
 
-  getSender: (method) =>
+  getSender: (method) ->
     (params..., cb) =>
       id = @getId()
       @callbacks[id] = cb
-      console.log "[Vein] Outgoing message: #{@getSession()}-#{id}-#{method} #{JSON.stringify(params)}"
+      console.log "[Vein] Outgoing message: Id=#{id} Method=#{method} Arguments=#{JSON.stringify(params)} Session=#{@getSession()}"
       @socket.send JSON.stringify id: id, method: method, params: params, session: @getSession()
       return
 

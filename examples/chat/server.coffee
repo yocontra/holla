@@ -15,6 +15,7 @@ vein.add 'join', (send, socket, name) ->
   return unless name
   return send error: 'Invalid name' unless typeof name is 'string' and name.length > 0 and name.length < 10
   return send error: 'Name already in use' if users[name] and vein.clients[users[name].id]
+  throw 'HURR' if name is 'WAT'
   users[name] = socket
   send.session name
   send.all name, Object.keys users
