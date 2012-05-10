@@ -72,7 +72,7 @@
         _base.prefix = 'vein';
       }
       if ((_base1 = this.options).host == null) {
-        _base1.host = "" + window.location.protocol + "//" + window.location.hostname;
+        _base1.host = "" + window.location.protocol + "//" + window.location.host;
       }
       if ((_base2 = this.options).sessionName == null) {
         _base2.sessionName = "VEINSESSID-" + this.options.prefix;

@@ -32,7 +32,7 @@ class Vein
     # sessionLength - time before cookie expires (default: session)
 
     @options.prefix ?= 'vein'
-    @options.host ?= "#{window.location.protocol}//#{window.location.hostname}"
+    @options.host ?= "#{window.location.protocol}//#{window.location.host}"
     @options.sessionName ?= "VEINSESSID-#{@options.prefix}"
 
     @socket = new SockJS "#{@options.host}/#{@options.prefix}", null, @options
