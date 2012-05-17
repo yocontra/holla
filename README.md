@@ -6,7 +6,7 @@
 </tr>
 <tr>
 <td>Description</td>
-<td>WebSocket RPC</td>
+<td>RPC/PubSub via WebSockets</td>
 </tr>
 <tr>
 <td>Node Version</td>
@@ -18,13 +18,26 @@
 
 ### Server
 
+##### With server
+
 ```javascript
 var Vein = require('vein');
 var server = http.createServer().listen(8080);
-var rpc = new Vein(server);
+var vein = new Vein(server);
 
-rpc.add('greetings', function (send, socket, first, last){
-  send("Hey there " + first + " " + last!");
+vein.add('greetings', function (res, first, last){
+  res.send("Hey there " + first + " " + last!");
+});
+```
+
+##### Without server
+
+```javascript
+var Vein = require('vein');
+var vein = new Vein(8080);
+
+vein.add('greetings', function (res, first, last){
+  res.send("Hey there " + first + " " + last!");
 });
 ```
 
@@ -34,60 +47,49 @@ rpc.add('greetings', function (send, socket, first, last){
 var vein = new Vein();
 vein.ready(function (){
   vein.greetings("John", "Foobar", function (res){
-     // res === "Hey there John Foobar!"
-    console.log(res);
+    // res === "Hey there John Foobar!"
   });
 });
 ```
 
 ## Usage
 
-Documentation is horrible. Will update later.
-
 ### Server
 ```javascript
-var http = require('http');
 var Vein = require('vein');
-var server = http.createServer().listen(8080);
 
-var vein = new Vein(server, {
-  //options go here
-});
+var vein = new Vein(8080, {
 /*
   Valid options:
-  prefix - vein endpoint (default: "vein")
-  sessionName - cookie name (default: "VEINSESSID-[prefix]")
-  noTrack - disable pubsub for performance (default: false)
-  response_limit - reopen socket after this much data (default: 128k)
+  path - prefix path (default: "/vein")
+  resource - change to allow multiple servers for one endpoint (default: "default")
 */
+});
 
 // A service is a function that gets called every time a client calls it
 // The format is function (send, socket, args...)
 // args can be any JSON-friendly data sent from the client
 // You can pass any JSON-friendly objects as arguments to the send
 // and they will be applied to the callback on the client.
-vein.add('someService', function (send, socket, name, num) {
-  send("Hey there " + name + " I got your number " + num);
+vein.add('someService', function (res, name, num) {
+  res.send("Hey there " + name + " I got your number " + num);
 });
 
-// The server can assign a session to the client via send.session.
-// Any services called will have access to the session value via socket.session
-// This session will persist between page loads/connects based on your settings
-// send.session is a simple way to set a tracking cookie not a session store
-vein.add('login', function (send, socket, username, password) {
-  if (username === 'username' && password === 'pass123') {
-    send.session('success! (some unique key)');
-    send(); // Call the login callback with no error
+// The server can assign and access cookies to the client via res.cookie().
+vein.add('login', function (res, username, password) {
+  if (res.cookie('login')) {
+    res.send('You already logged in!');
+  } else if (username === 'username' && password === 'pass123') {
+    res.cookie('login', 'success!');
+    res.send();
   } else {
-    send('Invalid username or password');
+    res.send('Invalid username or password');
   }
 });
 
-// If you have tracking enabled (noTrack=false) you can use send.all
-// to broadcast a message to all currently connected clients that are subscribed to the service
-// A hash of clients is available in vein.clients
-vein.add('someOtherService', function (send, socket, msg) {
-  send.all(msg);
+// You can use res.publish to send a message to everyone subscribing to a service
+vein.add('someOtherService', function (res, msg) {
+  res.publish(msg);
 });
 ```
 
@@ -95,24 +97,21 @@ vein.add('someOtherService', function (send, socket, msg) {
 
 ```javascript
 var vein = new Vein({
-  //options go here
-});
 /*
   Valid options:
-  host - server running vein (default: location.origin)
-  prefix - vein endpoint (default: "vein")
-  sessionName - cookie name (default: "VEINSESSID-[prefix]")
-  sessionLength - time before cookie expires (default: session)
-  debug - extra information (default: false)
+  host - server location (default: window.location.hostname)
+  port - server port (default: window.location.port)
+  secure - use SSL (default: window.location.protocol)
+  path - prefix path (default: "/vein")
+  resource - change to allow multiple servers for one endpoint (default: "default")
 */
+});
 
 //When the vein is ready this function will be called
 vein.ready(function (services) {
   // services is an array of service names available to use
-  // Any code using vein should be kicked off here
   // When calling a service the format is vein.<service name>(args..., callback)
-  // You can pass any JSON-friendly objects as arguments and they will be applied to the
-  // service on the server.
+  // You can pass any JSON-friendly objects as arguments.
   vein.someService('john', 2, function (err, result) {
     console.log(result);
   });
@@ -123,15 +122,15 @@ vein.ready(function (services) {
     console.log(message);
   });
 
-  // When the server assigns a session it is saved as a cookie with the client preferences.
-  // Make sure the client and server cookie preferences match.
-  // Session data can be accessed via .getSession() and .clearSession()
+  //The server can assign cookies to the client
+  // You can read and write these cookies by using vein.cookie()
   vein.login('username', 'pass123', function (err) {
     if (err) {
       alert(err);
+      vein.cookie('login', 'fail'); //write
     } else {
-      console.log(vein.getSession());
-      console.log(vein.clearSession());
+      console.log(vein.cookie('login')); //read
+      vein.cookie('login', null); //delete
     }
   });
 });
