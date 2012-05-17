@@ -1,118 +1,98 @@
-cookies =
-  getItem: (key) ->
-    return unless cookies.hasItem key
-    return unescape document.cookie.replace(new RegExp("(?:^|.*;\\s*)" + escape(key).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*((?:[^;](?!;))*[^;]?).*"), "$1")
-
-  setItem: (key, val, expires) ->
-    sExpires = ""
-    sExpires = "; max-age=#{expires}" if typeof expires is 'number'
-    sExpires = "; expires=#{expires}" if typeof expires is 'string'
-    sExpires = "; expires=#{expires.toGMTString()}" if expires.toGMTString if typeof expires is 'object'
-    document.cookie = "#{escape(key)}=#{escape(val)}#{sExpires}"
-    return
-
-  removeItem: (key) ->
-    document.cookie = "#{escape(key)}=; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/"
-    return
-
-  hasItem: (key) ->
-    ep = new RegExp "(?:^|;\\s*)" + (escape(key).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=")
-    return ep.test document.cookie
-
 class ServerError extends Error
   name: "ServerError"
-  constructor: (msg) -> @message = msg
+  constructor: ({@message, @type, @stack}) ->
 
 class Vein
   constructor: (@options={}) ->
-    # Valid options:
-    # host - server running vein (default: location.origin)
-    # prefix - vein endpoint (default: "vein")
-    # sessionName - cookie name (default: "VEINSESSID-[prefix]")
-    # sessionLength - time before cookie expires (default: session)
+    @options.host ?= window.location.hostname
+    @options.port ?= (if window.location.port.length > 0 then parseInt window.location.port else 80)
+    @options.secure ?= (window.location.protocol is 'https:')
+    @options.path ?= '/vein'
+    @options.forceBust ?= true
 
-    @options.prefix ?= 'vein'
-    @options.host ?= "#{window.location.protocol}//#{window.location.host}"
-    @options.sessionName ?= "VEINSESSID-#{@options.prefix}"
-
-    @socket = new SockJS "#{@options.host}/#{@options.prefix}", null, @options
-    @callbacks['methods'] = @handleMethods
-    @callbacks['session'] = @setSession
-    @socket.onmessage = @handleMessage
-    @socket.onclose = @handleClose
+    @socket = new eio.Socket @options
+    @socket.on 'open', @handleOpen
+    @socket.on 'error', @handleError
+    @socket.on 'message', @handleMessage
+    @socket.on 'close', @handleClose
     return
 
   connected: null
-  callbacks:
-    ready:[]
-    close:[]
-
+  services: null
+  _ready: []
+  _close: []
+  callbacks: {}
   subscribe: {}
 
-  getSession: -> cookies.getItem @options.sessionName
-  setSession: (sess) =>
-    console.log "[Vein] Setting session to #{sess}"
-    cookies.setItem @options.sessionName, sess, @options.sessionLength
-    return true
-
-  clearSession: ->
-    cookies.removeItem @options.sessionName
-    return
+  cookie: AIOCookie
 
   ready: (cb) ->
-    @callbacks['ready'].push cb
-    cb @methods if @connected is true
-  close: (cb) -> 
-    @callbacks['close'].push cb
-    cb @methods if @connected is false
-
-  # Event handlers
-  handleReady: (methods) ->
-    @methods = methods
-    @connected = true
-    cb methods for cb in @callbacks.ready
-  handleClose: =>
-    @connected = false
-    cb() for cb in @callbacks.close
-
-  handleMessage: (e) =>
-    {id, method, params, error} = JSON.parse e.data
-    params = [params] unless Array.isArray params
-    console.log "[Vein] Incoming message: Id=#{id} Method=#{method} Arguments=#{JSON.stringify(params)} Error=#{error}"
-    throw new ServerError error if error?
-    if @subscribe[method] and @subscribe[method].listeners
-      fn params... for fn in @subscribe[method].listeners
-    return unless @callbacks[id]
-    keep = @callbacks[id] params...
-    delete @callbacks[id] unless keep is true
+    @_ready.push cb
+    cb @services if @connected is true
     return
 
-  handleMethods: (methods...) =>
-    @[method] = @getSender method for method in methods
-    @subscribe[method] = @getListener method for method in methods
-    @handleReady methods
+  close: (cb) -> 
+    @_close.push cb
+    cb() if @connected is false
+    return
+
+  # Event handlers
+  handleOpen: =>
+    @getSender('list') (services) =>
+      for service in services
+        @[service] = @getSender service
+        @subscribe[service] = @getSubscriber service
+      @services = services
+      @connected = true
+      cb services for cb in @_ready
+    return
+
+  handleError: (args...) =>
+    console.log "Error:", args
+    return
+
+  handleMessage: (msg) =>
+    console.log 'IN:', msg
+    {id, service, args, error, cookies} = JSON.parse msg
+    args = [args] unless Array.isArray args
+    throw new ServerError error if error?
+    @addCookies cookies if cookies?
+    if id? and @callbacks[id]
+      @callbacks[id] args...
+    else if service? and @subscribe[service]
+      fn args... for fn in @subscribe[service].listeners
+    return
+
+  handleClose: (args...) =>
+    @connected = false
+    cb args... for cb in @_close
     return
 
   # Utilities
-  getListener: (method) -> 
-    (cb) =>
-      @subscribe[method].listeners ?= []
-      @subscribe[method].listeners.push cb
-      return
+  addCookies: (cookies) =>
+    existing = @cookie()
+    @cookie key, val for key, val of cookies when existing[key] isnt val
+    return
 
-  getSender: (method) ->
-    (params..., cb) =>
+  getSubscriber: (service) -> 
+    sub = (cb) =>
+      @subscribe[service].listeners.push cb
+      return
+    sub.listeners = []
+    return sub
+
+  getSender: (service) ->
+    (args..., cb) =>
       id = @getId()
       @callbacks[id] = cb
-      console.log "[Vein] Outgoing message: Id=#{id} Method=#{method} Arguments=#{JSON.stringify(params)} Session=#{@getSession()}"
-      @socket.send JSON.stringify id: id, method: method, params: params, session: @getSession()
+      msg = JSON.stringify id: id, service: service, args: args, cookies: @cookie()
+      console.log 'OUT:', msg
+      @socket.send msg
       return
 
   getId: ->
     rand = -> (((1 + Math.random()) * 0x10000000) | 0).toString 16
     rand()+rand()+rand()
 
-if typeof define is 'function'
-  define -> Vein
-else
-  window.Vein = Vein
+define "Vein", (-> Vein) if define? and define.amd?
+window.Vein = Vein

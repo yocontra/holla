@@ -14,26 +14,24 @@ function appendMessage(name, message) {
   $("#incomingMessages").scrollTop($("#incomingMessages")[0].scrollHeight);
 };
 
-var vein = new Vein();
+var vein = new Vein({path:'/chat'});
 vein.ready(function (services) {
-  console.log("Connected");
+  console.log("Connected - Available services: " + services);
 
-  var name = vein.getSession();
+  var name = vein.cookie('username');
 
   //Listeners
-  vein.subscribe.join(function (name, all) {
-    if (!name.error){
-      appendMessage('Server', name + ' has joined the room');
-    }
+  vein.subscribe.join(function (name) {
+    appendMessage('Server', name + ' has joined the room');
   });
-  vein.subscribe.leave(function (name, all) {
+  vein.subscribe.leave(function (name) {
     appendMessage('Server', name + ' has left the room');
   });
   vein.subscribe.message(function (name, message) {
     appendMessage(name, message);
   });
   window.onunload = function () {
-    vein.leave(name);
+    vein.leave();
   };
 
   //UI garbage
@@ -45,19 +43,16 @@ vein.ready(function (services) {
     if (!name){
       name = prompt("Enter your name", "");
     }
-    vein.join(name, function (res) {
+    vein.join(name, function (err) {
       $(location).attr('href', "#chatPage");
-      if (res.error) {
-        appendMessage('Server', res.error);
+      if (err) {
+        return alert(err);
       }
     });
   });
 
   $("#chatSendButton").click(function () {
-    vein.message(name, $("#messageText").val(), function (res) {
-      if (res.error) {
-        appendMessage('Server', res.error);
-      }
+    vein.message($("#messageText").val(), function () {
       $("#messageText").val("");
     });
   });

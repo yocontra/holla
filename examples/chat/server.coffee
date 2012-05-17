@@ -6,31 +6,20 @@ app = connect()
 app.use connect.static __dirname
 server = app.listen 8080
 
-users = {}
-checkUser = (name, socket) -> users[name] and users[name].id is socket.id
-
 # Web sockets
-vein = new Vein server
-vein.add 'join', (send, socket, name) ->
-  return unless name
-  return send error: 'Invalid name' unless typeof name is 'string' and name.length > 0 and name.length < 10
-  return send error: 'Name already in use' if users[name] and vein.clients[users[name].id]
-  throw 'HURR' if name is 'WAT'
-  users[name] = socket
-  send.session name
-  send.all name, Object.keys users
+vein = new Vein server, path: '/chat'
+vein.add 'join', (res, name) ->
+  return res.send 'Invalid name' unless name? and typeof name is 'string' and name.length > 0
+  res.cookie 'username', name
+  res.send()
+  res.publish name
 
-vein.add 'leave', (send, socket, name) ->
-  return unless name
-  return send error: 'Not authorized' unless checkUser name, socket
-  delete users[name]
-  send.all name, Object.keys users
+vein.add 'leave', (res) ->
+  res.send()
+  res.publish res.cookie 'username'
 
-vein.add 'message', (send, socket, name, message) ->
-  return unless name and message
-  return send error: 'Not authorized' unless checkUser name, socket
-  return send error: 'Invalid message' unless typeof message is 'string' and message.length > -1 and message.length < 750
-  message = message.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-  send.all name, message
+vein.add 'message', (res, message) ->
+  res.send()
+  res.publish res.cookie('username'), message
 
 console.log "Server listening"
