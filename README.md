@@ -75,7 +75,7 @@ vein.add('someService', function (res, name, num) {
   res.send("Hey there " + name + " I got your number " + num);
 });
 
-// The server can assign and access cookies to the client via res.cookie().
+// The server can read and write cookies via res.cookie().
 vein.add('login', function (res, username, password) {
   if (res.cookie('login')) {
     res.send('You already logged in!');
