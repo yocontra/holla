@@ -1,6 +1,6 @@
 {EventEmitter} = require 'events'
 ServiceResponse = require './ServiceResponse'
-engine = require './engine.io'
+engine = require 'engine.io'
 
 class Vein
   constructor: (hook, @options={}) ->
