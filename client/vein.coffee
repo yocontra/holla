@@ -94,5 +94,5 @@ class Vein
     rand = -> (((1 + Math.random()) * 0x10000000) | 0).toString 16
     rand()+rand()+rand()
 
-define "Vein", (-> Vein) if define? and define.amd?
+define "Vein", (-> Vein) if typeof define is 'function'
 window.Vein = Vein

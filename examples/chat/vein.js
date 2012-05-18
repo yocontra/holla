@@ -2472,7 +2472,7 @@ exports.qs = function (obj) {
 
   })();
 
-  if ((typeof define !== "undefined" && define !== null) && (define.amd != null)) {
+  if (typeof define === 'function') {
     define("Vein", (function() {
       return Vein;
     }));
