@@ -2388,7 +2388,6 @@ exports.qs = function (obj) {
 
     Vein.prototype.handleMessage = function(msg) {
       var args, cookies, error, fn, id, service, _i, _len, _ref, _ref1, _ref2;
-      console.log('IN:', msg);
       _ref = JSON.parse(msg), id = _ref.id, service = _ref.service, args = _ref.args, error = _ref.error, cookies = _ref.cookies;
       if (!Array.isArray(args)) {
         args = [args];
@@ -2455,7 +2454,6 @@ exports.qs = function (obj) {
           args: args,
           cookies: _this.cookie()
         });
-        console.log('OUT:', msg);
         _this.socket.send(msg);
       };
     };

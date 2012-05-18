@@ -52,7 +52,7 @@ class Vein
     return
 
   handleMessage: (msg) =>
-    console.log 'IN:', msg
+    #console.log 'IN:', msg
     {id, service, args, error, cookies} = JSON.parse msg
     args = [args] unless Array.isArray args
     throw new ServerError error if error?
@@ -86,7 +86,7 @@ class Vein
       id = @getId()
       @callbacks[id] = cb
       msg = JSON.stringify id: id, service: service, args: args, cookies: @cookie()
-      console.log 'OUT:', msg
+      #console.log 'OUT:', msg
       @socket.send msg
       return
 
