@@ -2296,7 +2296,7 @@ exports.qs = function (obj) {
     Vein.name = 'Vein';
 
     function Vein(options) {
-      var _base, _base1, _base2, _base3, _base4;
+      var _base, _base1, _base2, _base3, _base4, _base5;
       this.options = options != null ? options : {};
       this.addCookies = __bind(this.addCookies, this);
 
@@ -2322,6 +2322,9 @@ exports.qs = function (obj) {
       }
       if ((_base4 = this.options).forceBust == null) {
         _base4.forceBust = true;
+      }
+      if ((_base5 = this.options).debug == null) {
+        _base5.debug = false;
       }
       this.socket = new eio.Socket(this.options);
       this.socket.on('open', this.handleOpen);
@@ -2388,6 +2391,9 @@ exports.qs = function (obj) {
 
     Vein.prototype.handleMessage = function(msg) {
       var args, cookies, error, fn, id, service, _i, _len, _ref, _ref1, _ref2;
+      if (this.options.debug) {
+        console.log('IN:', msg);
+      }
       _ref = JSON.parse(msg), id = _ref.id, service = _ref.service, args = _ref.args, error = _ref.error, cookies = _ref.cookies;
       if (!Array.isArray(args)) {
         args = [args];
@@ -2454,6 +2460,9 @@ exports.qs = function (obj) {
           args: args,
           cookies: _this.cookie()
         });
+        if (_this.options.debug) {
+          console.log('OUT:', msg);
+        }
         _this.socket.send(msg);
       };
     };

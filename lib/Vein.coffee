@@ -1,6 +1,7 @@
 {EventEmitter} = require 'events'
-ServiceResponse = require './ServiceResponse'
+async = require 'async'
 engine = require 'engine.io'
+ServiceResponse = require './ServiceResponse'
 
 class Vein
   constructor: (hook, @options={}) ->
@@ -14,8 +15,10 @@ class Vein
 
   close: -> @server.close()
 
+  stack: []
   services: {}
 
+  use: (fn) -> @stack.push fn
   add: (name, fn) -> @services[name] = fn
   remove: (name) -> delete @services[name]
 
@@ -25,13 +28,18 @@ class Vein
 
   handleMessage: (socket, msg) =>
     res = new ServiceResponse socket, msg
-    # TODO: middleware here
-    return res.error "Invalid message" unless res.valid is true
-    return res.error "Invalid service" unless @services[res.req.service]?
-    @services[res.req.service] res, res.req.args...
-    #try
-    #  @services[res.req.service] res, res.req.args...
-    #catch err
-    #  return res.error err
+    @runMiddleware res.req, res, (err) =>
+      return res.error err if err?
+      return res.error "Invalid message" unless res.valid is true
+      return res.error "Invalid service" unless @services[res.req.service]?
+      @services[res.req.service] res, res.req.args...
+      #try
+      #  @services[res.req.service] res, res.req.args...
+      #catch err
+      #  return res.error err
+
+  runMiddleware: (req, res, cb) =>
+    run = (middle, done) => middle req, res, done
+    async.forEachSeries @stack, run, cb
 
 module.exports = Vein

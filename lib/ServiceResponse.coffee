@@ -40,6 +40,7 @@ class ServiceResponse
       return @req.cookies[key]
     else
       @req.cookies[key] = val
+      return @
 
   error: (err) =>
     err = new Error err unless err instanceof Error

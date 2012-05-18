@@ -18,26 +18,13 @@
 
 ### Server
 
-##### With server
-
 ```javascript
 var Vein = require('vein');
 var server = http.createServer().listen(8080);
 var vein = new Vein(server);
 
-vein.add('greetings', function (res, first, last){
-  res.send("Hey there " + first + " " + last!");
-});
-```
-
-##### Without server
-
-```javascript
-var Vein = require('vein');
-var vein = new Vein(8080);
-
-vein.add('greetings', function (res, first, last){
-  res.send("Hey there " + first + " " + last!");
+vein.add('multiply', function (res, numOne, numTwo){
+  res.send(numOne * numTwo);
 });
 ```
 
@@ -46,36 +33,52 @@ vein.add('greetings', function (res, first, last){
 ```javascript
 var vein = new Vein();
 vein.ready(function (){
-  vein.greetings("John", "Foobar", function (res){
-    // res === "Hey there John Foobar!"
+  vein.multiply(2, 5, function (num){
+    // num === 10
   });
 });
 ```
 
-## Usage
+## Server Usage
 
-### Server
+### Create
+
+```
+-- Options --
+path - prefix path (default: "/vein")
+resource - change to allow multiple servers for one prefix (default: "default")
+```
+
 ```javascript
 var Vein = require('vein');
+var vein = new Vein(8080, {options});
+```
 
-var vein = new Vein(8080, {
-/*
-  Valid options:
-  path - prefix path (default: "/vein")
-  resource - change to allow multiple servers for one endpoint (default: "default")
-*/
-});
+### Adding services
 
-// A service is a function that gets called every time a client calls it
-// The format is function (send, socket, args...)
-// args can be any JSON-friendly data sent from the client
-// You can pass any JSON-friendly objects as arguments to the send
-// and they will be applied to the callback on the client.
-vein.add('someService', function (res, name, num) {
+Arguments passed to res.send() will be applied to the callback on the client
+
+```javascript
+vein.add('getNumber', function (res, name, num) {
   res.send("Hey there " + name + " I got your number " + num);
 });
+```
 
-// The server can read and write cookies via res.cookie().
+### PubSub
+
+You can use res.publish() to send a message to everyone subscribing to a service
+
+```javascript
+vein.add('publishMessage', function (res, msg) {
+  res.publish(res.cookie('username'), msg);
+});
+```
+
+### Cookies
+
+The server can read and write cookies to the client via res.cookie()
+
+```javascript
 vein.add('login', function (res, username, password) {
   if (res.cookie('login')) {
     res.send('You already logged in!');
@@ -86,64 +89,97 @@ vein.add('login', function (res, username, password) {
     res.send('Invalid username or password');
   }
 });
-
-// You can use res.publish to send a message to everyone subscribing to a service
-vein.add('someOtherService', function (res, msg) {
-  res.publish(msg);
-});
 ```
 
-### Browser Client
+### Middleware
+
+You can use middleware to add layers in front of your services. Any arguments passed into next will be thrown as an error on the client and end the middleware chain.
 
 ```javascript
-var vein = new Vein({
-/*
-  Valid options:
-  host - server location (default: window.location.hostname)
-  port - server port (default: window.location.port)
-  secure - use SSL (default: window.location.protocol)
-  path - prefix path (default: "/vein")
-  resource - change to allow multiple servers for one endpoint (default: "default")
-*/
-});
-
-//When the vein is ready this function will be called
-vein.ready(function (services) {
-  // services is an array of service names available to use
-  // When calling a service the format is vein.<service name>(args..., callback)
-  // You can pass any JSON-friendly objects as arguments.
-  vein.someService('john', 2, function (err, result) {
-    console.log(result);
-  });
-
-  // Prefixing a service with .subscribe allows the server to send unsolicited messages
-  // to the client. Subscribing to a service does not communicate to the server in any way.
-  vein.subscribe.someOtherService(function (message) {
-    console.log(message);
-  });
-
-  //The server can assign cookies to the client
-  // You can read and write these cookies by using vein.cookie()
-  vein.login('username', 'pass123', function (err) {
-    if (err) {
-      alert(err);
-      vein.cookie('login', 'fail'); //write
+vein.use(function(req, res, next){
+  if (req.service == 'login') {
+    next();
+  } else {
+    if (res.cookie('login') == 'success!') {
+      next();
     } else {
-      console.log(vein.cookie('login')); //read
-      vein.cookie('login', null); //delete
+      next('Not authorized - piss off');
     }
-  });
-});
-
-//If the vein is closed this function will be called
-vein.close(function () {
-  console.log("Connection lost!");
+  }
 });
 ```
 
-## More Examples
+## Client Usage
 
-You can view a web-based chat example in the [example folder.](https://github.com/wearefractal/vein/tree/master/examples)
+### Create
+
+```
+-- Options --
+host - server location (default: window.location.hostname)
+port - server port (default: window.location.port)
+secure - use SSL (default: window.location.protocol)
+path - prefix path (default: "/vein")
+resource - change to allow multiple servers for one endpoint (default: "default")
+```
+
+```javascript
+var vein = new Vein({options});
+```
+
+### Ready
+
+When the connection has been established your callback will be called with an array of services available.
+
+```javascript
+vein.ready(function (services) {
+  //Start doing stuff!
+});
+```
+
+### Calling services
+
+When calling a service the format is vein.serviceName(args..., callback)
+
+```javascript
+vein.getNumber('john', 2, function (msg) {
+  console.log(msg);
+});
+```
+
+### PubSub
+
+Prefixing a service with .subscribe allows the server to send unsolicited messages to the client.
+Subscribing to a service does not communicate to the server in any way.
+
+```javascript
+vein.subscribe.publishMessage(function (user, message) {
+  console.log(user, "just said:", message);
+});
+```
+  
+### Cookies
+
+You can read/write cookies by using vein.cookie(). This is just nice sugar.
+
+```javascript
+vein.cookie('test', 'hello world'); //write
+console.log(vein.cookie('test')); //read
+vein.cookie('test', null); //delete
+```
+  
+### Close
+
+If the connection has been closed this will be called.
+
+```javascript
+vein.close(function (reason) {
+  console.log("Connection lost due to", reason);
+});
+```
+
+## Examples
+
+You can view a chatroom example and more in the [example folder.](https://github.com/wearefractal/vein/tree/master/examples)
 
 ## LICENSE
 

@@ -14,7 +14,7 @@ function appendMessage(name, message) {
   $("#incomingMessages").scrollTop($("#incomingMessages")[0].scrollHeight);
 };
 
-var vein = new Vein({path:'/chat'});
+var vein = new Vein({path:'/chat', debug:true});
 vein.ready(function (services) {
   console.log("Connected - Available services: " + services);
 

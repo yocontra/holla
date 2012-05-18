@@ -9,7 +9,7 @@ class Vein
     @options.secure ?= (window.location.protocol is 'https:')
     @options.path ?= '/vein'
     @options.forceBust ?= true
-
+    @options.debug ?= false
     @socket = new eio.Socket @options
     @socket.on 'open', @handleOpen
     @socket.on 'error', @handleError
@@ -52,7 +52,7 @@ class Vein
     return
 
   handleMessage: (msg) =>
-    #console.log 'IN:', msg
+    console.log 'IN:', msg if @options.debug
     {id, service, args, error, cookies} = JSON.parse msg
     args = [args] unless Array.isArray args
     throw new ServerError error if error?
@@ -86,7 +86,7 @@ class Vein
       id = @getId()
       @callbacks[id] = cb
       msg = JSON.stringify id: id, service: service, args: args, cookies: @cookie()
-      #console.log 'OUT:', msg
+      console.log 'OUT:', msg if @options.debug
       @socket.send msg
       return
 
