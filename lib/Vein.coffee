@@ -28,9 +28,10 @@ class Vein
     # TODO: middleware here
     return res.error "Invalid message" unless res.valid is true
     return res.error "Invalid service" unless @services[res.req.service]?
-    try
-      @services[res.req.service] res, res.req.args...
-    catch err
-      return res.error err
+    @services[res.req.service] res, res.req.args...
+    #try
+    #  @services[res.req.service] res, res.req.args...
+    #catch err
+    #  return res.error err
 
 module.exports = Vein
