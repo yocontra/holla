@@ -10,7 +10,7 @@ class ServiceResponse
 
   valid: false
 
-  getMessage: (args, err) ->
+  getMessage: (args, err) =>
     JSON.stringify 
       id: @req.id
       service: @req.service
@@ -21,32 +21,32 @@ class ServiceResponse
         type: err.type
         stack: err.stack
 
-  getAnonymousMessage: (args) ->
+  getAnonymousMessage: (args) =>
     JSON.stringify
       service: @req.service
       args: args if args?
 
-  publish: (args...) ->
+  publish: (args...) =>
     socket.send @getAnonymousMessage args for id, socket of @socket.server.clients
     return @
 
-  send: (args...) ->
+  send: (args...) =>
     @socket.send @getMessage args
     return @
 
-  cookie: (key, val) ->
+  cookie: (key, val) =>
     return @req.cookies unless key or val
     if key and not val
       return @req.cookies[key]
     else
       @req.cookies[key] = val
 
-  error: (err) ->
+  error: (err) =>
     err = new Error err unless err instanceof Error
     @socket.send @getMessage null, err
     return @
 
-  close: -> 
+  close: => 
     @socket.close()
     return @
 
