@@ -1,7 +1,9 @@
-{EventEmitter} = require 'events'
 async = require 'async'
 engine = require 'engine.io'
 ServiceResponse = require './ServiceResponse'
+{EventEmitter} = require 'events'
+{readdirSync} = require 'fs'
+{join, basename, extname} = require 'path'
 
 class Vein
   constructor: (hook, @options={}, cb) ->
@@ -13,17 +15,37 @@ class Vein
       @server.httpServer = hook
     @services.list = (res) => res.send Object.keys @services
     @server.on 'connection', @handleConnection
+    return
 
-  close: -> @server.httpServer.close()
+  close: -> 
+    @server.httpServer.close()
+    return @
 
-  drop: -> @server.close()
+  drop: -> 
+    @server.close()
+    return @
 
   stack: []
   services: {}
 
-  use: (fn) -> @stack.push fn
-  add: (name, fn) -> @services[name] = fn
-  remove: (name) -> delete @services[name]
+  use: (fn) -> 
+    @stack.push fn
+    return @
+
+  add: (name, fn) -> 
+    @services[name] = fn
+    return @
+
+  addFolder: (folder) ->
+    for file in readdirSync folder
+      serviceName = basename file, extname file
+      service = require join folder, file
+      @add serviceName, service
+    return @
+
+  remove: (name) -> 
+    delete @services[name]
+    return @
 
   # Core
   handleConnection: (socket) =>

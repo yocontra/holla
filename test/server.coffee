@@ -1,6 +1,7 @@
 http = require 'http'
 should = require 'should'
 Server = require '../'
+{join} = require 'path'
 {Client} = Server
 
 randomPort = -> Math.floor(Math.random() * 1000) + 8000
@@ -17,6 +18,11 @@ describe 'Vein', ->
   describe 'services', ->
     it 'should add', (done) ->
       serv.add 'test', (res) -> res.send 'test'
+      done()
+
+    it 'should addFolder', (done) ->
+      serv.addFolder join __dirname, "services"
+      should.exist serv.services.test
       done()
 
     it 'should remove', (done) ->
