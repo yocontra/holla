@@ -1,3 +1,5 @@
+![status](https://secure.travis-ci.org/wearefractal/vein.png?branch=master)
+
 ## Information
 
 <table>
