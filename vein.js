@@ -1,4 +1,4 @@
-(function(){var global = this;function debug(){return debug};function require(p, parent){ var path = require.resolve(p) , mod = require.modules[path]; if (!mod) throw new Error('failed to require "' + p + '" from ' + parent); if (!mod.exports) { mod.exports = {}; mod.call(mod.exports, mod, mod.exports, require.relative(path), global); } return mod.exports;}require.modules = {};require.resolve = function(path){ var orig = path , reg = path + '.js' , index = path + '/index.js'; return require.modules[reg] && reg || require.modules[index] && index || orig;};require.register = function(path, fn){ require.modules[path] = fn;};require.relative = function(parent) { return function(p){ if ('debug' == p) return debug; if ('.' != p.charAt(0)) return require(p); var path = parent.split('/') , segs = p.split('/'); path.pop(); for (var i = 0; i < segs.length; i++) { var seg = segs[i]; if ('..' == seg) path.pop(); else if ('.' != seg) path.push(seg); } return require(path.join('/'), parent); };};require.register("engine.io-client.js", function(module, exports, require, global){
+(function(){var global = this;function debug(){return debug};function require(p, parent){ var path = require.resolve(p) , mod = require.modules[path]; if (!mod) throw new Error('failed to require "' + p + '" from ' + parent); if (!mod.exports) { mod.exports = {}; mod.call(mod.exports, mod, mod.exports, require.relative(path), global); } return mod.exports;}require.modules = {};require.resolve = function(path){ var orig = path , reg = path + '.js' , index = path + '/index.js'; return require.modules[reg] && reg || require.modules[index] && index || orig;};require.register = function(path, fn){ require.modules[path] = fn;};require.relative = function(parent) { return function(p){ if ('debug' == p) return debug; if ('.' != p.charAt(0)) return require(p); var path = parent.split('/') , segs = p.split('/'); path.pop(); for (var i = 0; i < segs.length; i++) { var seg = segs[i]; if ('..' == seg) path.pop(); else if ('.' != seg) path.push(seg); } return require(path.join('/'), parent); };};require.register("node_modules/engine.io-client/lib/engine.io-client.js", function(module, exports, require, global){
 
 /**
  * Client version.
@@ -58,1350 +58,7 @@ exports.Transport = require('./transport');
 
 exports.transports = require('./transports');
 
-});require.register("parser.js", function(module, exports, require, global){
-/**
- * Module dependencies.
- */
-
-var util = require('./util')
-
-/**
- * Packet types.
- */
-
-var packets = exports.packets = {
-    open:     0    // non-ws
-  , close:    1    // non-ws
-  , ping:     2
-  , pong:     3
-  , message:  4
-  , upgrade:  5
-};
-
-var packetslist = util.keys(packets);
-
-/**
- * Premade error packet.
- */
-
-var err = { type: 'error', data: 'parser error' }
-
-/**
- * Encodes a packet.
- *
- *     <packet type id> [ `:` <data> ]
- *
- * Example:
- *
- *     5:hello world
- *     3
- *     4
- *
- * @api private
- */
-
-exports.encodePacket = function (packet) {
-  var encoded = packets[packet.type]
-
-  // data fragment is optional
-  if (undefined !== packet.data) {
-    encoded += String(packet.data);
-  }
-
-  return '' + encoded;
-};
-
-/**
- * Decodes a packet.
- *
- * @return {Object} with `type` and `data` (if any)
- * @api private
- */
-
-exports.decodePacket = function (data) {
-  var type = data.charAt(0);
-
-  if (Number(type) != type || !packetslist[type]) {
-    return err;
-  }
-
-  if (data.length > 1) {
-    return { type: packetslist[type], data: data.substring(1) };
-  } else {
-    return { type: packetslist[type] };
-  }
-};
-
-/**
- * Encodes multiple messages (payload).
- * 
- *     <length>:data
- *
- * Example:
- *
- *     11:hello world2:hi
- *
- * @param {Array} packets
- * @api private
- */
-
-exports.encodePayload = function (packets) {
-  if (!packets.length) {
-    return '0:';
-  }
-
-  var encoded = ''
-    , message
-
-  for (var i = 0, l = packets.length; i < l; i++) {
-    message = exports.encodePacket(packets[i]);
-    encoded += message.length + ':' + message;
-  }
-
-  return encoded;
-};
-
-/*
- * Decodes data when a payload is maybe expected.
- *
- * @param {String} data
- * @return {Array} packets
- * @api public
- */
-
-exports.decodePayload = function (data) {
-  if (data == '') {
-    // parser error - ignoring payload
-    return [err];
-  }
-
-  var packets = []
-    , length = ''
-    , n, msg, packet
-
-  for (var i = 0, l = data.length; i < l; i++) {
-    var chr = data.charAt(i)
-
-    if (':' != chr) {
-      length += chr;
-    } else {
-      if ('' == length || (length != (n = Number(length)))) {
-        // parser error - ignoring payload
-        return [err];
-      }
-
-      msg = data.substr(i + 1, n);
-
-      if (length != msg.length) {
-        // parser error - ignoring payload
-        return [err];
-      }
-
-      if (msg.length) {
-        packet = exports.decodePacket(msg);
-
-        if (err.type == packet.type && err.data == packet.data) {
-          // parser error in individual packet - ignoring payload
-          return [err];
-        }
-
-        packets.push(packet);
-      }
-
-      // advance cursor
-      i += n;
-      length = ''
-    }
-  }
-
-  if (length != '') {
-    // parser error - ignoring payload
-    return [err];
-  }
-
-  return packets;
-};
-
-});require.register("transports/flashsocket.js", function(module, exports, require, global){
-
-/**
- * Module dependencies.
- */
-
-var WebSocket = require('./websocket')
-  , util = require('../util')
-
-/**
- * Module exports.
- */
-
-module.exports = FlashWS;
-
-/**
- * FlashWS constructor.
- *
- * @api public
- */
-
-function FlashWS (options) {
-  WebSocket.call(this, options);
-  this.flashPath = options.flashPath;
-};
-
-/**
- * Inherits from WebSocket.
- */
-
-util.inherits(FlashWS, WebSocket);
-
-/**
- * Transport name.
- *
- * @api public
- */
-
-FlashWS.prototype.name = 'flashsocket';
-
-/**
- * Opens the transport.
- *
- * @api public
- */
-
-FlashWS.prototype.doOpen = function () {
-  if (!check()) {
-    // let the probe timeout
-    return;
-  }
-
-  // instrument websocketjs logging
-  function log (type) {
-    return function () {
-      var str = Array.prototype.join.call(arguments, ' ');
-      // debug: [websocketjs %s] %s, type, str
-    }
-  };
-
-  WEB_SOCKET_LOGGER = { log: log('debug'), error: log('error') };
-  WEB_SOCKET_SUPPRESS_CROSS_DOMAIN_SWF_ERROR = true;
-
-  // dependencies
-  var deps = [path + 'web_socket.js'];
-
-  if ('undefined' == typeof swfobject) {
-    deps.unshift(path + 'swfobject.js');
-  }
-
-  load(deps, function () {
-    FlashWS.prototype.doOpen.call(self);
-  });
-};
-
-/**
- * Override to prevent closing uninitialized flashsocket.
- *
- * @api private
- */
-
-FlashWS.prototype.doClose = function () {
-  if (!this.socket) return;
-  FlashWS.prototype.doClose.call(this);
-};
-
-/**
- * Feature detection for FlashSocket.
- *
- * @return {Boolean} whether this transport is available.
- * @api public
- */
-
-function check () {
-
-
-
-
-  for (var i = 0, l = navigator.plugins.length; i < l; i++) {
-    for (var j = 0, m = navigator.plugins[i].length; j < m; j++) {
-      if (navigator.plugins[i][j] == 'Shockwave Flash') return true;
-    }
-  }
-
-  return false;
-};
-
-/**
- * Lazy loading of scripts.
- * Based on $script by Dustin Diaz - MIT
- */
-
-var scripts = {};
-
-/**
- * Injects a script. Keeps tracked of injected ones.
- *
- * @param {String} path
- * @param {Function} callback
- * @api private
- */
-
-function create (path, fn) {
-  if (scripts[path]) return fn();
-
-  var el = document.createElement('script')
-    , loaded = false
-
-  // debug: loading "%s", path
-  el.onload = el.onreadystatechange = function () {
-    if (loaded || scripts[path]) return;
-    var rs = el.readyState;
-    if (!rs || 'loaded' == rs || 'complete' == rs) {
-      // debug: loaded "%s", path
-      el.onload = el.onreadystatechange = null;
-      loaded = true;
-      scripts[path] = true;
-      fn();
-    }
-  };
-
-  el.async = 1;
-  el.src = path;
-
-  var head = document.getElementsByTagName('head')[0];
-  head.insertBefore(el, head.firstChild);
-};
-
-/**
- * Loads scripts and fires a callback.
- *
- * @param {Array} paths
- * @param {Function} callback
- */
-
-function load (arr, fn) {
-  function process (i) {
-    if (!arr[i]) return fn();
-    create(arr[i], function () {
-      process(arr[++i]);
-    });
-  };
-
-  process(0);
-};
-
-});require.register("transports/polling-jsonp.js", function(module, exports, require, global){
-
-/**
- * Module requirements.
- */
-
-var Polling = require('./polling')
-  , util = require('../util')
-
-/**
- * Module exports.
- */
-
-module.exports = JSONPPolling;
-
-/**
- * Cached regular expressions.
- */
-
-var rNewline = /\n/g
-
-/**
- * Global JSONP callbacks.
- */
-
-var callbacks = global.___eio = [];
-
-/**
- * Callbacks count.
- */
-
-var index = 0;
-
-/**
- * Noop.
- */
-
-function empty () { }
-
-/**
- * JSONP Polling constructor.
- *
- * @param {Object} opts.
- * @api public
- */
-
-function JSONPPolling (opts) {
-  Polling.call(this, opts);
-
-  // callback identifier
-  this.index = index++;
-
-  // add callback to jsonp global
-  var self = this;
-  callbacks.push(function (msg) {
-    self.onData(msg);
-  });
-
-  // append to query string
-  this.query.j = callbacks.length - 1;
-};
-
-/**
- * Inherits from Polling.
- */
-
-util.inherits(JSONPPolling, Polling);
-
-/**
- * Opens the socket.
- *
- * @api private
- */
-
-JSONPPolling.prototype.doOpen = function () {
-  var self = this;
-  util.defer(function () {
-    Polling.prototype.doOpen.call(self);
-  });
-};
-
-/**
- * Closes the socket
- *
- * @api private
- */
-
-JSONPPolling.prototype.doClose = function () {
-  if (this.script) {
-    this.script.parentNode.removeChild(this.script);
-    this.script = null;
-  }
-
-  if (this.form) {
-    this.form.parentNode.removeChild(this.form);
-    this.form = null;
-  }
-
-  Polling.prototype.doClose.call(this);
-};
-
-/**
- * Starts a poll cycle.
- *
- * @api private
- */
-
-JSONPPolling.prototype.doPoll = function () {
-  var script = document.createElement('script');
-
-  if (this.script) {
-    this.script.parentNode.removeChild(this.script);
-    this.script = null;
-  }
-
-  script.async = true;
-  script.src = this.uri();
-
-  var insertAt = document.getElementsByTagName('script')[0]
-  insertAt.parentNode.insertBefore(script, insertAt);
-  this.script = script;
-
-  if (util.ua.gecko) {
-    setTimeout(function () {
-      var iframe = document.createElement('iframe');
-      document.body.appendChild(iframe);
-      document.body.removeChild(iframe);
-    }, 100);
-  }
-};
-
-/**
- * Writes with a hidden iframe.
- *
- * @param {String} data to send
- * @param {Function} called upon flush.
- * @api private
- */
-
-JSONPPolling.prototype.doWrite = function (data, fn) {
-  var self = this
-
-  if (!this.form) {
-    var form = document.createElement('form')
-      , area = document.createElement('textarea')
-      , id = this.iframeId = 'eio_iframe_' + this.index
-      , iframe;
-
-    form.className = 'socketio';
-    form.style.position = 'absolute';
-    form.style.top = '-1000px';
-    form.style.left = '-1000px';
-    form.target = id;
-    form.method = 'POST';
-    form.setAttribute('accept-charset', 'utf-8');
-    area.name = 'd';
-    form.appendChild(area);
-    document.body.appendChild(form);
-
-    this.form = form;
-    this.area = area;
-  }
-
-  this.form.action = this.uri();
-
-  function complete () {
-    initIframe();
-    fn();
-  };
-
-  function initIframe () {
-    if (self.iframe) {
-      self.form.removeChild(self.iframe);
-    }
-
-    try {
-      // ie6 dynamic iframes with target="" support (thanks Chris Lambacher)
-      iframe = document.createElement('<iframe name="'+ self.iframeId +'">');
-    } catch (e) {
-      iframe = document.createElement('iframe');
-      iframe.name = self.iframeId;
-    }
-
-    iframe.id = self.iframeId;
-
-    self.form.appendChild(iframe);
-    self.iframe = iframe;
-  };
-
-  initIframe();
-
-  // escape \n to prevent it from being converted into \r\n by some UAs
-  this.area.value = data.replace(rNewline, '\\n');
-
-  try {
-    this.form.submit();
-  } catch(e) {}
-
-  if (this.iframe.attachEvent) {
-    iframe.onreadystatechange = function () {
-      if (self.iframe.readyState == 'complete') {
-        complete();
-      }
-    };
-  } else {
-    this.iframe.onload = complete;
-  }
-};
-
-});require.register("transports/index.js", function(module, exports, require, global){
-
-/**
- * Module dependencies
- */
-
-var XHR = require('./polling-xhr')
-  , JSONP = require('./polling-jsonp')
-  , websocket = require('./websocket')
-  , flashsocket = require('./flashsocket')
-  , util = require('../util')
-
-/**
- * Export transports.
- */
-
-exports.polling = polling;
-exports.websocket = websocket;
-exports.flashsocket = flashsocket;
-
-/**
- * Polling transport polymorphic constructor.
- * Decides on xhr vs jsonp based on feature detection.
- *
- * @api private
- */
-
-function polling (opts) {
-  var xd = false;
-
-  if (global.location) {
-    xd = opts.host != global.location.hostname
-      || global.location.port != opts.port;
-  }
-
-  if (util.request(xd) && !opts.forceJSONP) {
-    return new XHR(opts);
-  } else {
-    return new JSONP(opts);
-  }
-};
-
-});require.register("transports/websocket.js", function(module, exports, require, global){
-
-/**
- * Module dependencies.
- */
-
-var Transport = require('../transport')
-  , parser = require('../parser')
-  , util = require('../util')
-
-/**
- * Module exports.
- */
-
-module.exports = WS;
-
-/**
- * WebSocket transport constructor.
- *
- * @api {Object} connection options
- * @api public
- */
-
-function WS (opts) {
-  Transport.call(this, opts);
-};
-
-/**
- * Inherits from Transport.
- */
-
-util.inherits(WS, Transport);
-
-/**
- * Transport name.
- *
- * @api public
- */
-
-WS.prototype.name = 'websocket';
-
-/**
- * Opens socket.
- *
- * @api private
- */
-
-WS.prototype.doOpen = function () {
-  if (!check()) {
-    // let probe timeout
-    return;
-  }
-
-  var self = this;
-
-  this.socket = new (ws())(this.uri());
-  this.socket.onopen = function () {
-    self.onOpen();
-  };
-  this.socket.onclose = function () {
-    self.onClose();
-  };
-  this.socket.onmessage = function (ev) {
-    self.onData(ev.data);
-  };
-  this.socket.onerror = function (e) {
-    self.onError('websocket error', e);
-  };
-};
-
-/**
- * Writes data to socket.
- *
- * @param {Array} array of packets.
- * @param {Function} drain callback.
- * @api private
- */
-
-WS.prototype.write = function (packets) {
-  for (var i = 0, l = packets.length; i < l; i++) {
-    this.socket.send(parser.encodePacket(packets[i]));
-  }
-};
-
-/**
- * Closes socket.
- *
- * @api private
- */
-
-WS.prototype.doClose = function () {
-  this.socket.close();
-};
-
-/**
- * Generates uri for connection.
- *
- * @api private
- */
-
-WS.prototype.uri = function () {
-  var query = util.qs(this.query)
-    , schema = this.secure ? 'wss' : 'ws'
-    , port = ''
-
-  // avoid port if default for schema
-  if (this.port && (('wss' == schema && this.port != 443)
-    || ('ws' == schema && this.port != 80))) {
-    port = ':' + this.port;
-  }
-
-  // prepend ? to query
-  if (query.length) {
-    query = '?' + query;
-  }
-
-  return schema + '://' + this.host + port + this.path + query;
-};
-
-/**
- * Getter for WS constructor.
- *
- * @api private
- */
-
-function ws () {
-
-
-
-
-  return global.WebSocket || global.MozWebSocket;
-}
-
-/**
- * Feature detection for WebSocket.
- *
- * @return {Boolean} whether this transport is available.
- * @api public
- */
-
-function check () {
-  return !!ws();
-}
-
-});require.register("transports/polling.js", function(module, exports, require, global){
-/**
- * Module dependencies.
- */
-
-var Transport = require('../transport')
-  , util = require('../util')
-  , parser = require('../parser')
-
-/**
- * Module exports.
- */
-
-module.exports = Polling;
-
-/**
- * Polling interface.
- *
- * @param {Object} opts
- * @api private
- */
-
-function Polling (opts) {
-  Transport.call(this, opts);
-  this.forceBust = !!opts.forceBust;
-}
-
-/**
- * Inherits from Transport.
- */
-
-util.inherits(Polling, Transport);
-
-/**
- * Transport name.
- */
-
-Polling.prototype.name = 'polling';
-
-/**
- * Opens the socket (triggers polling). We write a PING message to determine
- * when the transport is open.
- *
- * @api private
- */
-
-Polling.prototype.doOpen = function () {
-  this.poll();
-};
-
-/**
- * Pauses polling.
- *
- * @param {Function} callback upon buffers are flushed and transport is paused
- * @api private
- */
-
-Polling.prototype.pause = function (onPause) {
-  var pending = 0
-    , self = this
-
-  this.readyState = 'pausing';
-
-  function pause () {
-    // debug: paused
-    self.readyState = 'paused';
-    onPause();
-  }
-
-  if (this.polling || !this.writable) {
-    var total = 0;
-
-    if (this.polling) {
-      // debug: we are currently polling - waiting to pause
-      total++;
-      this.once('poll', function () {
-        // debug: pre-pause polling complete
-        --total || pause();
-      });
-    }
-
-    if (!this.writable) {
-      // debug: we are currently writing - waiting to pause
-      total++;
-      this.once('drain', function () {
-        // debug: pre-pause writing complete
-        --total || pause();
-      });
-    }
-  } else {
-    pause();
-  }
-};
-
-/**
- * Starts polling cycle.
- *
- * @api public
- */
-
-Polling.prototype.poll = function () {
-  // debug: polling
-  this.polling = true;
-  this.doPoll();
-};
-
-/**
- * Overloads onData to detect payloads.
- *
- * @api private
- */
-
-Polling.prototype.onData = function (data) {
-  // debug: polling got, data
-  // decode payload
-  var packets = parser.decodePayload(data);
-
-  for (var i = 0, l = packets.length; i < l; i++) {
-    // if its the first message we consider the trnasport open
-    if ('opening' == this.readyState) {
-      this.onOpen();
-    }
-
-    // if its a close packet, we close the ongoing requests
-    if ('close' == packets[i].type) {
-      this.onClose();
-      return;
-    }
-
-    // otherwise bypass onData and handle the message
-    this.onPacket(packets[i]);
-  }
-
-  // if we got data we're not polling
-  this.polling = false;
-  this.emit('poll');
-
-  if ('open' == this.readyState) {
-    this.poll();
-  } else {
-    // debug: ignoring poll - transport state "%s", this.readyState
-  }
-};
-
-/**
- * For polling, send a close packet.
- *
- * @api private
- */
-
-Polling.prototype.doClose = function () {
-  // debug: sending close packet
-  this.send([{ type: 'close' }]);
-};
-
-/**
- * Writes a packets payload.
- *
- * @param {Array} data packets
- * @param {Function} drain callback
- * @api private
- */
-
-Polling.prototype.write = function (packets) {
-  var self = this;
-  this.writable = false;
-  this.doWrite(parser.encodePayload(packets), function () {
-    self.writable = true;
-    self.emit('drain');
-  });
-};
-
-/**
- * Generates uri for connection.
- *
- * @api private
- */
-
-Polling.prototype.uri = function () {
-  var query = this.query || {}
-    , schema = this.secure ? 'https' : 'http'
-    , port = ''
-
-  // cache busting for IE
-  if (global.ActiveXObject || this.forceBust) {
-    query.t = +new Date;
-  }
-
-  query = util.qs(query);
-
-  // avoid port if default for schema
-  if (this.port && (('https' == schema && this.port != 443)
-    || ('http' == schema && this.port != 80))) {
-    port = ':' + this.port;
-  }
-
-  // prepend ? to query
-  if (query.length) {
-    query = '?' + query;
-  }
-
-  return schema + '://' + this.host + port + this.path + query;
-};
-
-});require.register("transports/polling-xhr.js", function(module, exports, require, global){
-/**
- * Module requirements.
- */
-
-var Polling = require('./polling')
-  , EventEmitter = require('../event-emitter')
-  , util = require('../util')
-
-/**
- * Module exports.
- */
-
-module.exports = XHR;
-module.exports.Request = Request;
-
-/**
- * Empty function
- */
-
-function empty () { }
-
-/**
- * XHR Polling constructor.
- *
- * @param {Object} opts
- * @api public
- */
-
-function XHR (opts) {
-  Polling.call(this, opts);
-
-  if (global.location) {
-    this.xd = opts.host != global.location.hostname
-      || global.location.port != opts.port;
-  }
-};
-
-/**
- * Inherits from Polling.
- */
-
-util.inherits(XHR, Polling);
-
-/**
- * Opens the socket
- *
- * @api private
- */
-
-XHR.prototype.doOpen = function () {
-  var self = this;
-  util.defer(function () {
-    Polling.prototype.doOpen.call(self);
-  });
-};
-
-/**
- * Creates a request.
- *
- * @param {String} method
- * @api private
- */
-
-XHR.prototype.request = function (opts) {
-  opts = opts || {};
-  opts.uri = this.uri();
-  opts.xd = this.xd;
-  return new Request(opts);
-};
-
-/**
- * Sends data.
- *
- * @param {String} data to send.
- * @param {Function} called upon flush.
- * @api private
- */
-
-XHR.prototype.doWrite = function (data, fn) {
-  var req = this.request({ method: 'POST', data: data })
-    , self = this
-  req.on('success', fn);
-  req.on('error', function (err) {
-    self.onError('xhr post error', err);
-  });
-  this.sendXhr = req;
-};
-
-/**
- * Starts a poll cycle.
- *
- * @api private
- */
-
-XHR.prototype.doPoll = function () {
-  // debug: xhr poll
-  var req = this.request()
-    , self = this
-  req.on('data', function (data) {
-    self.onData(data);
-  });
-  req.on('error', function (err) {
-    self.onError('xhr poll error', err);
-  });
-  this.pollXhr = req;
-};
-
-/**
- * Request constructor
- *
- * @param {Object} options
- * @api public
- */
-
-function Request (opts) {
-  this.method = opts.method || 'GET';
-  this.uri = opts.uri;
-  this.xd = !!opts.xd;
-  this.async = false !== opts.async;
-  this.data = undefined != opts.data ? opts.data : null;
-  this.create();
-}
-
-/**
- * Inherits from Polling.
- */
-
-util.inherits(Request, EventEmitter);
-
-/**
- * Creates the XHR object and sends the request.
- *
- * @api private
- */
-
-Request.prototype.create = function () {
-  var xhr = this.xhr = util.request(this.xd)
-    , self = this
-
-  xhr.open(this.method, this.uri, this.async);
-
-  if ('POST' == this.method) {
-    try {
-      if (xhr.setRequestHeader) {
-        // xmlhttprequest
-        xhr.setRequestHeader('Content-type', 'text/plain;charset=UTF-8');
-      } else {
-        // xdomainrequest
-        xhr.contentType = 'text/plain';
-      }
-    } catch (e) {}
-  }
-
-  if (this.xd && global.XDomainRequest && xhr instanceof XDomainRequest) {
-    xhr.onerror = function (e) {
-      self.onError(e);
-    };
-    xhr.onload = function () {
-      self.onData(xhr.responseText);
-    };
-    xhr.onprogress = empty;
-  } else {
-    xhr.withCredentials = true;
-    xhr.onreadystatechange = function () {
-      var data;
-
-      try {
-        if (4 != xhr.readyState) return;
-        if (200 == xhr.status || 1223 == xhr.status) {
-          data = xhr.responseText;
-        } else {
-          self.onError(xhr.status);
-        }
-      } catch (e) {
-        self.onError(e);
-      }
-
-      if (undefined !== data) {
-        self.onData(data);
-      }
-    };
-  }
-
-  // debug: sending xhr with url %s | data %s, this.uri, this.data
-  xhr.send(this.data);
-
-  if (global.ActiveXObject) {
-    this.index = Request.requestsCount++;
-    Request.requests[this.index] = this;
-  }
-};
-
-/**
- * Called upon successful response.
- *
- * @api private
- */
-
-Request.prototype.onSuccess = function () {
-  this.emit('success');
-  this.cleanup();
-}
-
-/**
- * Called if we have data.
- *
- * @api private
- */
-
-Request.prototype.onData = function (data) {
-  this.emit('data', data);
-  this.onSuccess();
-}
-
-/**
- * Called upon error.
- *
- * @api private
- */
-
-Request.prototype.onError = function (err) {
-  this.emit('error', err);
-  this.cleanup();
-}
-
-/**
- * Cleans up house.
- *
- * @api private
- */
-
-Request.prototype.cleanup = function () {
-  // xmlhttprequest
-  this.xhr.onreadystatechange = empty;
-
-  // xdomainrequest
-  this.xhr.onload = this.xhr.onerror = empty;
-
-  try {
-    this.xhr.abort();
-  } catch(e) {}
-
-  if (global.ActiveXObject) {
-    delete Request.requests[this.index];
-  }
-
-  this.xhr = null;
-}
-
-/**
- * Aborts the request.
- *
- * @api public
- */
-
-Request.prototype.abort = function () {
-  this.cleanup();
-};
-
-if (global.ActiveXObject) {
-  Request.requestsCount = 0;
-  Request.requests = {};
-
-  global.attachEvent('onunload', function () {
-    for (var i in Request.requests) {
-      if (Request.requests.hasOwnProperty(i)) {
-        Request.requests[i].abort();
-      }
-    }
-  });
-}
-
-});require.register("transport.js", function(module, exports, require, global){
-
-/**
- * Module dependencies.
- */
-
-var util = require('./util')
-  , parser = require('./parser')
-  , EventEmitter = require('./event-emitter')
-
-/**
- * Module exports.
- */
-
-module.exports = Transport;
-
-/**
- * Transport abstract constructor.
- *
- * @param {Object} options.
- * @api private
- */
-
-function Transport (opts) {
-  this.path = opts.path;
-  this.host = opts.host;
-  this.port = opts.port;
-  this.secure = opts.secure;
-  this.query = opts.query;
-  this.readyState = '';
-};
-
-/**
- * Inherits from EventEmitter.
- */
-
-util.inherits(Transport, EventEmitter);
-
-/**
- * Emits an error.
- *
- * @param {String} str
- * @return {Transport} for chaining
- * @api public
- */
-
-Transport.prototype.onError = function (msg, desc) {
-  var err = new Error(msg);
-  err.type = 'TransportError';
-  err.description = desc;
-  this.emit('error', err);
-  return this;
-};
-
-/**
- * Opens the transport.
- *
- * @api public
- */
-
-Transport.prototype.open = function () {
-  if ('closed' == this.readyState || '' == this.readyState) {
-    this.readyState = 'opening';
-    this.doOpen();
-  }
-
-  return this;
-};
-
-/**
- * Closes the transport.
- *
- * @api private
- */
-
-Transport.prototype.close = function () {
-  if ('opening' == this.readyState || 'open' == this.readyState) {
-    this.doClose();
-    this.onClose();
-  }
-
-  return this;
-};
-
-/**
- * Sends multiple packets.
- *
- * @param {Array} packets
- * @api private
- */
-
-Transport.prototype.send = function (packets) {
-  if ('open' == this.readyState) {
-    this.write(packets);
-  } else {
-    throw new Error('Transport not open');
-  }
-}
-
-/**
- * Called upon open
- *
- * @api private
- */
-
-Transport.prototype.onOpen = function () {
-  this.readyState = 'open';
-  this.writable = true;
-  this.emit('open');
-};
-
-/**
- * Called with data.
- *
- * @param {String} data
- * @api private
- */
-
-Transport.prototype.onData = function (data) {
-  this.onPacket(parser.decodePacket(data));
-};
-
-/**
- * Called with a decoded packet.
- */
-
-Transport.prototype.onPacket = function (packet) {
-  this.emit('packet', packet);
-};
-
-/**
- * Called upon close.
- *
- * @api private
- */
-
-Transport.prototype.onClose = function () {
-  this.readyState = 'closed';
-  this.emit('close');
-};
-
-});require.register("event-emitter.js", function(module, exports, require, global){
+});require.register("node_modules/engine.io-client/lib/event-emitter.js", function(module, exports, require, global){
 
 /**
  * Module exports.
@@ -1592,7 +249,171 @@ EventEmitter.prototype.addEventListener = EventEmitter.prototype.on;
 EventEmitter.prototype.removeEventListener = EventEmitter.prototype.removeListener;
 EventEmitter.prototype.dispatchEvent = EventEmitter.prototype.emit;
 
-});require.register("socket.js", function(module, exports, require, global){
+});require.register("node_modules/engine.io-client/lib/parser.js", function(module, exports, require, global){
+/**
+ * Module dependencies.
+ */
+
+var util = require('./util')
+
+/**
+ * Packet types.
+ */
+
+var packets = exports.packets = {
+    open:     0    // non-ws
+  , close:    1    // non-ws
+  , ping:     2
+  , pong:     3
+  , message:  4
+  , upgrade:  5
+};
+
+var packetslist = util.keys(packets);
+
+/**
+ * Premade error packet.
+ */
+
+var err = { type: 'error', data: 'parser error' }
+
+/**
+ * Encodes a packet.
+ *
+ *     <packet type id> [ `:` <data> ]
+ *
+ * Example:
+ *
+ *     5:hello world
+ *     3
+ *     4
+ *
+ * @api private
+ */
+
+exports.encodePacket = function (packet) {
+  var encoded = packets[packet.type]
+
+  // data fragment is optional
+  if (undefined !== packet.data) {
+    encoded += String(packet.data);
+  }
+
+  return '' + encoded;
+};
+
+/**
+ * Decodes a packet.
+ *
+ * @return {Object} with `type` and `data` (if any)
+ * @api private
+ */
+
+exports.decodePacket = function (data) {
+  var type = data.charAt(0);
+
+  if (Number(type) != type || !packetslist[type]) {
+    return err;
+  }
+
+  if (data.length > 1) {
+    return { type: packetslist[type], data: data.substring(1) };
+  } else {
+    return { type: packetslist[type] };
+  }
+};
+
+/**
+ * Encodes multiple messages (payload).
+ * 
+ *     <length>:data
+ *
+ * Example:
+ *
+ *     11:hello world2:hi
+ *
+ * @param {Array} packets
+ * @api private
+ */
+
+exports.encodePayload = function (packets) {
+  if (!packets.length) {
+    return '0:';
+  }
+
+  var encoded = ''
+    , message
+
+  for (var i = 0, l = packets.length; i < l; i++) {
+    message = exports.encodePacket(packets[i]);
+    encoded += message.length + ':' + message;
+  }
+
+  return encoded;
+};
+
+/*
+ * Decodes data when a payload is maybe expected.
+ *
+ * @param {String} data
+ * @return {Array} packets
+ * @api public
+ */
+
+exports.decodePayload = function (data) {
+  if (data == '') {
+    // parser error - ignoring payload
+    return [err];
+  }
+
+  var packets = []
+    , length = ''
+    , n, msg, packet
+
+  for (var i = 0, l = data.length; i < l; i++) {
+    var chr = data.charAt(i)
+
+    if (':' != chr) {
+      length += chr;
+    } else {
+      if ('' == length || (length != (n = Number(length)))) {
+        // parser error - ignoring payload
+        return [err];
+      }
+
+      msg = data.substr(i + 1, n);
+
+      if (length != msg.length) {
+        // parser error - ignoring payload
+        return [err];
+      }
+
+      if (msg.length) {
+        packet = exports.decodePacket(msg);
+
+        if (err.type == packet.type && err.data == packet.data) {
+          // parser error in individual packet - ignoring payload
+          return [err];
+        }
+
+        packets.push(packet);
+      }
+
+      // advance cursor
+      i += n;
+      length = ''
+    }
+  }
+
+  if (length != '') {
+    // parser error - ignoring payload
+    return [err];
+  }
+
+  return packets;
+};
+
+});require.register("node_modules/engine.io-client/lib/socket.js", function(module, exports, require, global){
 /**
  * Module dependencies.
  */
@@ -1975,7 +796,1186 @@ function rnd () {
   return String(Math.random()).substr(5) + String(Math.random()).substr(5);
 }
 
-});require.register("util.js", function(module, exports, require, global){
+});require.register("node_modules/engine.io-client/lib/transport.js", function(module, exports, require, global){
+
+/**
+ * Module dependencies.
+ */
+
+var util = require('./util')
+  , parser = require('./parser')
+  , EventEmitter = require('./event-emitter')
+
+/**
+ * Module exports.
+ */
+
+module.exports = Transport;
+
+/**
+ * Transport abstract constructor.
+ *
+ * @param {Object} options.
+ * @api private
+ */
+
+function Transport (opts) {
+  this.path = opts.path;
+  this.host = opts.host;
+  this.port = opts.port;
+  this.secure = opts.secure;
+  this.query = opts.query;
+  this.readyState = '';
+};
+
+/**
+ * Inherits from EventEmitter.
+ */
+
+util.inherits(Transport, EventEmitter);
+
+/**
+ * Emits an error.
+ *
+ * @param {String} str
+ * @return {Transport} for chaining
+ * @api public
+ */
+
+Transport.prototype.onError = function (msg, desc) {
+  var err = new Error(msg);
+  err.type = 'TransportError';
+  err.description = desc;
+  this.emit('error', err);
+  return this;
+};
+
+/**
+ * Opens the transport.
+ *
+ * @api public
+ */
+
+Transport.prototype.open = function () {
+  if ('closed' == this.readyState || '' == this.readyState) {
+    this.readyState = 'opening';
+    this.doOpen();
+  }
+
+  return this;
+};
+
+/**
+ * Closes the transport.
+ *
+ * @api private
+ */
+
+Transport.prototype.close = function () {
+  if ('opening' == this.readyState || 'open' == this.readyState) {
+    this.doClose();
+    this.onClose();
+  }
+
+  return this;
+};
+
+/**
+ * Sends multiple packets.
+ *
+ * @param {Array} packets
+ * @api private
+ */
+
+Transport.prototype.send = function (packets) {
+  if ('open' == this.readyState) {
+    this.write(packets);
+  } else {
+    throw new Error('Transport not open');
+  }
+}
+
+/**
+ * Called upon open
+ *
+ * @api private
+ */
+
+Transport.prototype.onOpen = function () {
+  this.readyState = 'open';
+  this.writable = true;
+  this.emit('open');
+};
+
+/**
+ * Called with data.
+ *
+ * @param {String} data
+ * @api private
+ */
+
+Transport.prototype.onData = function (data) {
+  this.onPacket(parser.decodePacket(data));
+};
+
+/**
+ * Called with a decoded packet.
+ */
+
+Transport.prototype.onPacket = function (packet) {
+  this.emit('packet', packet);
+};
+
+/**
+ * Called upon close.
+ *
+ * @api private
+ */
+
+Transport.prototype.onClose = function () {
+  this.readyState = 'closed';
+  this.emit('close');
+};
+
+});require.register("node_modules/engine.io-client/lib/transports/flashsocket.js", function(module, exports, require, global){
+
+/**
+ * Module dependencies.
+ */
+
+var WebSocket = require('./websocket')
+  , util = require('../util')
+
+/**
+ * Module exports.
+ */
+
+module.exports = FlashWS;
+
+/**
+ * FlashWS constructor.
+ *
+ * @api public
+ */
+
+function FlashWS (options) {
+  WebSocket.call(this, options);
+  this.flashPath = options.flashPath;
+};
+
+/**
+ * Inherits from WebSocket.
+ */
+
+util.inherits(FlashWS, WebSocket);
+
+/**
+ * Transport name.
+ *
+ * @api public
+ */
+
+FlashWS.prototype.name = 'flashsocket';
+
+/**
+ * Opens the transport.
+ *
+ * @api public
+ */
+
+FlashWS.prototype.doOpen = function () {
+  if (!check()) {
+    // let the probe timeout
+    return;
+  }
+
+  // instrument websocketjs logging
+  function log (type) {
+    return function () {
+      var str = Array.prototype.join.call(arguments, ' ');
+      // debug: [websocketjs %s] %s, type, str
+    }
+  };
+
+  WEB_SOCKET_LOGGER = { log: log('debug'), error: log('error') };
+  WEB_SOCKET_SUPPRESS_CROSS_DOMAIN_SWF_ERROR = true;
+
+  // dependencies
+  var deps = [path + 'web_socket.js'];
+
+  if ('undefined' == typeof swfobject) {
+    deps.unshift(path + 'swfobject.js');
+  }
+
+  load(deps, function () {
+    FlashWS.prototype.doOpen.call(self);
+  });
+};
+
+/**
+ * Override to prevent closing uninitialized flashsocket.
+ *
+ * @api private
+ */
+
+FlashWS.prototype.doClose = function () {
+  if (!this.socket) return;
+  FlashWS.prototype.doClose.call(this);
+};
+
+/**
+ * Feature detection for FlashSocket.
+ *
+ * @return {Boolean} whether this transport is available.
+ * @api public
+ */
+
+function check () {
+
+
+
+
+  for (var i = 0, l = navigator.plugins.length; i < l; i++) {
+    for (var j = 0, m = navigator.plugins[i].length; j < m; j++) {
+      if (navigator.plugins[i][j] == 'Shockwave Flash') return true;
+    }
+  }
+
+  return false;
+};
+
+/**
+ * Lazy loading of scripts.
+ * Based on $script by Dustin Diaz - MIT
+ */
+
+var scripts = {};
+
+/**
+ * Injects a script. Keeps tracked of injected ones.
+ *
+ * @param {String} path
+ * @param {Function} callback
+ * @api private
+ */
+
+function create (path, fn) {
+  if (scripts[path]) return fn();
+
+  var el = document.createElement('script')
+    , loaded = false
+
+  // debug: loading "%s", path
+  el.onload = el.onreadystatechange = function () {
+    if (loaded || scripts[path]) return;
+    var rs = el.readyState;
+    if (!rs || 'loaded' == rs || 'complete' == rs) {
+      // debug: loaded "%s", path
+      el.onload = el.onreadystatechange = null;
+      loaded = true;
+      scripts[path] = true;
+      fn();
+    }
+  };
+
+  el.async = 1;
+  el.src = path;
+
+  var head = document.getElementsByTagName('head')[0];
+  head.insertBefore(el, head.firstChild);
+};
+
+/**
+ * Loads scripts and fires a callback.
+ *
+ * @param {Array} paths
+ * @param {Function} callback
+ */
+
+function load (arr, fn) {
+  function process (i) {
+    if (!arr[i]) return fn();
+    create(arr[i], function () {
+      process(arr[++i]);
+    });
+  };
+
+  process(0);
+};
+
+});require.register("node_modules/engine.io-client/lib/transports/polling-jsonp.js", function(module, exports, require, global){
+
+/**
+ * Module requirements.
+ */
+
+var Polling = require('./polling')
+  , util = require('../util')
+
+/**
+ * Module exports.
+ */
+
+module.exports = JSONPPolling;
+
+/**
+ * Cached regular expressions.
+ */
+
+var rNewline = /\n/g
+
+/**
+ * Global JSONP callbacks.
+ */
+
+var callbacks = global.___eio = [];
+
+/**
+ * Callbacks count.
+ */
+
+var index = 0;
+
+/**
+ * Noop.
+ */
+
+function empty () { }
+
+/**
+ * JSONP Polling constructor.
+ *
+ * @param {Object} opts.
+ * @api public
+ */
+
+function JSONPPolling (opts) {
+  Polling.call(this, opts);
+
+  // callback identifier
+  this.index = index++;
+
+  // add callback to jsonp global
+  var self = this;
+  callbacks.push(function (msg) {
+    self.onData(msg);
+  });
+
+  // append to query string
+  this.query.j = callbacks.length - 1;
+};
+
+/**
+ * Inherits from Polling.
+ */
+
+util.inherits(JSONPPolling, Polling);
+
+/**
+ * Opens the socket.
+ *
+ * @api private
+ */
+
+JSONPPolling.prototype.doOpen = function () {
+  var self = this;
+  util.defer(function () {
+    Polling.prototype.doOpen.call(self);
+  });
+};
+
+/**
+ * Closes the socket
+ *
+ * @api private
+ */
+
+JSONPPolling.prototype.doClose = function () {
+  if (this.script) {
+    this.script.parentNode.removeChild(this.script);
+    this.script = null;
+  }
+
+  if (this.form) {
+    this.form.parentNode.removeChild(this.form);
+    this.form = null;
+  }
+
+  Polling.prototype.doClose.call(this);
+};
+
+/**
+ * Starts a poll cycle.
+ *
+ * @api private
+ */
+
+JSONPPolling.prototype.doPoll = function () {
+  var script = document.createElement('script');
+
+  if (this.script) {
+    this.script.parentNode.removeChild(this.script);
+    this.script = null;
+  }
+
+  script.async = true;
+  script.src = this.uri();
+
+  var insertAt = document.getElementsByTagName('script')[0]
+  insertAt.parentNode.insertBefore(script, insertAt);
+  this.script = script;
+
+  if (util.ua.gecko) {
+    setTimeout(function () {
+      var iframe = document.createElement('iframe');
+      document.body.appendChild(iframe);
+      document.body.removeChild(iframe);
+    }, 100);
+  }
+};
+
+/**
+ * Writes with a hidden iframe.
+ *
+ * @param {String} data to send
+ * @param {Function} called upon flush.
+ * @api private
+ */
+
+JSONPPolling.prototype.doWrite = function (data, fn) {
+  var self = this
+
+  if (!this.form) {
+    var form = document.createElement('form')
+      , area = document.createElement('textarea')
+      , id = this.iframeId = 'eio_iframe_' + this.index
+      , iframe;
+
+    form.className = 'socketio';
+    form.style.position = 'absolute';
+    form.style.top = '-1000px';
+    form.style.left = '-1000px';
+    form.target = id;
+    form.method = 'POST';
+    form.setAttribute('accept-charset', 'utf-8');
+    area.name = 'd';
+    form.appendChild(area);
+    document.body.appendChild(form);
+
+    this.form = form;
+    this.area = area;
+  }
+
+  this.form.action = this.uri();
+
+  function complete () {
+    initIframe();
+    fn();
+  };
+
+  function initIframe () {
+    if (self.iframe) {
+      self.form.removeChild(self.iframe);
+    }
+
+    try {
+      // ie6 dynamic iframes with target="" support (thanks Chris Lambacher)
+      iframe = document.createElement('<iframe name="'+ self.iframeId +'">');
+    } catch (e) {
+      iframe = document.createElement('iframe');
+      iframe.name = self.iframeId;
+    }
+
+    iframe.id = self.iframeId;
+
+    self.form.appendChild(iframe);
+    self.iframe = iframe;
+  };
+
+  initIframe();
+
+  // escape \n to prevent it from being converted into \r\n by some UAs
+  this.area.value = data.replace(rNewline, '\\n');
+
+  try {
+    this.form.submit();
+  } catch(e) {}
+
+  if (this.iframe.attachEvent) {
+    iframe.onreadystatechange = function () {
+      if (self.iframe.readyState == 'complete') {
+        complete();
+      }
+    };
+  } else {
+    this.iframe.onload = complete;
+  }
+};
+
+});require.register("node_modules/engine.io-client/lib/transports/index.js", function(module, exports, require, global){
+
+/**
+ * Module dependencies
+ */
+
+var XHR = require('./polling-xhr')
+  , JSONP = require('./polling-jsonp')
+  , websocket = require('./websocket')
+  , flashsocket = require('./flashsocket')
+  , util = require('../util')
+
+/**
+ * Export transports.
+ */
+
+exports.polling = polling;
+exports.websocket = websocket;
+exports.flashsocket = flashsocket;
+
+/**
+ * Polling transport polymorphic constructor.
+ * Decides on xhr vs jsonp based on feature detection.
+ *
+ * @api private
+ */
+
+function polling (opts) {
+  var xd = false;
+
+  if (global.location) {
+    xd = opts.host != global.location.hostname
+      || global.location.port != opts.port;
+  }
+
+  if (util.request(xd) && !opts.forceJSONP) {
+    return new XHR(opts);
+  } else {
+    return new JSONP(opts);
+  }
+};
+
+});require.register("node_modules/engine.io-client/lib/transports/websocket.js", function(module, exports, require, global){
+
+/**
+ * Module dependencies.
+ */
+
+var Transport = require('../transport')
+  , parser = require('../parser')
+  , util = require('../util')
+
+/**
+ * Module exports.
+ */
+
+module.exports = WS;
+
+/**
+ * WebSocket transport constructor.
+ *
+ * @api {Object} connection options
+ * @api public
+ */
+
+function WS (opts) {
+  Transport.call(this, opts);
+};
+
+/**
+ * Inherits from Transport.
+ */
+
+util.inherits(WS, Transport);
+
+/**
+ * Transport name.
+ *
+ * @api public
+ */
+
+WS.prototype.name = 'websocket';
+
+/**
+ * Opens socket.
+ *
+ * @api private
+ */
+
+WS.prototype.doOpen = function () {
+  if (!check()) {
+    // let probe timeout
+    return;
+  }
+
+  var self = this;
+
+  this.socket = new (ws())(this.uri());
+  this.socket.onopen = function () {
+    self.onOpen();
+  };
+  this.socket.onclose = function () {
+    self.onClose();
+  };
+  this.socket.onmessage = function (ev) {
+    self.onData(ev.data);
+  };
+  this.socket.onerror = function (e) {
+    self.onError('websocket error', e);
+  };
+};
+
+/**
+ * Writes data to socket.
+ *
+ * @param {Array} array of packets.
+ * @param {Function} drain callback.
+ * @api private
+ */
+
+WS.prototype.write = function (packets) {
+  for (var i = 0, l = packets.length; i < l; i++) {
+    this.socket.send(parser.encodePacket(packets[i]));
+  }
+};
+
+/**
+ * Closes socket.
+ *
+ * @api private
+ */
+
+WS.prototype.doClose = function () {
+  this.socket.close();
+};
+
+/**
+ * Generates uri for connection.
+ *
+ * @api private
+ */
+
+WS.prototype.uri = function () {
+  var query = util.qs(this.query)
+    , schema = this.secure ? 'wss' : 'ws'
+    , port = ''
+
+  // avoid port if default for schema
+  if (this.port && (('wss' == schema && this.port != 443)
+    || ('ws' == schema && this.port != 80))) {
+    port = ':' + this.port;
+  }
+
+  // prepend ? to query
+  if (query.length) {
+    query = '?' + query;
+  }
+
+  return schema + '://' + this.host + port + this.path + query;
+};
+
+/**
+ * Getter for WS constructor.
+ *
+ * @api private
+ */
+
+function ws () {
+
+
+
+
+  return global.WebSocket || global.MozWebSocket;
+}
+
+/**
+ * Feature detection for WebSocket.
+ *
+ * @return {Boolean} whether this transport is available.
+ * @api public
+ */
+
+function check () {
+  return !!ws();
+}
+
+});require.register("node_modules/engine.io-client/lib/transports/polling.js", function(module, exports, require, global){
+/**
+ * Module dependencies.
+ */
+
+var Transport = require('../transport')
+  , util = require('../util')
+  , parser = require('../parser')
+
+/**
+ * Module exports.
+ */
+
+module.exports = Polling;
+
+/**
+ * Polling interface.
+ *
+ * @param {Object} opts
+ * @api private
+ */
+
+function Polling (opts) {
+  Transport.call(this, opts);
+  this.forceBust = !!opts.forceBust;
+}
+
+/**
+ * Inherits from Transport.
+ */
+
+util.inherits(Polling, Transport);
+
+/**
+ * Transport name.
+ */
+
+Polling.prototype.name = 'polling';
+
+/**
+ * Opens the socket (triggers polling). We write a PING message to determine
+ * when the transport is open.
+ *
+ * @api private
+ */
+
+Polling.prototype.doOpen = function () {
+  this.poll();
+};
+
+/**
+ * Pauses polling.
+ *
+ * @param {Function} callback upon buffers are flushed and transport is paused
+ * @api private
+ */
+
+Polling.prototype.pause = function (onPause) {
+  var pending = 0
+    , self = this
+
+  this.readyState = 'pausing';
+
+  function pause () {
+    // debug: paused
+    self.readyState = 'paused';
+    onPause();
+  }
+
+  if (this.polling || !this.writable) {
+    var total = 0;
+
+    if (this.polling) {
+      // debug: we are currently polling - waiting to pause
+      total++;
+      this.once('poll', function () {
+        // debug: pre-pause polling complete
+        --total || pause();
+      });
+    }
+
+    if (!this.writable) {
+      // debug: we are currently writing - waiting to pause
+      total++;
+      this.once('drain', function () {
+        // debug: pre-pause writing complete
+        --total || pause();
+      });
+    }
+  } else {
+    pause();
+  }
+};
+
+/**
+ * Starts polling cycle.
+ *
+ * @api public
+ */
+
+Polling.prototype.poll = function () {
+  // debug: polling
+  this.polling = true;
+  this.doPoll();
+};
+
+/**
+ * Overloads onData to detect payloads.
+ *
+ * @api private
+ */
+
+Polling.prototype.onData = function (data) {
+  // debug: polling got, data
+  // decode payload
+  var packets = parser.decodePayload(data);
+
+  for (var i = 0, l = packets.length; i < l; i++) {
+    // if its the first message we consider the trnasport open
+    if ('opening' == this.readyState) {
+      this.onOpen();
+    }
+
+    // if its a close packet, we close the ongoing requests
+    if ('close' == packets[i].type) {
+      this.onClose();
+      return;
+    }
+
+    // otherwise bypass onData and handle the message
+    this.onPacket(packets[i]);
+  }
+
+  // if we got data we're not polling
+  this.polling = false;
+  this.emit('poll');
+
+  if ('open' == this.readyState) {
+    this.poll();
+  } else {
+    // debug: ignoring poll - transport state "%s", this.readyState
+  }
+};
+
+/**
+ * For polling, send a close packet.
+ *
+ * @api private
+ */
+
+Polling.prototype.doClose = function () {
+  // debug: sending close packet
+  this.send([{ type: 'close' }]);
+};
+
+/**
+ * Writes a packets payload.
+ *
+ * @param {Array} data packets
+ * @param {Function} drain callback
+ * @api private
+ */
+
+Polling.prototype.write = function (packets) {
+  var self = this;
+  this.writable = false;
+  this.doWrite(parser.encodePayload(packets), function () {
+    self.writable = true;
+    self.emit('drain');
+  });
+};
+
+/**
+ * Generates uri for connection.
+ *
+ * @api private
+ */
+
+Polling.prototype.uri = function () {
+  var query = this.query || {}
+    , schema = this.secure ? 'https' : 'http'
+    , port = ''
+
+  // cache busting for IE
+  if (global.ActiveXObject || this.forceBust) {
+    query.t = +new Date;
+  }
+
+  query = util.qs(query);
+
+  // avoid port if default for schema
+  if (this.port && (('https' == schema && this.port != 443)
+    || ('http' == schema && this.port != 80))) {
+    port = ':' + this.port;
+  }
+
+  // prepend ? to query
+  if (query.length) {
+    query = '?' + query;
+  }
+
+  return schema + '://' + this.host + port + this.path + query;
+};
+
+});require.register("node_modules/engine.io-client/lib/transports/polling-xhr.js", function(module, exports, require, global){
+/**
+ * Module requirements.
+ */
+
+var Polling = require('./polling')
+  , EventEmitter = require('../event-emitter')
+  , util = require('../util')
+
+/**
+ * Module exports.
+ */
+
+module.exports = XHR;
+module.exports.Request = Request;
+
+/**
+ * Empty function
+ */
+
+function empty () { }
+
+/**
+ * XHR Polling constructor.
+ *
+ * @param {Object} opts
+ * @api public
+ */
+
+function XHR (opts) {
+  Polling.call(this, opts);
+
+  if (global.location) {
+    this.xd = opts.host != global.location.hostname
+      || global.location.port != opts.port;
+  }
+};
+
+/**
+ * Inherits from Polling.
+ */
+
+util.inherits(XHR, Polling);
+
+/**
+ * Opens the socket
+ *
+ * @api private
+ */
+
+XHR.prototype.doOpen = function () {
+  var self = this;
+  util.defer(function () {
+    Polling.prototype.doOpen.call(self);
+  });
+};
+
+/**
+ * Creates a request.
+ *
+ * @param {String} method
+ * @api private
+ */
+
+XHR.prototype.request = function (opts) {
+  opts = opts || {};
+  opts.uri = this.uri();
+  opts.xd = this.xd;
+  return new Request(opts);
+};
+
+/**
+ * Sends data.
+ *
+ * @param {String} data to send.
+ * @param {Function} called upon flush.
+ * @api private
+ */
+
+XHR.prototype.doWrite = function (data, fn) {
+  var req = this.request({ method: 'POST', data: data })
+    , self = this
+  req.on('success', fn);
+  req.on('error', function (err) {
+    self.onError('xhr post error', err);
+  });
+  this.sendXhr = req;
+};
+
+/**
+ * Starts a poll cycle.
+ *
+ * @api private
+ */
+
+XHR.prototype.doPoll = function () {
+  // debug: xhr poll
+  var req = this.request()
+    , self = this
+  req.on('data', function (data) {
+    self.onData(data);
+  });
+  req.on('error', function (err) {
+    self.onError('xhr poll error', err);
+  });
+  this.pollXhr = req;
+};
+
+/**
+ * Request constructor
+ *
+ * @param {Object} options
+ * @api public
+ */
+
+function Request (opts) {
+  this.method = opts.method || 'GET';
+  this.uri = opts.uri;
+  this.xd = !!opts.xd;
+  this.async = false !== opts.async;
+  this.data = undefined != opts.data ? opts.data : null;
+  this.create();
+}
+
+/**
+ * Inherits from Polling.
+ */
+
+util.inherits(Request, EventEmitter);
+
+/**
+ * Creates the XHR object and sends the request.
+ *
+ * @api private
+ */
+
+Request.prototype.create = function () {
+  var xhr = this.xhr = util.request(this.xd)
+    , self = this
+
+  xhr.open(this.method, this.uri, this.async);
+
+  if ('POST' == this.method) {
+    try {
+      if (xhr.setRequestHeader) {
+        // xmlhttprequest
+        xhr.setRequestHeader('Content-type', 'text/plain;charset=UTF-8');
+      } else {
+        // xdomainrequest
+        xhr.contentType = 'text/plain';
+      }
+    } catch (e) {}
+  }
+
+  if (this.xd && global.XDomainRequest && xhr instanceof XDomainRequest) {
+    xhr.onerror = function (e) {
+      self.onError(e);
+    };
+    xhr.onload = function () {
+      self.onData(xhr.responseText);
+    };
+    xhr.onprogress = empty;
+  } else {
+    xhr.withCredentials = true;
+    xhr.onreadystatechange = function () {
+      var data;
+
+      try {
+        if (4 != xhr.readyState) return;
+        if (200 == xhr.status || 1223 == xhr.status) {
+          data = xhr.responseText;
+        } else {
+          self.onError(xhr.status);
+        }
+      } catch (e) {
+        self.onError(e);
+      }
+
+      if (undefined !== data) {
+        self.onData(data);
+      }
+    };
+  }
+
+  // debug: sending xhr with url %s | data %s, this.uri, this.data
+  xhr.send(this.data);
+
+  if (global.ActiveXObject) {
+    this.index = Request.requestsCount++;
+    Request.requests[this.index] = this;
+  }
+};
+
+/**
+ * Called upon successful response.
+ *
+ * @api private
+ */
+
+Request.prototype.onSuccess = function () {
+  this.emit('success');
+  this.cleanup();
+}
+
+/**
+ * Called if we have data.
+ *
+ * @api private
+ */
+
+Request.prototype.onData = function (data) {
+  this.emit('data', data);
+  this.onSuccess();
+}
+
+/**
+ * Called upon error.
+ *
+ * @api private
+ */
+
+Request.prototype.onError = function (err) {
+  this.emit('error', err);
+  this.cleanup();
+}
+
+/**
+ * Cleans up house.
+ *
+ * @api private
+ */
+
+Request.prototype.cleanup = function () {
+  // xmlhttprequest
+  this.xhr.onreadystatechange = empty;
+
+  // xdomainrequest
+  this.xhr.onload = this.xhr.onerror = empty;
+
+  try {
+    this.xhr.abort();
+  } catch(e) {}
+
+  if (global.ActiveXObject) {
+    delete Request.requests[this.index];
+  }
+
+  this.xhr = null;
+}
+
+/**
+ * Aborts the request.
+ *
+ * @api public
+ */
+
+Request.prototype.abort = function () {
+  this.cleanup();
+};
+
+if (global.ActiveXObject) {
+  Request.requestsCount = 0;
+  Request.requests = {};
+
+  global.attachEvent('onunload', function () {
+    for (var i in Request.requests) {
+      if (Request.requests.hasOwnProperty(i)) {
+        Request.requests[i].abort();
+      }
+    }
+  });
+}
+
+});require.register("node_modules/engine.io-client/lib/util.js", function(module, exports, require, global){
 
 /**
  * Status of page load.
@@ -2221,59 +2221,12 @@ exports.qs = function (obj) {
   return str;
 };
 
-});eio = require('engine.io-client');
-})();
+});require.register("ServerError.js", function(module, exports, require, global){
 // Generated by CoffeeScript 1.3.1
 (function() {
-  var ServerError, Vein,
+  var ServerError,
     __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; },
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-    __slice = [].slice;
-
-  window.AIOCookie = function(key, val, expires) {
-    var all, remove, set;
-    all = function() {
-      var cookie, out, pair, _i, _len, _ref;
-      out = {};
-      _ref = document.cookie.split(";");
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        cookie = _ref[_i];
-        pair = cookie.split("=");
-        out[pair[0]] = pair[1];
-      }
-      return out;
-    };
-    set = function(key, val, expires) {
-      var sExpires;
-      sExpires = "";
-      if (typeof expires === 'number') {
-        sExpires = "; max-age=" + expires;
-      }
-      if (typeof expires === 'string') {
-        sExpires = "; expires=" + expires;
-      }
-      if (typeof expires === 'object' ? expires.toGMTString : void 0) {
-        sExpires = "; expires=" + (expires.toGMTString());
-      }
-      document.cookie = "" + (escape(key)) + "=" + (escape(val)) + sExpires;
-    };
-    remove = function(key) {
-      document.cookie = "" + (escape(key)) + "=; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/";
-    };
-    if (!key) {
-      return all();
-    }
-    if (key && val === null) {
-      return remove(key);
-    }
-    if (key && !val) {
-      return all()[key];
-    }
-    if (key && val) {
-      return set(key, val, expires);
-    }
-  };
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
   ServerError = (function(_super) {
 
@@ -2291,6 +2244,23 @@ exports.qs = function (obj) {
 
   })(Error);
 
+  module.exports = ServerError;
+
+}).call(this);
+
+});require.register("Vein.js", function(module, exports, require, global){
+// Generated by CoffeeScript 1.3.1
+(function() {
+  var ServerError, Vein, eio, isBrowser,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __slice = [].slice;
+
+  ServerError = require('./ServerError');
+
+  isBrowser = typeof window !== 'undefined';
+
+  eio = require((isBrowser ? 'node_modules/engine.io-client/lib/engine.io-client' : 'engine.io-client'));
+
   Vein = (function() {
 
     Vein.name = 'Vein';
@@ -2298,6 +2268,10 @@ exports.qs = function (obj) {
     function Vein(options) {
       var _base, _base1, _base2, _base3, _base4, _base5;
       this.options = options != null ? options : {};
+      this.getSender = __bind(this.getSender, this);
+
+      this.getSubscriber = __bind(this.getSubscriber, this);
+
       this.addCookies = __bind(this.addCookies, this);
 
       this.handleClose = __bind(this.handleClose, this);
@@ -2308,14 +2282,18 @@ exports.qs = function (obj) {
 
       this.handleOpen = __bind(this.handleOpen, this);
 
-      if ((_base = this.options).host == null) {
-        _base.host = window.location.hostname;
-      }
-      if ((_base1 = this.options).port == null) {
-        _base1.port = (window.location.port.length > 0 ? parseInt(window.location.port) : 80);
-      }
-      if ((_base2 = this.options).secure == null) {
-        _base2.secure = window.location.protocol === 'https:';
+      this.cookie = __bind(this.cookie, this);
+
+      if (isBrowser) {
+        if ((_base = this.options).host == null) {
+          _base.host = window.location.hostname;
+        }
+        if ((_base1 = this.options).port == null) {
+          _base1.port = (window.location.port.length > 0 ? parseInt(window.location.port) : 80);
+        }
+        if ((_base2 = this.options).secure == null) {
+          _base2.secure = window.location.protocol === 'https:';
+        }
       }
       if ((_base3 = this.options).path == null) {
         _base3.path = '/vein';
@@ -2334,9 +2312,11 @@ exports.qs = function (obj) {
       return;
     }
 
-    Vein.prototype.connected = null;
+    Vein.prototype.connected = false;
 
     Vein.prototype.services = null;
+
+    Vein.prototype.cookies = {};
 
     Vein.prototype._ready = [];
 
@@ -2346,18 +2326,81 @@ exports.qs = function (obj) {
 
     Vein.prototype.subscribe = {};
 
-    Vein.prototype.cookie = AIOCookie;
+    Vein.prototype.cookie = function(key, val, expires) {
+      var all, remove, set,
+        _this = this;
+      if (typeof window !== 'undefined') {
+        all = function() {
+          var cookie, out, pair, _i, _len, _ref;
+          out = {};
+          _ref = document.cookie.split(";");
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            cookie = _ref[_i];
+            pair = cookie.split("=");
+            out[pair[0]] = pair[1];
+          }
+          return out;
+        };
+        set = function(key, val, expires) {
+          var sExpires;
+          sExpires = "";
+          if (typeof expires === 'number') {
+            sExpires = "; max-age=" + expires;
+          }
+          if (typeof expires === 'string') {
+            sExpires = "; expires=" + expires;
+          }
+          if (typeof expires === 'object' ? expires.toGMTString : void 0) {
+            sExpires = "; expires=" + (expires.toGMTString());
+          }
+          document.cookie = "" + (escape(key)) + "=" + (escape(val)) + sExpires;
+        };
+        remove = function(key) {
+          document.cookie = "" + (escape(key)) + "=; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/";
+        };
+      } else {
+        all = function() {
+          return _this.cookies;
+        };
+        set = function(key, val, expires) {
+          _this.cookies[key] = val;
+        };
+        remove = function(key) {
+          delete _this.cookies[key];
+        };
+      }
+      if (!key) {
+        return all();
+      }
+      if (key && val === null) {
+        return remove(key);
+      }
+      if (key && !val) {
+        return all()[key];
+      }
+      if (key && val) {
+        return set(key, val, expires);
+      }
+    };
+
+    Vein.prototype.disconnect = function() {
+      return this.socket.close();
+    };
 
     Vein.prototype.ready = function(cb) {
-      this._ready.push(cb);
-      if (this.connected === true) {
+      if (!this.connected) {
+        this._ready.push(cb);
+      }
+      if (this.connected) {
         cb(this.services);
       }
     };
 
     Vein.prototype.close = function(cb) {
-      this._close.push(cb);
-      if (this.connected === false) {
+      if (this.connected) {
+        this._close.push(cb);
+      }
+      if (!this.connected) {
         cb();
       }
     };
@@ -2365,7 +2408,7 @@ exports.qs = function (obj) {
     Vein.prototype.handleOpen = function() {
       var _this = this;
       this.getSender('list')(function(services) {
-        var cb, service, _i, _j, _len, _len1, _ref, _results;
+        var cb, service, _i, _j, _len, _len1, _ref;
         for (_i = 0, _len = services.length; _i < _len; _i++) {
           service = services[_i];
           _this[service] = _this.getSender(service);
@@ -2374,12 +2417,11 @@ exports.qs = function (obj) {
         _this.services = services;
         _this.connected = true;
         _ref = _this._ready;
-        _results = [];
         for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
           cb = _ref[_j];
-          _results.push(cb(services));
+          cb(services);
         }
-        return _results;
+        return _this._ready = [];
       });
     };
 
@@ -2424,6 +2466,7 @@ exports.qs = function (obj) {
         cb = _ref[_i];
         cb.apply(null, args);
       }
+      this._close = [];
     };
 
     Vein.prototype.addCookies = function(cookies) {
@@ -2480,11 +2523,14 @@ exports.qs = function (obj) {
   })();
 
   if (typeof define === 'function') {
-    define("Vein", (function() {
+    define((function() {
       return Vein;
     }));
   }
 
-  window.Vein = Vein;
+  module.exports = Vein;
 
 }).call(this);
+
+});Vein = require('Vein');
+})();

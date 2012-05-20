@@ -1,12 +1,13 @@
-class ServerError extends Error
-  name: "ServerError"
-  constructor: ({@message, @type, @stack}) ->
+ServerError = require './ServerError'
+isBrowser = typeof window isnt 'undefined'
+eio = require (if isBrowser then 'node_modules/engine.io-client/lib/engine.io-client' else 'engine.io-client')
 
 class Vein
   constructor: (@options={}) ->
-    @options.host ?= window.location.hostname
-    @options.port ?= (if window.location.port.length > 0 then parseInt window.location.port else 80)
-    @options.secure ?= (window.location.protocol is 'https:')
+    if isBrowser
+      @options.host ?= window.location.hostname
+      @options.port ?= (if window.location.port.length > 0 then parseInt window.location.port else 80)
+      @options.secure ?= (window.location.protocol is 'https:')
     @options.path ?= '/vein'
     @options.forceBust ?= true
     @options.debug ?= false
@@ -17,23 +18,54 @@ class Vein
     @socket.on 'close', @handleClose
     return
 
-  connected: null
+  connected: false
   services: null
+  cookies: {}
   _ready: []
   _close: []
   callbacks: {}
   subscribe: {}
 
-  cookie: AIOCookie
+  cookie: (key, val, expires) =>
+    if typeof window isnt 'undefined' # browser
+      all = ->
+        out = {}
+        for cookie in document.cookie.split ";"
+          pair = cookie.split "="
+          out[pair[0]] = pair[1]
+        return out
+      set = (key, val, expires) ->
+        sExpires = ""
+        sExpires = "; max-age=#{expires}" if typeof expires is 'number'
+        sExpires = "; expires=#{expires}" if typeof expires is 'string'
+        sExpires = "; expires=#{expires.toGMTString()}" if expires.toGMTString if typeof expires is 'object'
+        document.cookie = "#{escape(key)}=#{escape(val)}#{sExpires}"
+        return
+      remove = (key) ->
+        document.cookie = "#{escape(key)}=; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/"
+        return
+    else # node
+      all = => @cookies
+      set = (key, val, expires) =>
+        @cookies[key] = val
+        return
+      remove = (key) =>
+        delete @cookies[key]
+        return
+    return all() unless key
+    return remove key if key and val is null
+    return all()[key] if key and not val
+    return set key, val, expires if key and val
 
+  disconnect: -> @socket.close()
   ready: (cb) ->
-    @_ready.push cb
-    cb @services if @connected is true
+    @_ready.push cb unless @connected
+    cb @services if @connected
     return
 
   close: (cb) -> 
-    @_close.push cb
-    cb() if @connected is false
+    @_close.push cb if @connected
+    cb() unless @connected
     return
 
   # Event handlers
@@ -45,6 +77,7 @@ class Vein
       @services = services
       @connected = true
       cb services for cb in @_ready
+      @_ready = []
     return
 
   handleError: (args...) =>
@@ -66,6 +99,7 @@ class Vein
   handleClose: (args...) =>
     @connected = false
     cb args... for cb in @_close
+    @_close = []
     return
 
   # Utilities
@@ -74,14 +108,14 @@ class Vein
     @cookie key, val for key, val of cookies when existing[key] isnt val
     return
 
-  getSubscriber: (service) -> 
+  getSubscriber: (service) => 
     sub = (cb) =>
       @subscribe[service].listeners.push cb
       return
     sub.listeners = []
     return sub
 
-  getSender: (service) ->
+  getSender: (service) =>
     (args..., cb) =>
       id = @getId()
       @callbacks[id] = cb
@@ -94,5 +128,6 @@ class Vein
     rand = -> (((1 + Math.random()) * 0x10000000) | 0).toString 16
     rand()+rand()+rand()
 
-define "Vein", (-> Vein) if typeof define is 'function'
-window.Vein = Vein
+define (-> Vein) if typeof define is 'function'
+
+module.exports = Vein

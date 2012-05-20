@@ -10,7 +10,16 @@
    "dependencies":{
       "coffee-script":"*",
       "async":"*",
-      "engine.io":"git://github.com/LearnBoost/engine.io"
+      "engine.io":"git://github.com/LearnBoost/engine.io.git"
+   },
+   "devDependencies":{
+      "engine.io-client":"git://github.com/LearnBoost/engine.io-client.git",
+      "mocha":"*",
+      "should":"*",
+      "browserbuild":"*"
+   },
+   "scripts":{
+      "test":"mocha --compilers coffee:coffee-script --reporter spec"
    },
    "engines":{
       "node":">= 0.4.0"

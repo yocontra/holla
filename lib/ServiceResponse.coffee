@@ -30,6 +30,10 @@ class ServiceResponse
     socket.send @getAnonymousMessage args for id, socket of @socket.server.clients
     return @
 
+  close: ->
+    @socket.close()
+    return @
+
   send: (args...) =>
     @socket.send @getMessage args
     return @

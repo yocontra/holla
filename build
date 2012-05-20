@@ -1,15 +1,16 @@
-# build engine
-cd client/engine.io
-make build
-cd ../../
-
 # compile
-coffee -j vein.js -c client/cookies.coffee client/vein.coffee
+rm -rf dist
+mkdir dist
+coffee -o dist -c client/*
 
-# prepend deps
-cat client/engine.io/dist/engine.io.js | cat - vein.js > /tmp/out && mv /tmp/out vein.js
+# build
+browserbuild -g Vein -m Vein -b dist/ node_modules/engine.io-client/lib/* dist/* > vein.js
 
+# minify
 uglifyjs -nc --unsafe -mt -o vein.min.js vein.js
 echo "File size (minified): " && cat vein.min.js | wc -c
 echo "File size (gzipped): " && cat vein.min.js | gzip -9f  | wc -c
 cp ./vein.js ./examples/chat/vein.js
+
+# clean
+rm -rf dist

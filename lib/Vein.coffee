@@ -4,16 +4,19 @@ engine = require 'engine.io'
 ServiceResponse = require './ServiceResponse'
 
 class Vein
-  constructor: (hook, @options={}) ->
+  constructor: (hook, @options={}, cb) ->
     @options.path ?= '/vein'
     if typeof hook is 'number'
       @server = engine.listen hook
     else
       @server = engine.attach hook, @options
+      @server.httpServer = hook
     @services.list = (res) => res.send Object.keys @services
     @server.on 'connection', @handleConnection
 
-  close: -> @server.close()
+  close: -> @server.httpServer.close()
+
+  drop: -> @server.close()
 
   stack: []
   services: {}
@@ -42,4 +45,5 @@ class Vein
     run = (middle, done) => middle req, res, done
     async.forEachSeries @stack, run, cb
 
+Vein.Client = require '../client/Vein'
 module.exports = Vein
