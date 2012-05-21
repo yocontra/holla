@@ -2523,9 +2523,13 @@ exports.qs = function (obj) {
   })();
 
   if (typeof define === 'function') {
-    define("Vein", (function() {
+    define(function() {
       return Vein;
-    }));
+    });
+  }
+
+  if (isBrowser) {
+    window.Vein = Vein;
   }
 
   module.exports = Vein;
