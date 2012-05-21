@@ -2266,7 +2266,7 @@ exports.qs = function (obj) {
     Vein.name = 'Vein';
 
     function Vein(options) {
-      var _base, _base1, _base2, _base3, _base4, _base5;
+      var _base, _base1, _base2, _base3, _base4, _base5, _base6;
       this.options = options != null ? options : {};
       this.getSender = __bind(this.getSender, this);
 
@@ -2295,14 +2295,17 @@ exports.qs = function (obj) {
           _base2.secure = window.location.protocol === 'https:';
         }
       }
-      if ((_base3 = this.options).path == null) {
-        _base3.path = '/vein';
+      if ((_base3 = this.options).transports == null) {
+        _base3.transports = ["websocket", "polling"];
       }
-      if ((_base4 = this.options).forceBust == null) {
-        _base4.forceBust = true;
+      if ((_base4 = this.options).path == null) {
+        _base4.path = '/vein';
       }
-      if ((_base5 = this.options).debug == null) {
-        _base5.debug = false;
+      if ((_base5 = this.options).forceBust == null) {
+        _base5.forceBust = true;
+      }
+      if ((_base6 = this.options).debug == null) {
+        _base6.debug = false;
       }
       this.socket = new eio.Socket(this.options);
       this.socket.on('open', this.handleOpen);

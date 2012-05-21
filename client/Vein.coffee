@@ -8,6 +8,8 @@ class Vein
       @options.host ?= window.location.hostname
       @options.port ?= (if window.location.port.length > 0 then parseInt window.location.port else 80)
       @options.secure ?= (window.location.protocol is 'https:')
+
+    @options.transports ?= ["websocket", "polling"]
     @options.path ?= '/vein'
     @options.forceBust ?= true
     @options.debug ?= false
