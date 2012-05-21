@@ -2523,7 +2523,7 @@ exports.qs = function (obj) {
   })();
 
   if (typeof define === 'function') {
-    define((function() {
+    define("Vein", (function() {
       return Vein;
     }));
   }
