@@ -39,8 +39,9 @@ class Vein
   addFolder: (folder) ->
     for file in readdirSync folder
       serviceName = basename file, extname file
-      service = require join folder, file
-      @add serviceName, service
+      try
+        service = require join folder, file
+        @add serviceName, service
     return @
 
   remove: (name) -> 
@@ -57,11 +58,10 @@ class Vein
       return res.error err if err?
       return res.error "Invalid message" unless res.valid is true
       return res.error "Invalid service" unless @services[res.req.service]?
-      @services[res.req.service] res, res.req.args...
-      #try
-      #  @services[res.req.service] res, res.req.args...
-      #catch err
-      #  return res.error err
+      try
+        @services[res.req.service] res, res.req.args...
+      catch err
+        return res.error err
 
   runMiddleware: (req, res, cb) =>
     run = (middle, done) => middle req, res, done
