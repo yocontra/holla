@@ -2264,12 +2264,6 @@ exports.qs = function (obj) {
     function Vein(options) {
       var _base, _base1, _base2, _base3, _base4, _base5, _base6, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6;
       this.options = options != null ? options : {};
-      this.getSender = __bind(this.getSender, this);
-
-      this.getSubscriber = __bind(this.getSubscriber, this);
-
-      this.addCookies = __bind(this.addCookies, this);
-
       this.handleClose = __bind(this.handleClose, this);
 
       this.handleMessage = __bind(this.handleMessage, this);
@@ -2383,22 +2377,22 @@ exports.qs = function (obj) {
     };
 
     Vein.prototype.disconnect = function() {
-      return this.socket.close();
+      this.socket.close();
+    };
+
+    Vein.prototype.connect = function() {
+      this.socket.open();
     };
 
     Vein.prototype.ready = function(cb) {
-      if (!this.connected) {
-        this._ready.push(cb);
-      }
+      this._ready.push(cb);
       if (this.connected) {
         cb(this.services);
       }
     };
 
     Vein.prototype.close = function(cb) {
-      if (this.connected) {
-        this._close.push(cb);
-      }
+      this._close.push(cb);
       if (!this.connected) {
         cb();
       }
@@ -2407,27 +2401,30 @@ exports.qs = function (obj) {
     Vein.prototype.handleOpen = function() {
       var _this = this;
       this.getSender('list')(function(services) {
-        var cb, service, _i, _j, _len, _len1, _ref;
+        var cb, service, _i, _j, _len, _len1, _ref, _results;
+        _this.connected = true;
         for (_i = 0, _len = services.length; _i < _len; _i++) {
           service = services[_i];
           _this[service] = _this.getSender(service);
           _this.subscribe[service] = _this.getSubscriber(service);
         }
         _this.services = services;
-        _this.connected = true;
         _ref = _this._ready;
+        _results = [];
         for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
           cb = _ref[_j];
-          cb(services);
+          _results.push(cb(services));
         }
-        return _this._ready = [];
+        return _results;
       });
     };
 
     Vein.prototype.handleError = function() {
       var args;
       args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      console.log("Error:", args);
+      if (this.options.debug) {
+        console.log("Error:", args);
+      }
     };
 
     Vein.prototype.handleMessage = function(msg) {
@@ -2465,7 +2462,6 @@ exports.qs = function (obj) {
         cb = _ref[_i];
         cb.apply(null, args);
       }
-      this._close = [];
     };
 
     Vein.prototype.addCookies = function(cookies) {

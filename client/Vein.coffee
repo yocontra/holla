@@ -59,31 +59,37 @@ class Vein
     return all()[key] if key and not val
     return set key, val, expires if key and val
 
-  disconnect: -> @socket.close()
+  disconnect: -> 
+    @socket.close()
+    return
+
+  connect: ->
+    @socket.open()
+    return
+
   ready: (cb) ->
-    @_ready.push cb unless @connected
+    @_ready.push cb
     cb @services if @connected
     return
 
   close: (cb) -> 
-    @_close.push cb if @connected
+    @_close.push cb
     cb() unless @connected
     return
 
   # Event handlers
   handleOpen: =>
     @getSender('list') (services) =>
+      @connected = true
       for service in services
         @[service] = @getSender service
         @subscribe[service] = @getSubscriber service
       @services = services
-      @connected = true
       cb services for cb in @_ready
-      @_ready = []
     return
 
   handleError: (args...) =>
-    console.log "Error:", args
+    console.log "Error:", args if @options.debug
     return
 
   handleMessage: (msg) =>
@@ -100,24 +106,27 @@ class Vein
 
   handleClose: (args...) =>
     @connected = false
+    #@callbacks = {}
+    #delete @[k] for k,v of @subscribe
+    #@subscribe = {}
+    #@services = null
     cb args... for cb in @_close
-    @_close = []
     return
 
   # Utilities
-  addCookies: (cookies) =>
+  addCookies: (cookies) ->
     existing = @cookie()
     @cookie key, val for key, val of cookies when existing[key] isnt val
     return
 
-  getSubscriber: (service) => 
+  getSubscriber: (service) -> 
     sub = (cb) =>
       @subscribe[service].listeners.push cb
       return
     sub.listeners = []
     return sub
 
-  getSender: (service) =>
+  getSender: (service) ->
     (args..., cb) =>
       id = @getId()
       @callbacks[id] = cb

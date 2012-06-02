@@ -62,11 +62,15 @@ describe 'Vein', ->
       done()
 
     it 'should call', (done) ->
+      called = false
       serv.use (req, res, next) -> next()
-      serv.use (req, res, next) -> next done()
+      serv.use (req, res, next) ->
+        called = true
+        next()
       serv.add 'test', (res) -> res.send()
       client = getClient()
       client.ready (services) ->
-        client.test client.disconnect
-      done()
-
+        client.test ->
+          called.should.equal true
+          client.disconnect()
+          done()
