@@ -2401,7 +2401,7 @@ exports.qs = function (obj) {
     Vein.prototype.handleOpen = function() {
       var _this = this;
       this.emit('open');
-      this.getSender('list')(function(services) {
+      this.getSender('__list')(function(services) {
         var service, _i, _len;
         _this.connected = true;
         for (_i = 0, _len = services.length; _i < _len; _i++) {

@@ -79,7 +79,7 @@ class Vein extends eio.EventEmitter
   # Event handlers
   handleOpen: =>
     @emit 'open'
-    @getSender('list') (services) =>
+    @getSender('__list') (services) =>
       @connected = true
       for service in services
         @[service] = @getSender service

@@ -5,7 +5,7 @@ ServiceResponse = require './ServiceResponse'
 {readdirSync} = require 'fs'
 {join, basename, extname} = require 'path'
 
-class Vein
+class Vein extends EventEmitter
   constructor: (hook, @options={}, cb) ->
     @options.path ?= '/vein'
     if typeof hook is 'number'
@@ -13,7 +13,6 @@ class Vein
     else
       @server = engine.attach hook, @options
       @server.httpServer = hook
-    @services.list = (res) => res.send Object.keys @services
     @server.on 'connection', @handleConnection
     return
 
@@ -50,10 +49,13 @@ class Vein
 
   # Core
   handleConnection: (socket) =>
+    @emit 'connection', socket
     socket.on 'message', (msg) => @handleMessage socket, msg
 
   handleMessage: (socket, msg) =>
     res = new ServiceResponse socket, msg
+    return res.send Object.keys @services if res.req.service is '__list'
+    @emit 'request', res
     @runMiddleware res.req, res, (err) =>
       return res.error err if err?
       return res.error "Invalid message" unless res.valid is true

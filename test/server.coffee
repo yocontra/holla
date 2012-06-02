@@ -11,7 +11,7 @@ getClient = -> new Client port: port, transports: ['websocket']
 
 describe 'Vein', ->
   beforeEach ->
-    delete serv.services[key] for key, val of serv.services when key isnt 'list'
+    serv.services = {}
     serv.stack = []
     serv.drop()
 
@@ -38,7 +38,7 @@ describe 'Vein', ->
 
       client = getClient()
       client.ready (services) ->
-        services.should.eql ['list', 'test']
+        services.should.eql ['test']
         client.test 5, 6, (num) ->
           num.should.equal 30
           client.disconnect()
