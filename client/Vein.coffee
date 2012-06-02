@@ -2,7 +2,7 @@ ServerError = require './ServerError'
 isBrowser = typeof window isnt 'undefined'
 eio = require (if isBrowser then 'node_modules/engine.io-client/lib/engine.io-client' else 'engine.io-client')
 
-class Vein
+class Vein extends eio.EventEmitter
   constructor: (@options={}) ->
     if isBrowser
       @options.host ?= window.location.hostname
@@ -13,6 +13,7 @@ class Vein
     @options.path ?= '/vein'
     @options.forceBust ?= true
     @options.debug ?= false
+
     @socket = new eio.Socket @options
     @socket.on 'open', @handleOpen
     @socket.on 'error', @handleError
@@ -23,8 +24,6 @@ class Vein
   connected: false
   services: null
   cookies: {}
-  _ready: []
-  _close: []
   callbacks: {}
   subscribe: {}
 
@@ -68,32 +67,33 @@ class Vein
     return
 
   ready: (cb) ->
-    @_ready.push cb
+    @on 'ready', cb
     cb @services if @connected
     return
 
   close: (cb) -> 
-    @_close.push cb
+    @on 'close', cb
     cb() unless @connected
     return
 
   # Event handlers
   handleOpen: =>
+    @emit 'open'
     @getSender('list') (services) =>
       @connected = true
       for service in services
         @[service] = @getSender service
         @subscribe[service] = @getSubscriber service
       @services = services
-      cb services for cb in @_ready
+      @emit 'ready', services
     return
 
   handleError: (args...) =>
-    console.log "Error:", args if @options.debug
+    @emit 'error', args...
     return
 
   handleMessage: (msg) =>
-    console.log 'IN:', msg if @options.debug
+    @emit 'inbound', msg
     {id, service, args, error, cookies} = JSON.parse msg
     args = [args] unless Array.isArray args
     throw new ServerError error if error?
@@ -110,7 +110,7 @@ class Vein
     #delete @[k] for k,v of @subscribe
     #@subscribe = {}
     #@services = null
-    cb args... for cb in @_close
+    @emit 'close', args...
     return
 
   # Utilities
@@ -131,7 +131,7 @@ class Vein
       id = @getId()
       @callbacks[id] = cb
       msg = JSON.stringify id: id, service: service, args: args, cookies: @cookie()
-      console.log 'OUT:', msg if @options.debug
+      @emit 'outbound', msg
       @socket.send msg
       return
 

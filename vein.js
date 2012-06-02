@@ -2251,6 +2251,8 @@ exports.qs = function (obj) {
 (function() {
   var ServerError, Vein, eio, isBrowser,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     __slice = [].slice;
 
   ServerError = require('./ServerError');
@@ -2259,7 +2261,9 @@ exports.qs = function (obj) {
 
   eio = require((isBrowser ? 'node_modules/engine.io-client/lib/engine.io-client' : 'engine.io-client'));
 
-  Vein = (function() {
+  Vein = (function(_super) {
+
+    __extends(Vein, _super);
 
     function Vein(options) {
       var _base, _base1, _base2, _base3, _base4, _base5, _base6, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6;
@@ -2310,10 +2314,6 @@ exports.qs = function (obj) {
     Vein.prototype.services = null;
 
     Vein.prototype.cookies = {};
-
-    Vein.prototype._ready = [];
-
-    Vein.prototype._close = [];
 
     Vein.prototype.callbacks = {};
 
@@ -2385,14 +2385,14 @@ exports.qs = function (obj) {
     };
 
     Vein.prototype.ready = function(cb) {
-      this._ready.push(cb);
+      this.on('ready', cb);
       if (this.connected) {
         cb(this.services);
       }
     };
 
     Vein.prototype.close = function(cb) {
-      this._close.push(cb);
+      this.on('close', cb);
       if (!this.connected) {
         cb();
       }
@@ -2400,8 +2400,9 @@ exports.qs = function (obj) {
 
     Vein.prototype.handleOpen = function() {
       var _this = this;
+      this.emit('open');
       this.getSender('list')(function(services) {
-        var cb, service, _i, _j, _len, _len1, _ref, _results;
+        var service, _i, _len;
         _this.connected = true;
         for (_i = 0, _len = services.length; _i < _len; _i++) {
           service = services[_i];
@@ -2409,29 +2410,19 @@ exports.qs = function (obj) {
           _this.subscribe[service] = _this.getSubscriber(service);
         }
         _this.services = services;
-        _ref = _this._ready;
-        _results = [];
-        for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
-          cb = _ref[_j];
-          _results.push(cb(services));
-        }
-        return _results;
+        return _this.emit('ready', services);
       });
     };
 
     Vein.prototype.handleError = function() {
       var args;
       args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      if (this.options.debug) {
-        console.log("Error:", args);
-      }
+      this.emit.apply(this, ['error'].concat(__slice.call(args)));
     };
 
     Vein.prototype.handleMessage = function(msg) {
       var args, cookies, error, fn, id, service, _i, _len, _ref, _ref1, _ref2;
-      if (this.options.debug) {
-        console.log('IN:', msg);
-      }
+      this.emit('inbound', msg);
       _ref = JSON.parse(msg), id = _ref.id, service = _ref.service, args = _ref.args, error = _ref.error, cookies = _ref.cookies;
       if (!Array.isArray(args)) {
         args = [args];
@@ -2454,14 +2445,10 @@ exports.qs = function (obj) {
     };
 
     Vein.prototype.handleClose = function() {
-      var args, cb, _i, _len, _ref;
+      var args;
       args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
       this.connected = false;
-      _ref = this._close;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        cb = _ref[_i];
-        cb.apply(null, args);
-      }
+      this.emit.apply(this, ['close'].concat(__slice.call(args)));
     };
 
     Vein.prototype.addCookies = function(cookies) {
@@ -2498,9 +2485,7 @@ exports.qs = function (obj) {
           args: args,
           cookies: _this.cookie()
         });
-        if (_this.options.debug) {
-          console.log('OUT:', msg);
-        }
+        _this.emit('outbound', msg);
         _this.socket.send(msg);
       };
     };
@@ -2515,7 +2500,7 @@ exports.qs = function (obj) {
 
     return Vein;
 
-  })();
+  })(eio.EventEmitter);
 
   if (typeof define === 'function') {
     define(function() {

@@ -12,14 +12,12 @@ describe 'multiple clients', ->
   beforeEach -> serv.drop()
 
   it 'should work', (done) ->
-    return done()
     client = getClient()
     client.ready (services) ->
       client.disconnect()
       done()
 
   it 'should work on the second client', (done) ->
-    return done()
     client = getClient()
     client.ready (services) ->
       client.disconnect()
