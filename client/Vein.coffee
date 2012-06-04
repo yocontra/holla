@@ -33,7 +33,7 @@ class Vein extends eio.EventEmitter
         out = {}
         for cookie in document.cookie.split ";"
           pair = cookie.split "="
-          out[pair[0]] = pair[1]
+          out[pair[0].replace(/^\s*([\S\s]*)\b\s*$/,'$1')] = pair[1].replace(/^\s*([\S\s]*)\b\s*$/,'$1')
         return out
       set = (key, val, expires) ->
         sExpires = ""

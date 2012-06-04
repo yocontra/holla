@@ -2330,7 +2330,7 @@ exports.qs = function (obj) {
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
             cookie = _ref[_i];
             pair = cookie.split("=");
-            out[pair[0]] = pair[1];
+            out[pair[0].replace(/^\s*([\S\s]*)\b\s*$/, '$1')] = pair[1].replace(/^\s*([\S\s]*)\b\s*$/, '$1');
           }
           return out;
         };
