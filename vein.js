@@ -2331,7 +2331,7 @@ exports.qs = function (obj) {
             cookie = _ref[_i];
             pair = cookie.split("=");
             if (!(pair[0] && pair[1])) {
-              return;
+              continue;
             }
             out[pair[0].trim()] = pair[1].trim();
           }

@@ -33,7 +33,7 @@ class Vein extends eio.EventEmitter
         out = {}
         for cookie in document.cookie.split ";"
           pair = cookie.split "="
-          return unless pair[0] and pair[1]
+          continue unless pair[0] and pair[1]
           out[pair[0].trim()] = pair[1].trim()
         return out
       set = (key, val, expires) ->
