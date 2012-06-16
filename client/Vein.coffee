@@ -59,11 +59,11 @@ class Vein extends eio.EventEmitter
     return all()[key] if key and not val
     return set key, val, expires if key and val
 
-  disconnect: -> 
+  disconnect: => 
     @socket.close()
     return
 
-  connect: ->
+  connect: =>
     @socket.open()
     return
 
@@ -77,15 +77,23 @@ class Vein extends eio.EventEmitter
     cb() unless @connected
     return
 
+  refresh: (cb) => 
+    @getSender('__list') (services) =>
+      for name, service of @services
+        delete @[name]
+        delete @subscribe[name]
+      for name in services
+        @[name] = @getSender name
+        @subscribe[name] = @getSubscriber name
+      @services = services
+      cb services
+    return
+  
   # Event handlers
   handleOpen: =>
     @emit 'open'
-    @getSender('__list') (services) =>
+    @refresh (services) =>
       @connected = true
-      for service in services
-        @[service] = @getSender service
-        @subscribe[service] = @getSubscriber service
-      @services = services
       @emit 'ready', services
     return
 
@@ -136,7 +144,7 @@ class Vein extends eio.EventEmitter
       @socket.send msg
       return
 
-  getId: ->
+  getId: =>
     rand = -> (((1 + Math.random()) * 0x10000000) | 0).toString 16
     rand()+rand()+rand()
 

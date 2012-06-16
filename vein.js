@@ -2268,6 +2268,8 @@ exports.qs = function (obj) {
     function Vein(options) {
       var _base, _base1, _base2, _base3, _base4, _base5, _base6, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6;
       this.options = options != null ? options : {};
+      this.getId = __bind(this.getId, this);
+
       this.handleClose = __bind(this.handleClose, this);
 
       this.handleMessage = __bind(this.handleMessage, this);
@@ -2275,6 +2277,12 @@ exports.qs = function (obj) {
       this.handleError = __bind(this.handleError, this);
 
       this.handleOpen = __bind(this.handleOpen, this);
+
+      this.refresh = __bind(this.refresh, this);
+
+      this.connect = __bind(this.connect, this);
+
+      this.disconnect = __bind(this.disconnect, this);
 
       this.cookie = __bind(this.cookie, this);
 
@@ -2401,18 +2409,31 @@ exports.qs = function (obj) {
       }
     };
 
+    Vein.prototype.refresh = function(cb) {
+      var _this = this;
+      this.getSender('__list')(function(services) {
+        var name, service, _i, _len, _ref;
+        _ref = _this.services;
+        for (name in _ref) {
+          service = _ref[name];
+          delete _this[name];
+          delete _this.subscribe[name];
+        }
+        for (_i = 0, _len = services.length; _i < _len; _i++) {
+          name = services[_i];
+          _this[name] = _this.getSender(name);
+          _this.subscribe[name] = _this.getSubscriber(name);
+        }
+        _this.services = services;
+        return cb(services);
+      });
+    };
+
     Vein.prototype.handleOpen = function() {
       var _this = this;
       this.emit('open');
-      this.getSender('__list')(function(services) {
-        var service, _i, _len;
+      this.refresh(function(services) {
         _this.connected = true;
-        for (_i = 0, _len = services.length; _i < _len; _i++) {
-          service = services[_i];
-          _this[service] = _this.getSender(service);
-          _this.subscribe[service] = _this.getSubscriber(service);
-        }
-        _this.services = services;
         return _this.emit('ready', services);
       });
     };
