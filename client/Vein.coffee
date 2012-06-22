@@ -1,6 +1,6 @@
 ServerError = require './ServerError'
 isBrowser = typeof window isnt 'undefined'
-eio = require (if isBrowser then 'deps/engine.io-client/lib/engine.io-client' else '../deps/engine.io-client')
+eio = require (if isBrowser then 'node_modules/engine.io-client-f/lib/engine.io-client' else 'engine.io-client-f')
 
 class Vein extends eio.EventEmitter
   constructor: (@options={}) ->

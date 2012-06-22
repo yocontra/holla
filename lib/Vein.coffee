@@ -1,5 +1,5 @@
 async = require 'async'
-engine = require '../deps/engine.io'
+engine = require 'engine.io-f'
 ServiceResponse = require './ServiceResponse'
 {EventEmitter} = require 'events'
 {readdirSync} = require 'fs'

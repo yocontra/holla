@@ -1,4 +1,4 @@
-(function(){var global = this;function debug(){return debug};function require(p, parent){ var path = require.resolve(p) , mod = require.modules[path]; if (!mod) throw new Error('failed to require "' + p + '" from ' + parent); if (!mod.exports) { mod.exports = {}; mod.call(mod.exports, mod, mod.exports, require.relative(path), global); } return mod.exports;}require.modules = {};require.resolve = function(path){ var orig = path , reg = path + '.js' , index = path + '/index.js'; return require.modules[reg] && reg || require.modules[index] && index || orig;};require.register = function(path, fn){ require.modules[path] = fn;};require.relative = function(parent) { return function(p){ if ('debug' == p) return debug; if ('.' != p.charAt(0)) return require(p); var path = parent.split('/') , segs = p.split('/'); path.pop(); for (var i = 0; i < segs.length; i++) { var seg = segs[i]; if ('..' == seg) path.pop(); else if ('.' != seg) path.push(seg); } return require(path.join('/'), parent); };};require.register("deps/engine.io-client/lib/engine.io-client.js", function(module, exports, require, global){
+(function(){var global = this;function debug(){return debug};function require(p, parent){ var path = require.resolve(p) , mod = require.modules[path]; if (!mod) throw new Error('failed to require "' + p + '" from ' + parent); if (!mod.exports) { mod.exports = {}; mod.call(mod.exports, mod, mod.exports, require.relative(path), global); } return mod.exports;}require.modules = {};require.resolve = function(path){ var orig = path , reg = path + '.js' , index = path + '/index.js'; return require.modules[reg] && reg || require.modules[index] && index || orig;};require.register = function(path, fn){ require.modules[path] = fn;};require.relative = function(parent) { return function(p){ if ('debug' == p) return debug; if ('.' != p.charAt(0)) return require(p); var path = parent.split('/') , segs = p.split('/'); path.pop(); for (var i = 0; i < segs.length; i++) { var seg = segs[i]; if ('..' == seg) path.pop(); else if ('.' != seg) path.push(seg); } return require(path.join('/'), parent); };};require.register("node_modules/engine.io-client-f/lib/engine.io-client.js", function(module, exports, require, global){
 
 /**
  * Client version.
@@ -58,7 +58,7 @@ exports.Transport = require('./transport');
 
 exports.transports = require('./transports');
 
-});require.register("deps/engine.io-client/lib/event-emitter.js", function(module, exports, require, global){
+});require.register("node_modules/engine.io-client-f/lib/event-emitter.js", function(module, exports, require, global){
 
 /**
  * Module exports.
@@ -249,7 +249,7 @@ EventEmitter.prototype.addEventListener = EventEmitter.prototype.on;
 EventEmitter.prototype.removeEventListener = EventEmitter.prototype.removeListener;
 EventEmitter.prototype.dispatchEvent = EventEmitter.prototype.emit;
 
-});require.register("deps/engine.io-client/lib/parser.js", function(module, exports, require, global){
+});require.register("node_modules/engine.io-client-f/lib/parser.js", function(module, exports, require, global){
 /**
  * Module dependencies.
  */
@@ -413,7 +413,7 @@ exports.decodePayload = function (data) {
   return packets;
 };
 
-});require.register("deps/engine.io-client/lib/socket.js", function(module, exports, require, global){
+});require.register("node_modules/engine.io-client-f/lib/socket.js", function(module, exports, require, global){
 /**
  * Module dependencies.
  */
@@ -796,7 +796,7 @@ function rnd () {
   return String(Math.random()).substr(5) + String(Math.random()).substr(5);
 }
 
-});require.register("deps/engine.io-client/lib/transport.js", function(module, exports, require, global){
+});require.register("node_modules/engine.io-client-f/lib/transport.js", function(module, exports, require, global){
 
 /**
  * Module dependencies.
@@ -937,7 +937,7 @@ Transport.prototype.onClose = function () {
   this.emit('close');
 };
 
-});require.register("deps/engine.io-client/lib/transports/polling.js", function(module, exports, require, global){
+});require.register("node_modules/engine.io-client-f/lib/transports/polling.js", function(module, exports, require, global){
 /**
  * Module dependencies.
  */
@@ -1141,7 +1141,7 @@ Polling.prototype.uri = function () {
   return schema + '://' + this.host + port + this.path + query;
 };
 
-});require.register("deps/engine.io-client/lib/transports/flashsocket.js", function(module, exports, require, global){
+});require.register("node_modules/engine.io-client-f/lib/transports/flashsocket.js", function(module, exports, require, global){
 
 /**
  * Module dependencies.
@@ -1307,7 +1307,7 @@ function load (arr, fn) {
   process(0);
 };
 
-});require.register("deps/engine.io-client/lib/transports/polling-jsonp.js", function(module, exports, require, global){
+});require.register("node_modules/engine.io-client-f/lib/transports/polling-jsonp.js", function(module, exports, require, global){
 
 /**
  * Module requirements.
@@ -1516,7 +1516,7 @@ JSONPPolling.prototype.doWrite = function (data, fn) {
   }
 };
 
-});require.register("deps/engine.io-client/lib/transports/polling-xhr.js", function(module, exports, require, global){
+});require.register("node_modules/engine.io-client-f/lib/transports/polling-xhr.js", function(module, exports, require, global){
 /**
  * Module requirements.
  */
@@ -1793,7 +1793,7 @@ if (global.ActiveXObject) {
   });
 }
 
-});require.register("deps/engine.io-client/lib/transports/index.js", function(module, exports, require, global){
+});require.register("node_modules/engine.io-client-f/lib/transports/index.js", function(module, exports, require, global){
 
 /**
  * Module dependencies
@@ -1835,7 +1835,7 @@ function polling (opts) {
   }
 };
 
-});require.register("deps/engine.io-client/lib/transports/websocket.js", function(module, exports, require, global){
+});require.register("node_modules/engine.io-client-f/lib/transports/websocket.js", function(module, exports, require, global){
 
 /**
  * Module dependencies.
@@ -1979,7 +1979,7 @@ function check () {
   return !!ws();
 }
 
-});require.register("deps/engine.io-client/lib/util.js", function(module, exports, require, global){
+});require.register("node_modules/engine.io-client-f/lib/util.js", function(module, exports, require, global){
 
 /**
  * Status of page load.
@@ -2263,7 +2263,7 @@ exports.qs = function (obj) {
 
   isBrowser = typeof window !== 'undefined';
 
-  eio = require((isBrowser ? 'deps/engine.io-client/lib/engine.io-client' : '../deps/engine.io-client'));
+  eio = require((isBrowser ? 'node_modules/engine.io-client-f/lib/engine.io-client' : 'engine.io-client-f'));
 
   Vein = (function(_super) {
 
