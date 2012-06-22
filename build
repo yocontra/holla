@@ -4,10 +4,10 @@ mkdir dist
 coffee -o dist -c client/*
 
 # build
-browserbuild -g Vein -m Vein -b dist/ node_modules/engine.io-client/lib/* dist/* > vein.js
+node_modules/.bin/browserbuild -g Vein -m Vein -b dist/ deps/engine.io-client/lib/* dist/* > vein.js
 
 # minify
-uglifyjs -nc --unsafe -mt -o vein.min.js vein.js
+node_modules/.bin/uglifyjs -nc --unsafe -mt -o vein.min.js vein.js
 echo "File size (minified): " && cat vein.min.js | wc -c
 echo "File size (gzipped): " && cat vein.min.js | gzip -9f  | wc -c
 cp ./vein.js ./examples/chat/vein.js
