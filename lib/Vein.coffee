@@ -37,8 +37,9 @@ class Vein extends EventEmitter
 
   addFolder: (folder) ->
     for file in readdirSync folder
-      serviceName = basename file, extname file
-      try
+      ext = extname file
+      serviceName = basename file, ext
+      if require.extensions[ext]?
         service = require join folder, file
         @add serviceName, service
     return @
