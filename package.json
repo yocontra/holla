@@ -1,6 +1,6 @@
 {
    "name":"vein",
-   "description":"WebSocket RPC and PubSub",
+   "description":"WebSocket RPC",
    "version":"0.3.3",
    "homepage":"http://github.com/wearefractal/vein",
    "repository":"git://github.com/wearefractal/vein.git",
