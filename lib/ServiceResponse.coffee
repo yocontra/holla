@@ -21,15 +21,6 @@ class ServiceResponse
         type: err.type
         stack: err.stack
 
-  getAnonymousMessage: (args) =>
-    JSON.stringify
-      service: @req.service
-      args: args if args?
-
-  publish: (args...) =>
-    socket.send @getAnonymousMessage args for id, socket of @socket.server.clients
-    return @
-
   close: ->
     @socket.close()
     return @

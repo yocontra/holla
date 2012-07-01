@@ -2329,8 +2329,6 @@ exports.qs = function (obj) {
 
     Vein.prototype.callbacks = {};
 
-    Vein.prototype.subscribe = {};
-
     Vein.prototype.cookie = function(key, val, expires) {
       var all, remove, set,
         _this = this;
@@ -2416,19 +2414,12 @@ exports.qs = function (obj) {
     Vein.prototype.refresh = function(cb) {
       var _this = this;
       this.getSender('__list')(function(services) {
-        var name, service, _i, _len, _ref;
-        _ref = _this.services;
-        for (name in _ref) {
-          service = _ref[name];
-          delete _this[name];
-          delete _this.subscribe[name];
-        }
+        var name, _i, _len;
+        _this.services = services;
         for (_i = 0, _len = services.length; _i < _len; _i++) {
           name = services[_i];
           _this[name] = _this.getSender(name);
-          _this.subscribe[name] = _this.getSubscriber(name);
         }
-        _this.services = services;
         return cb(services);
       });
     };
@@ -2449,7 +2440,7 @@ exports.qs = function (obj) {
     };
 
     Vein.prototype.handleMessage = function(msg) {
-      var args, cookies, error, fn, id, service, _i, _len, _ref, _ref1, _ref2;
+      var args, cookies, error, id, service, _base, _ref;
       this.emit('inbound', msg);
       _ref = JSON.parse(msg), id = _ref.id, service = _ref.service, args = _ref.args, error = _ref.error, cookies = _ref.cookies;
       if (!Array.isArray(args)) {
@@ -2461,14 +2452,8 @@ exports.qs = function (obj) {
       if (cookies != null) {
         this.addCookies(cookies);
       }
-      if ((id != null) && this.callbacks[id]) {
-        (_ref1 = this.callbacks)[id].apply(_ref1, args);
-      } else if ((service != null) && this.subscribe[service]) {
-        _ref2 = this.subscribe[service].listeners;
-        for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
-          fn = _ref2[_i];
-          fn.apply(null, args);
-        }
+      if (typeof (_base = this.callbacks)[id] === "function") {
+        _base[id].apply(_base, args);
       }
     };
 
@@ -2488,16 +2473,6 @@ exports.qs = function (obj) {
           this.cookie(key, val);
         }
       }
-    };
-
-    Vein.prototype.getSubscriber = function(service) {
-      var sub,
-        _this = this;
-      sub = function(cb) {
-        _this.subscribe[service].listeners.push(cb);
-      };
-      sub.listeners = [];
-      return sub;
     };
 
     Vein.prototype.getSender = function(service) {

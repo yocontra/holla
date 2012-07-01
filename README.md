@@ -67,16 +67,6 @@ vein.add('getNumber', function (res, name, num) {
 });
 ```
 
-### PubSub
-
-You can use res.publish() to send a message to everyone subscribing to a service
-
-```javascript
-vein.add('publishMessage', function (res, msg) {
-  res.publish(res.cookie('username'), msg);
-});
-```
-
 ### Cookies
 
 The server can read and write cookies to the client via res.cookie()
@@ -146,17 +136,6 @@ When calling a service the format is vein.serviceName(args..., callback)
 ```javascript
 vein.getNumber('john', 2, function (msg) {
   console.log(msg);
-});
-```
-
-### PubSub
-
-Prefixing a service with .subscribe allows the server to send unsolicited messages to the client.
-Subscribing to a service does not communicate to the server in any way.
-
-```javascript
-vein.subscribe.publishMessage(function (user, message) {
-  console.log(user, "just said:", message);
 });
 ```
   

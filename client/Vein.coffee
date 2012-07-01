@@ -25,7 +25,6 @@ class Vein extends eio.EventEmitter
   services: null
   cookies: {}
   callbacks: {}
-  subscribe: {}
 
   cookie: (key, val, expires) =>
     if typeof window isnt 'undefined' # browser
@@ -79,13 +78,8 @@ class Vein extends eio.EventEmitter
 
   refresh: (cb) => 
     @getSender('__list') (services) =>
-      for name, service of @services
-        delete @[name]
-        delete @subscribe[name]
-      for name in services
-        @[name] = @getSender name
-        @subscribe[name] = @getSubscriber name
       @services = services
+      @[name] = @getSender name for name in services
       cb services
     return
   
@@ -107,18 +101,11 @@ class Vein extends eio.EventEmitter
     args = [args] unless Array.isArray args
     throw new ServerError error if error?
     @addCookies cookies if cookies?
-    if id? and @callbacks[id]
-      @callbacks[id] args...
-    else if service? and @subscribe[service]
-      fn args... for fn in @subscribe[service].listeners
+    @callbacks[id]? args...
     return
 
   handleClose: (args...) =>
     @connected = false
-    #@callbacks = {}
-    #delete @[k] for k,v of @subscribe
-    #@subscribe = {}
-    #@services = null
     @emit 'close', args...
     return
 
@@ -127,13 +114,6 @@ class Vein extends eio.EventEmitter
     existing = @cookie()
     @cookie key, val for key, val of cookies when existing[key] isnt val
     return
-
-  getSubscriber: (service) -> 
-    sub = (cb) =>
-      @subscribe[service].listeners.push cb
-      return
-    sub.listeners = []
-    return sub
 
   getSender: (service) ->
     (args..., cb) =>
