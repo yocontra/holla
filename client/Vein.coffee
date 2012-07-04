@@ -1,6 +1,6 @@
 ServerError = require './ServerError'
 isBrowser = typeof window isnt 'undefined'
-eio = require (if isBrowser then 'node_modules/engine.io-client-f/lib/engine.io-client' else 'engine.io-client-f')
+eio = require (if isBrowser then 'node_modules/engine.io-client/lib/engine.io-client' else 'engine.io-client')
 
 class Vein extends eio.EventEmitter
   constructor: (@options={}) ->
@@ -9,7 +9,6 @@ class Vein extends eio.EventEmitter
       @options.port ?= (if window.location.port.length > 0 then parseInt window.location.port else 80)
       @options.secure ?= (window.location.protocol is 'https:')
 
-    @options.transports ?= ["websocket", "polling"]
     @options.path ?= '/vein'
     @options.forceBust ?= true
     @options.debug ?= false

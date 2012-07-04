@@ -1,4 +1,4 @@
-(function(){var global = this;function debug(){return debug};function require(p, parent){ var path = require.resolve(p) , mod = require.modules[path]; if (!mod) throw new Error('failed to require "' + p + '" from ' + parent); if (!mod.exports) { mod.exports = {}; mod.call(mod.exports, mod, mod.exports, require.relative(path), global); } return mod.exports;}require.modules = {};require.resolve = function(path){ var orig = path , reg = path + '.js' , index = path + '/index.js'; return require.modules[reg] && reg || require.modules[index] && index || orig;};require.register = function(path, fn){ require.modules[path] = fn;};require.relative = function(parent) { return function(p){ if ('debug' == p) return debug; if ('.' != p.charAt(0)) return require(p); var path = parent.split('/') , segs = p.split('/'); path.pop(); for (var i = 0; i < segs.length; i++) { var seg = segs[i]; if ('..' == seg) path.pop(); else if ('.' != seg) path.push(seg); } return require(path.join('/'), parent); };};require.register("node_modules/engine.io-client-f/lib/engine.io-client.js", function(module, exports, require, global){
+(function(){var global = this;function debug(){return debug};function require(p, parent){ var path = require.resolve(p) , mod = require.modules[path]; if (!mod) throw new Error('failed to require "' + p + '" from ' + parent); if (!mod.exports) { mod.exports = {}; mod.call(mod.exports, mod, mod.exports, require.relative(path), global); } return mod.exports;}require.modules = {};require.resolve = function(path){ var orig = path , reg = path + '.js' , index = path + '/index.js'; return require.modules[reg] && reg || require.modules[index] && index || orig;};require.register = function(path, fn){ require.modules[path] = fn;};require.relative = function(parent) { return function(p){ if ('debug' == p) return debug; if ('.' != p.charAt(0)) return require(p); var path = parent.split('/') , segs = p.split('/'); path.pop(); for (var i = 0; i < segs.length; i++) { var seg = segs[i]; if ('..' == seg) path.pop(); else if ('.' != seg) path.push(seg); } return require(path.join('/'), parent); };};require.register("node_modules/engine.io-client/lib/engine.io-client.js", function(module, exports, require, global){
 
 /**
  * Client version.
@@ -58,7 +58,7 @@ exports.Transport = require('./transport');
 
 exports.transports = require('./transports');
 
-});require.register("node_modules/engine.io-client-f/lib/event-emitter.js", function(module, exports, require, global){
+});require.register("node_modules/engine.io-client/lib/event-emitter.js", function(module, exports, require, global){
 
 /**
  * Module exports.
@@ -249,7 +249,7 @@ EventEmitter.prototype.addEventListener = EventEmitter.prototype.on;
 EventEmitter.prototype.removeEventListener = EventEmitter.prototype.removeListener;
 EventEmitter.prototype.dispatchEvent = EventEmitter.prototype.emit;
 
-});require.register("node_modules/engine.io-client-f/lib/parser.js", function(module, exports, require, global){
+});require.register("node_modules/engine.io-client/lib/parser.js", function(module, exports, require, global){
 /**
  * Module dependencies.
  */
@@ -267,6 +267,7 @@ var packets = exports.packets = {
   , pong:     3
   , message:  4
   , upgrade:  5
+  , noop:     6
 };
 
 var packetslist = util.keys(packets);
@@ -413,7 +414,7 @@ exports.decodePayload = function (data) {
   return packets;
 };
 
-});require.register("node_modules/engine.io-client-f/lib/socket.js", function(module, exports, require, global){
+});require.register("node_modules/engine.io-client/lib/socket.js", function(module, exports, require, global){
 /**
  * Module dependencies.
  */
@@ -460,6 +461,7 @@ function Socket (opts) {
   this.transports = opts.transports || ['polling', 'websocket', 'flashsocket'];
   this.readyState = '';
   this.writeBuffer = [];
+  this.policyPort = opts.policyPort || 843;
   this.open();
 };
 
@@ -494,6 +496,7 @@ Socket.prototype.createTransport = function (name) {
     , query: query
     , forceJSONP: this.forceJSONP
     , flashPath: this.flashPath
+    , policyPort: this.policyPort
   });
 
   return transport;
@@ -663,7 +666,11 @@ Socket.prototype.onPacket = function (packet) {
 
       case 'message':
         this.emit('message', packet.data);
-        this.onmessage && this.onmessage.call(this, { data: packet.data });
+        var event = { data: packet.data };
+        event.toString = function () {
+          return packet.data;
+        }
+        this.onmessage && this.onmessage.call(this, event);
         break;
     }
   } else {
@@ -796,7 +803,7 @@ function rnd () {
   return String(Math.random()).substr(5) + String(Math.random()).substr(5);
 }
 
-});require.register("node_modules/engine.io-client-f/lib/transport.js", function(module, exports, require, global){
+});require.register("node_modules/engine.io-client/lib/transport.js", function(module, exports, require, global){
 
 /**
  * Module dependencies.
@@ -937,7 +944,7 @@ Transport.prototype.onClose = function () {
   this.emit('close');
 };
 
-});require.register("node_modules/engine.io-client-f/lib/transports/polling.js", function(module, exports, require, global){
+});require.register("node_modules/engine.io-client/lib/transports/polling.js", function(module, exports, require, global){
 /**
  * Module dependencies.
  */
@@ -1141,13 +1148,13 @@ Polling.prototype.uri = function () {
   return schema + '://' + this.host + port + this.path + query;
 };
 
-});require.register("node_modules/engine.io-client-f/lib/transports/flashsocket.js", function(module, exports, require, global){
+});require.register("node_modules/engine.io-client/lib/transports/flashsocket.js", function(module, exports, require, global){
 
 /**
  * Module dependencies.
  */
 
-var WebSocket = require('./websocket')
+var WS = require('./websocket')
   , util = require('../util')
 
 /**
@@ -1163,15 +1170,16 @@ module.exports = FlashWS;
  */
 
 function FlashWS (options) {
-  WebSocket.call(this, options);
+  WS.call(this, options);
   this.flashPath = options.flashPath;
+  this.policyPort = options.policyPort;
 };
 
 /**
  * Inherits from WebSocket.
  */
 
-util.inherits(FlashWS, WebSocket);
+util.inherits(FlashWS, WS);
 
 /**
  * Transport name.
@@ -1188,7 +1196,7 @@ FlashWS.prototype.name = 'flashsocket';
  */
 
 FlashWS.prototype.doOpen = function () {
-  if (!check()) {
+  if (!this.check()) {
     // let the probe timeout
     return;
   }
@@ -1203,16 +1211,27 @@ FlashWS.prototype.doOpen = function () {
 
   WEB_SOCKET_LOGGER = { log: log('debug'), error: log('error') };
   WEB_SOCKET_SUPPRESS_CROSS_DOMAIN_SWF_ERROR = true;
+  WEB_SOCKET_DISABLE_AUTO_INITIALIZATION = true;
 
-  // dependencies
-  var deps = [path + 'web_socket.js'];
-
-  if ('undefined' == typeof swfobject) {
-    deps.unshift(path + 'swfobject.js');
+  if ('undefined' == typeof WEB_SOCKET_SWF_LOCATION) {
+    WEB_SOCKET_SWF_LOCATION = this.flashPath + 'WebSocketMainInsecure.swf';
   }
 
+  // dependencies
+  var deps = [this.flashPath + 'web_socket.js'];
+
+  if ('undefined' == typeof swfobject) {
+    deps.unshift(this.flashPath + 'swfobject.js');
+  }
+
+  var self = this;
+
   load(deps, function () {
-    FlashWS.prototype.doOpen.call(self);
+    self.ready(function () {
+      WebSocket.__addTask(function () {
+        WS.prototype.doOpen.call(self);
+      });
+    });
   });
 };
 
@@ -1224,24 +1243,96 @@ FlashWS.prototype.doOpen = function () {
 
 FlashWS.prototype.doClose = function () {
   if (!this.socket) return;
-  FlashWS.prototype.doClose.call(this);
+  var self = this;
+  WebSocket.__addTask(function() {
+    WS.prototype.doClose.call(self);
+  });
 };
 
 /**
- * Feature detection for FlashSocket.
+ * Writes to the Flash socket.
+ *
+ * @api private
+ */
+
+FlashWS.prototype.write = function() {
+  var self = this, args = arguments;
+  WebSocket.__addTask(function () {
+    WS.prototype.write.apply(self, args);
+  });
+};
+
+/**
+ * Called upon dependencies are loaded.
+ *
+ * @api private
+ */
+
+FlashWS.prototype.ready = function (fn) {
+  if (typeof WebSocket == 'undefined'
+    || !('__initialize' in WebSocket) || !swfobject
+  ) {
+    return;
+  }
+
+  if (swfobject.getFlashPlayerVersion().major < 10) {
+    return;
+  }
+
+  function init () {
+    // Only start downloading the swf file when the checked that this browser
+    // actually supports it
+    if (!FlashWS.loaded) {
+      if (843 != self.policyPort) {
+        WebSocket.loadFlashPolicyFile('xmlsocket://' + self.host + ':' + self.policyPort);
+      }
+
+      WebSocket.__initialize();
+      FlashWS.loaded = true;
+    }
+
+    fn.call(self);
+  }
+
+  var self = this;
+  if (document.body) {
+    return init();
+  }
+
+  util.load(init);
+};
+
+/**
+ * Feature detection for flashsocket.
  *
  * @return {Boolean} whether this transport is available.
  * @api public
  */
 
-function check () {
+FlashWS.prototype.check = function () {
 
 
 
 
-  for (var i = 0, l = navigator.plugins.length; i < l; i++) {
-    for (var j = 0, m = navigator.plugins[i].length; j < m; j++) {
-      if (navigator.plugins[i][j] == 'Shockwave Flash') return true;
+  if (typeof WebSocket != 'undefined' && !('__initialize' in WebSocket)) {
+    return false;
+  }
+
+  if (window.ActiveXObject) {
+    var control = null;
+    try {
+      control = new ActiveXObject('ShockwaveFlash.ShockwaveFlash');
+    } catch (e) { }
+    if (control) {
+      return true;
+    }
+  } else {
+    for (var i = 0, l = navigator.plugins.length; i < l; i++) {
+      for (var j = 0, m = navigator.plugins[i].length; j < m; j++) {
+        if (navigator.plugins[i][j].description == 'Shockwave Flash') {
+          return true;
+        }
+      }
     }
   }
 
@@ -1300,14 +1391,14 @@ function load (arr, fn) {
   function process (i) {
     if (!arr[i]) return fn();
     create(arr[i], function () {
-      process(arr[++i]);
+      process(++i);
     });
   };
 
   process(0);
 };
 
-});require.register("node_modules/engine.io-client-f/lib/transports/polling-jsonp.js", function(module, exports, require, global){
+});require.register("node_modules/engine.io-client/lib/transports/polling-jsonp.js", function(module, exports, require, global){
 
 /**
  * Module requirements.
@@ -1516,7 +1607,7 @@ JSONPPolling.prototype.doWrite = function (data, fn) {
   }
 };
 
-});require.register("node_modules/engine.io-client-f/lib/transports/polling-xhr.js", function(module, exports, require, global){
+});require.register("node_modules/engine.io-client/lib/transports/polling-xhr.js", function(module, exports, require, global){
 /**
  * Module requirements.
  */
@@ -1793,7 +1884,7 @@ if (global.ActiveXObject) {
   });
 }
 
-});require.register("node_modules/engine.io-client-f/lib/transports/index.js", function(module, exports, require, global){
+});require.register("node_modules/engine.io-client/lib/transports/index.js", function(module, exports, require, global){
 
 /**
  * Module dependencies
@@ -1835,7 +1926,7 @@ function polling (opts) {
   }
 };
 
-});require.register("node_modules/engine.io-client-f/lib/transports/websocket.js", function(module, exports, require, global){
+});require.register("node_modules/engine.io-client/lib/transports/websocket.js", function(module, exports, require, global){
 
 /**
  * Module dependencies.
@@ -1883,7 +1974,7 @@ WS.prototype.name = 'websocket';
  */
 
 WS.prototype.doOpen = function () {
-  if (!check()) {
+  if (!this.check()) {
     // let probe timeout
     return;
   }
@@ -1926,7 +2017,9 @@ WS.prototype.write = function (packets) {
  */
 
 WS.prototype.doClose = function () {
-  this.socket.close();
+  if (typeof this.socket !== 'undefined') {
+    this.socket.close();
+  }
 };
 
 /**
@@ -1955,6 +2048,18 @@ WS.prototype.uri = function () {
 };
 
 /**
+ * Feature detection for WebSocket.
+ *
+ * @return {Boolean} whether this transport is available.
+ * @api public
+ */
+
+WS.prototype.check = function () {
+  var websocket = ws();
+  return !!websocket && !('__initialize' in websocket && this.name === WS.prototype.name);
+}
+
+/**
  * Getter for WS constructor.
  *
  * @api private
@@ -1968,18 +2073,7 @@ function ws () {
   return global.WebSocket || global.MozWebSocket;
 }
 
-/**
- * Feature detection for WebSocket.
- *
- * @return {Boolean} whether this transport is available.
- * @api public
- */
-
-function check () {
-  return !!ws();
-}
-
-});require.register("node_modules/engine.io-client-f/lib/util.js", function(module, exports, require, global){
+});require.register("node_modules/engine.io-client/lib/util.js", function(module, exports, require, global){
 
 /**
  * Status of page load.
@@ -2263,14 +2357,14 @@ exports.qs = function (obj) {
 
   isBrowser = typeof window !== 'undefined';
 
-  eio = require((isBrowser ? 'node_modules/engine.io-client-f/lib/engine.io-client' : 'engine.io-client-f'));
+  eio = require((isBrowser ? 'node_modules/engine.io-client/lib/engine.io-client' : 'engine.io-client'));
 
   Vein = (function(_super) {
 
     __extends(Vein, _super);
 
     function Vein(options) {
-      var _base, _base1, _base2, _base3, _base4, _base5, _base6, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6;
+      var _base, _base1, _base2, _base3, _base4, _base5, _ref, _ref1, _ref2, _ref3, _ref4, _ref5;
       this.options = options != null ? options : {};
       this.getId = __bind(this.getId, this);
 
@@ -2301,17 +2395,14 @@ exports.qs = function (obj) {
           _base2.secure = window.location.protocol === 'https:';
         }
       }
-      if ((_ref3 = (_base3 = this.options).transports) == null) {
-        _base3.transports = ["websocket", "polling"];
+      if ((_ref3 = (_base3 = this.options).path) == null) {
+        _base3.path = '/vein';
       }
-      if ((_ref4 = (_base4 = this.options).path) == null) {
-        _base4.path = '/vein';
+      if ((_ref4 = (_base4 = this.options).forceBust) == null) {
+        _base4.forceBust = true;
       }
-      if ((_ref5 = (_base5 = this.options).forceBust) == null) {
-        _base5.forceBust = true;
-      }
-      if ((_ref6 = (_base6 = this.options).debug) == null) {
-        _base6.debug = false;
+      if ((_ref5 = (_base5 = this.options).debug) == null) {
+        _base5.debug = false;
       }
       this.socket = new eio.Socket(this.options);
       this.socket.on('open', this.handleOpen);
