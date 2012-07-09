@@ -18,12 +18,11 @@ class Vein extends eio.EventEmitter
     @socket.on 'error', @handleError
     @socket.on 'message', @handleMessage
     @socket.on 'close', @handleClose
-    return
 
-  connected: false
-  services: null
-  cookies: {}
-  callbacks: {}
+    @connected = false
+    @services = null
+    @callbacks = {}
+    return
 
   cookie: (key, val, expires) =>
     if typeof window isnt 'undefined' # browser
@@ -45,6 +44,7 @@ class Vein extends eio.EventEmitter
         document.cookie = "#{escape(key)}=; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/"
         return
     else # node
+      @cookies ?= {}
       all = => @cookies
       set = (key, val, expires) =>
         @cookies[key] = val

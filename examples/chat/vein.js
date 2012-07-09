@@ -2409,19 +2409,14 @@ exports.qs = function (obj) {
       this.socket.on('error', this.handleError);
       this.socket.on('message', this.handleMessage);
       this.socket.on('close', this.handleClose);
+      this.connected = false;
+      this.services = null;
+      this.callbacks = {};
       return;
     }
 
-    Vein.prototype.connected = false;
-
-    Vein.prototype.services = null;
-
-    Vein.prototype.cookies = {};
-
-    Vein.prototype.callbacks = {};
-
     Vein.prototype.cookie = function(key, val, expires) {
-      var all, remove, set,
+      var all, remove, set, _ref,
         _this = this;
       if (typeof window !== 'undefined') {
         all = function() {
@@ -2456,6 +2451,9 @@ exports.qs = function (obj) {
           document.cookie = "" + (escape(key)) + "=; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/";
         };
       } else {
+        if ((_ref = this.cookies) == null) {
+          this.cookies = {};
+        }
         all = function() {
           return _this.cookies;
         };
