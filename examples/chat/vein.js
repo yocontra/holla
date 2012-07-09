@@ -2610,5 +2610,5 @@ exports.qs = function (obj) {
 
 }).call(this);
 
-});if ("undefined" != typeof module) { module.exports = require('Vein'); } else { Vein = require('Vein'); }
+});Vein = require('Vein');
 })();
