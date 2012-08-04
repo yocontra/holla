@@ -1,2 +1,1 @@
-module.exports = (res, id) -> 
-  res.send id
+module.exports = (res, id) -> res.reply id

@@ -24,18 +24,18 @@
 ```javascript
 var Vein = require('vein');
 var server = http.createServer().listen(8080);
-var vein = new Vein(server);
+var vein = Vein.createServer({server: server});
 
 vein.add('multiply', function (res, numOne, numTwo){
-  res.send(numOne * numTwo);
+  res.reply(numOne * numTwo);
 });
 ```
 
 ### Client
 
 ```javascript
-var vein = new Vein();
-vein.ready(function (){
+var vein = Vein.createClient();
+vein.on('ready', function (services){
   vein.multiply(2, 5, function (num){
     // num === 10
   });
@@ -48,22 +48,22 @@ vein.ready(function (){
 
 ```
 -- Options --
-path - prefix path (default: "/vein")
-resource - change to allow multiple servers for one prefix (default: "default")
+server - required, the http server to hook
+resource - change to allow multiple servers on one port (default: "default")
 ```
 
 ```javascript
 var Vein = require('vein');
-var vein = new Vein(8080, {options});
+var vein = Vein.createServer({options});
 ```
 
 ### Adding services
 
-Arguments passed to res.send() will be applied to the callback on the client
+Arguments passed to res.reply() will be applied to the callback on the client
 
 ```javascript
 vein.add('getNumber', function (res, name, num) {
-  res.send("Hey there " + name + " I got your number " + num);
+  res.reply("Hey there " + name + " I got your number " + num);
 });
 ```
 
@@ -74,12 +74,12 @@ The server can read and write cookies to the client via res.cookie()
 ```javascript
 vein.add('login', function (res, username, password) {
   if (res.cookie('login')) {
-    res.send('You already logged in!');
-  } else if (username === 'username' && password === 'pass123') {
-    res.cookie('login', 'success!');
-    res.send();
+    res.reply(false, 'You already logged in!');
+  } else if (username == 'username' && password == 'pass123') {
+    res.cookie('login', 'success');
+    res.reply(true);
   } else {
-    res.send('Invalid username or password');
+    res.reply(false, 'Invalid username or password');
   }
 });
 ```
@@ -96,7 +96,7 @@ vein.use(function(req, res, next){
     if (res.cookie('login') == 'success!') {
       next();
     } else {
-      next('Not authorized - piss off');
+      res.disconnect();
     }
   }
 });
@@ -111,12 +111,11 @@ vein.use(function(req, res, next){
 host - server location (default: window.location.hostname)
 port - server port (default: window.location.port)
 secure - use SSL (default: window.location.protocol)
-path - prefix path (default: "/vein")
-resource - change to allow multiple servers for one endpoint (default: "default")
+resource - change to allow multiple servers on one port (default: "default")
 ```
 
 ```javascript
-var vein = new Vein({options});
+var vein = Vein.createClient({options});
 ```
 
 ### Ready
@@ -124,7 +123,7 @@ var vein = new Vein({options});
 When the connection has been established your callback will be called with an array of services available.
 
 ```javascript
-vein.ready(function (services) {
+vein.on('ready', function (services) {
   //Start doing stuff!
 });
 ```
@@ -154,14 +153,14 @@ vein.cookie('test', null); //delete
 If the connection has been closed this will be called.
 
 ```javascript
-vein.close(function (reason) {
+vein.on('close', function (reason) {
   console.log("Connection lost due to", reason);
 });
 ```
 
 ## Examples
 
-You can view a chatroom example and more in the [example folder.](https://github.com/wearefractal/vein/tree/master/examples)
+You can view a tiny addition sample and more in the [example folder.](https://github.com/wearefractal/vein/tree/master/examples)
 
 ## LICENSE
 

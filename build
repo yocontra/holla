@@ -1,16 +1,17 @@
 # compile
 rm -rf dist
 mkdir dist
-coffee -o dist -c client/*
+coffee -o dist -c lib/Client.coffee
 
 # build
-node_modules/.bin/browserbuild -g Vein -m Vein -b dist/ node_modules/engine.io-client/lib/* dist/* > vein.js
+cat node_modules/protosock/protosock.js > vein.js
+cat dist/Client.js >> vein.js
 
 # minify
 node_modules/.bin/uglifyjs -nc --unsafe -mt -o vein.min.js vein.js
 echo "File size (minified): " && cat vein.min.js | wc -c
 echo "File size (gzipped): " && cat vein.min.js | gzip -9f  | wc -c
-cp ./vein.js ./examples/chat/vein.js
+cp ./vein.js ./examples/add/vein.js
 
 # clean
 rm -rf dist
