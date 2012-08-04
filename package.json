@@ -10,7 +10,7 @@
    "dependencies":{
       "coffee-script":"*",
       "async":"*",
-      "protosock":"0.0.1"
+      "protosock":"0.0.2"
    },
    "devDependencies":{
       "mocha":"*",
