@@ -2647,7 +2647,14 @@ function ws () {
       },
       start: function() {
         this.services = {};
-        return this.callbacks = {};
+        this.callbacks = {};
+        return this.connected = false;
+      },
+      ready: function(fn) {
+        if (this.connected === true) {
+          return fn(this.services);
+        }
+        return this.on('ready', fn);
       },
       inbound: function(socket, msg, done) {
         try {
@@ -2700,6 +2707,7 @@ function ws () {
         throw err;
       },
       close: function(socket, reason) {
+        this.connected = false;
         return this.emit('close', reason);
       },
       message: function(socket, msg) {
@@ -2715,6 +2723,7 @@ function ws () {
             k = _ref1[_i];
             this[k] = this.getSender(socket, k);
           }
+          this.connected = true;
           return this.emit('ready', this.services);
         }
       },
@@ -2730,7 +2739,7 @@ function ws () {
             id: id,
             service: service,
             args: args,
-            cookies: {}
+            cookies: _this.cookie()
           });
         };
       },

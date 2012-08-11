@@ -48,7 +48,7 @@ describe 'Vein', ->
         res.reply numOne * numTwo
 
       client = getClient serv
-      client.on 'ready', (services) ->
+      client.ready (services) ->
         client.connected.should.be.true
         services.should.eql ['test']
         client.test 5, 6, (num) ->
@@ -63,7 +63,7 @@ describe 'Vein', ->
         res.reply 'goyta'
 
       client = getClient serv
-      client.on 'ready', (services) ->
+      client.ready (services) ->
         client.test ->
           client.cookie('result').should.equal 'oi'
           serv.destroy()
@@ -86,21 +86,23 @@ describe 'Vein', ->
       serv.add 'test', (res) -> res.reply()
 
       client = getClient serv
-      client.on 'ready', (services) ->
+      client.ready (services) ->
         client.test ->
           called.should.equal true
           serv.destroy()
           done()
 
-  describe 'multiple clients', ->
+describe 'client', ->
+  it 'should work on multiple clients', (done) ->
     serv = getServer()
-    it 'should work', (done) ->
-      client = getClient serv
-      client.on 'ready', (services) ->
-        client.ready (services) ->
-          done()
+    client = getClient serv
+    client.ready (services) ->
+      client2 = getClient serv
+      client2.ready (services) -> done()
 
-    it 'should work on the second client', (done) ->
-      client = getClient serv
-      client.on 'ready', (services) ->
-        done()
+  it 'should disconnect before ready', (done) ->
+    serv = getServer()
+    client = getClient serv
+    client.ready ->
+      client.disconnect()
+      done()
