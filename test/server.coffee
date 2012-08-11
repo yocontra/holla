@@ -49,6 +49,7 @@ describe 'Vein', ->
 
       client = getClient serv
       client.on 'ready', (services) ->
+        client.connected.should.be.true
         services.should.eql ['test']
         client.test 5, 6, (num) ->
           num.should.equal 30
@@ -96,7 +97,8 @@ describe 'Vein', ->
     it 'should work', (done) ->
       client = getClient serv
       client.on 'ready', (services) ->
-        done()
+        client.ready (services) ->
+          done()
 
     it 'should work on the second client', (done) ->
       client = getClient serv

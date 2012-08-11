@@ -13,6 +13,11 @@ client = (opt) ->
     start: ->
       @services = {}
       @callbacks = {}
+      @connected = false
+
+    ready: (fn) ->
+      return fn @services if @connected is true
+      @on 'ready', fn
 
     inbound: (socket, msg, done) ->
       try
@@ -43,7 +48,10 @@ client = (opt) ->
       return done true
 
     error: (socket, err) -> throw err
-    close: (socket, reason) -> @emit 'close', reason
+    close: (socket, reason) ->
+      @connected = false
+      @emit 'close', reason
+
     message: (socket, msg) ->
       if msg.type is 'response'
         @callbacks[msg.id] msg.args...
@@ -52,6 +60,7 @@ client = (opt) ->
       else if msg.type is 'services'
         @services = msg.args
         @[k]=@getSender(socket,k) for k in @services
+        @connected = true
         @emit 'ready', @services
 
     getSender: (socket, service) ->
@@ -63,7 +72,7 @@ client = (opt) ->
           id: id
           service: service
           args: args
-          cookies: {} # TODO: implement
+          cookies: @cookie()
 
     cookie: (key, val, expires) ->
       if isBrowser
