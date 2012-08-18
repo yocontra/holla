@@ -10,7 +10,7 @@
    "dependencies":{
       "coffee-script":"*",
       "async":"*",
-      "protosock":"0.0.4"
+      "protosock":"0.0.5"
    },
    "devDependencies":{
       "mocha":"*",
@@ -22,7 +22,7 @@
       "test":"mocha --compilers coffee:coffee-script --ignore-leaks --reporter spec"
    },
    "engines":{
-      "node":">= 0.4.0"
+      "node":">= 0.6.0"
    },
    "licenses":[
       {
