@@ -1,7 +1,7 @@
 {
    "name":"vein",
    "description":"WebSocket RPC",
-   "version":"0.3.7",
+   "version":"0.3.8",
    "homepage":"http://github.com/wearefractal/vein",
    "repository":"git://github.com/wearefractal/vein.git",
    "author":"Fractal <contact@wearefractal.com> (http://wearefractal.com/)",
@@ -10,7 +10,7 @@
    "dependencies":{
       "coffee-script":"*",
       "async":"*",
-      "protosock":"0.0.3"
+      "protosock":"0.0.4"
    },
    "devDependencies":{
       "mocha":"*",

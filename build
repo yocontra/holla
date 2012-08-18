@@ -1,11 +1,11 @@
 # compile
 rm -rf dist
 mkdir dist
-coffee -o dist -c lib/Client.coffee
+coffee -o dist -c lib/main.coffee
 
 # build
 cat node_modules/protosock/protosock.js > vein.js
-cat dist/Client.js >> vein.js
+cat dist/main.js >> vein.js
 
 # minify
 node_modules/.bin/uglifyjs -nc --unsafe -mt -o vein.min.js vein.js
