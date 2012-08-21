@@ -3,7 +3,7 @@ should = require 'should'
 Vein = require '../'
 {join} = require 'path'
 
-randomPort = -> Math.floor(Math.random() * 1000) + 8000
+randomPort = -> Math.floor(Math.random() * 2000) + 8000
 
 getServer = ->
   Vein.createServer

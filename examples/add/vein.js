@@ -2521,12 +2521,6 @@ Transport.prototype.onClose = function () {
 
   window.ProtoSock = ps;
 
-  if (typeof define === 'function') {
-    define(function() {
-      return ProtoSock;
-    });
-  }
-
 }).call(this);
 
 });require.register("util.js", function(module, exports, require, global){
