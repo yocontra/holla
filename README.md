@@ -104,7 +104,7 @@ vein.use(function(req, res, next){
 
 ### Testing
 
-Vein supports calling the res object as a function. If you write your code like this you will be able to test your services without writing anything specific to vein. The only difference is that you still have to put the callback first, but this is to prevent headaches with variable arguments.
+Vein supports calling the res object as a function. If you write your code like this you will be able to test your services without writing anything specific to vein. The only difference is that you still have to put the callback first (this is to prevent headaches with variable arguments).
 
 ```javascript
 vein.add('echoUser', function (res, username, password) {
