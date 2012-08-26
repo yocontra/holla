@@ -56,6 +56,22 @@ describe 'Vein', ->
           serv.destroy()
           done()
 
+    it 'should call as fn', (done) ->
+      serv = getServer()
+      serv.add 'test', (res, numOne, numTwo) -> 
+        numOne.should.equal 5
+        numTwo.should.equal 6
+        res numOne * numTwo
+
+      client = getClient serv
+      client.ready (services) ->
+        client.connected.should.be.true
+        services.should.eql ['test']
+        client.test 5, 6, (num) ->
+          num.should.equal 30
+          serv.destroy()
+          done()
+
     it 'should transmit cookies', (done) ->
       serv = getServer()
       serv.add 'test', (res) ->

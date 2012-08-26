@@ -58,7 +58,16 @@ module.exports = (opt) ->
         @error socket, err
 
     getResponder: (socket, msg) ->
-      cookie: (key, val) =>
+      responder = (args...) ->
+        # TODO: enforce a reply-once policy
+        socket.write
+          type: 'response'
+          id: msg.id
+          service: msg.service
+          args: args
+        return @
+
+      responder.cookie = (key, val) ->
         # TODO: implement expires
         return msg.cookies unless key or val
         if key and not val
@@ -71,14 +80,8 @@ module.exports = (opt) ->
             val: val
           return @
 
-      reply: (args...) =>
-        # TODO: enforce a reply-once policy
-        socket.write
-          type: 'response'
-          id: msg.id
-          service: msg.service
-          args: args
-        return @
+      responder.reply = responder
+      return responder
 
       disconnect: -> socket.close()
 
