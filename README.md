@@ -17,6 +17,8 @@
 </tr>
 </table>
 
+Vein uses ES5 features so be sure to include es5shim on your page.
+
 ## Example
 
 ### Server
@@ -67,23 +69,6 @@ vein.add('getNumber', function (res, name, num) {
 });
 ```
 
-### Cookies
-
-The server can read and write cookies to the client via res.cookie()
-
-```javascript
-vein.add('login', function (res, username, password) {
-  if (res.cookie('login')) {
-    res.reply(false, 'You already logged in!');
-  } else if (username == 'username' && password == 'pass123') {
-    res.cookie('login', 'success');
-    res.reply(true);
-  } else {
-    res.reply(false, 'Invalid username or password');
-  }
-});
-```
-
 ### Middleware
 
 You can use middleware to add layers in front of your services. Any arguments passed into next will be thrown as an error on the client and end the middleware chain.
@@ -104,7 +89,7 @@ vein.use(function(req, res, next){
 
 ### Testing
 
-Vein supports calling the res object as a function. If you write your code like this you will be able to test your services without writing anything specific to vein. The only difference is that you still have to put the callback first (this is to prevent headaches with variable arguments).
+Vein supports calling the res object as a function. This makes it easier to integrate vanilla-JS services into vein. The only difference is that you still have to put the callback first (this is to prevent headaches with variable arguments from the client).
 
 ```javascript
 vein.add('echoUser', function (res, username, password) {

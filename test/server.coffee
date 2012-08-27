@@ -53,7 +53,6 @@ describe 'Vein', ->
         services.should.eql ['test']
         client.test 5, 6, (num) ->
           num.should.equal 30
-          serv.destroy()
           done()
 
     it 'should call as fn', (done) ->
@@ -69,27 +68,12 @@ describe 'Vein', ->
         services.should.eql ['test']
         client.test 5, 6, (num) ->
           num.should.equal 30
-          serv.destroy()
-          done()
-
-    it 'should transmit cookies', (done) ->
-      serv = getServer()
-      serv.add 'test', (res) ->
-        res.cookie 'result', 'oi'
-        res.reply 'goyta'
-
-      client = getClient serv
-      client.ready (services) ->
-        client.test ->
-          client.cookie('result').should.equal 'oi'
-          serv.destroy()
           done()
 
   describe 'middleware', ->
     it 'should add', (done) ->
       serv = getServer()
       serv.use (req, res, next) -> next()
-      serv.destroy()
       done()
 
     it 'should call', (done) ->
@@ -105,7 +89,6 @@ describe 'Vein', ->
       client.ready (services) ->
         client.test ->
           called.should.equal true
-          serv.destroy()
           done()
 
 describe 'client', ->
@@ -116,7 +99,7 @@ describe 'client', ->
       client2 = getClient serv
       client2.ready (services) -> done()
 
-  it 'should disconnect before ready', (done) ->
+  it 'should disconnect after ready', (done) ->
     serv = getServer()
     client = getClient serv
     client.ready ->

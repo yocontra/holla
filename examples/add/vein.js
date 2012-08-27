@@ -6,7 +6,7 @@
  * @api public.
  */
 
-exports.version = '0.2.1';
+exports.version = '0.2.2';
 
 /**
  * Protocol version.
@@ -421,7 +421,7 @@ exports.decodePayload = function (data) {
  */
 
 var Polling = require('./polling')
-  , util = require('../util')
+  , util = require('../util');
 
 /**
  * Module exports.
@@ -433,13 +433,13 @@ module.exports = JSONPPolling;
  * Cached regular expressions.
  */
 
-var rNewline = /\n/g
+var rNewline = /\n/g;
 
 /**
  * Global JSONP callbacks.
  */
 
-var callbacks = global.___eio = [];
+var callbacks;
 
 /**
  * Callbacks count.
@@ -463,8 +463,16 @@ function empty () { }
 function JSONPPolling (opts) {
   Polling.call(this, opts);
 
+  // define global callbacks array if not present
+  // we do this here (lazily) to avoid unneeded global pollution
+  if (!callbacks) {
+    // we need to consider multiple engines in the same page
+    if (!global.___eio) global.___eio = [];
+    callbacks = global.___eio;
+  }
+
   // callback identifier
-  this.index = index++;
+  this.index = callbacks.length;
 
   // add callback to jsonp global
   var self = this;
@@ -473,7 +481,7 @@ function JSONPPolling (opts) {
   });
 
   // append to query string
-  this.query.j = callbacks.length - 1;
+  this.query.j = this.index;
 };
 
 /**
@@ -532,7 +540,7 @@ JSONPPolling.prototype.doPoll = function () {
   script.async = true;
   script.src = this.uri();
 
-  var insertAt = document.getElementsByTagName('script')[0]
+  var insertAt = document.getElementsByTagName('script')[0];
   insertAt.parentNode.insertBefore(script, insertAt);
   this.script = script;
 
@@ -554,7 +562,7 @@ JSONPPolling.prototype.doPoll = function () {
  */
 
 JSONPPolling.prototype.doWrite = function (data, fn) {
-  var self = this
+  var self = this;
 
   if (!this.form) {
     var form = document.createElement('form')
@@ -613,7 +621,7 @@ JSONPPolling.prototype.doWrite = function (data, fn) {
   } catch(e) {}
 
   if (this.iframe.attachEvent) {
-    iframe.onreadystatechange = function () {
+    this.iframe.onreadystatechange = function(){
       if (self.iframe.readyState == 'complete') {
         complete();
       }
@@ -2692,10 +2700,6 @@ Transport.prototype.onClose = function () {
           if (!Array.isArray(msg.args)) {
             return done(false);
           }
-        } else if (msg.type === 'cookie') {
-          if (typeof msg.key !== 'string') {
-            return done(false);
-          }
         } else if (msg.type === 'services') {
           if (!Array.isArray(msg.args)) {
             return done(false);
@@ -2711,9 +2715,8 @@ Transport.prototype.onClose = function () {
       message: function(socket, msg) {
         var k, _i, _len, _ref, _ref1;
         if (msg.type === 'response') {
-          return (_ref = this.callbacks)[msg.id].apply(_ref, msg.args);
-        } else if (msg.type === 'cookie') {
-          return this.cookie(msg.key, msg.val);
+          (_ref = this.callbacks)[msg.id].apply(_ref, msg.args);
+          return delete this.callbacks[msg.id];
         } else if (msg.type === 'services') {
           this.services = msg.args;
           _ref1 = this.services;
@@ -2736,72 +2739,9 @@ Transport.prototype.onClose = function () {
             type: 'request',
             id: id,
             service: service,
-            args: args,
-            cookies: _this.cookie()
+            args: args
           });
         };
-      },
-      cookie: function(key, val, expires) {
-        var all, remove, set, _ref,
-          _this = this;
-        if (isBrowser) {
-          all = function() {
-            var cookie, pair, _i, _len, _ref;
-            out = {};
-            _ref = document.cookie.split(";");
-            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-              cookie = _ref[_i];
-              pair = cookie.split("=");
-              if (!(pair[0] && pair[1])) {
-                continue;
-              }
-              out[pair[0].trim()] = pair[1].trim();
-            }
-            return out;
-          };
-          set = function(key, val, expires) {
-            var sExpires;
-            sExpires = "";
-            if (typeof expires === 'number') {
-              sExpires = "; max-age=" + expires;
-            }
-            if (typeof expires === 'string') {
-              sExpires = "; expires=" + expires;
-            }
-            if (typeof expires === 'object' ? expires.toGMTString : void 0) {
-              sExpires = "; expires=" + (expires.toGMTString());
-            }
-            document.cookie = "" + (escape(key)) + "=" + (escape(val)) + sExpires;
-          };
-          remove = function(key) {
-            document.cookie = "" + (escape(key)) + "=; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/";
-          };
-        } else {
-          if ((_ref = this.cookies) == null) {
-            this.cookies = {};
-          }
-          all = function() {
-            return _this.cookies;
-          };
-          set = function(key, val, expires) {
-            _this.cookies[key] = val;
-          };
-          remove = function(key) {
-            delete _this.cookies[key];
-          };
-        }
-        if (!key) {
-          return all();
-        }
-        if (key && val === null) {
-          return remove(key);
-        }
-        if (key && !val) {
-          return all()[key];
-        }
-        if (key && val) {
-          return set(key, val, expires);
-        }
       }
     };
     for (k in opt) {

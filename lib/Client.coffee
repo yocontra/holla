@@ -26,8 +26,6 @@ client = (opt) ->
         return done false unless typeof @callbacks[msg.id] is 'function'
         return done false unless typeof msg.service is 'string'
         return done false unless Array.isArray msg.args
-      else if msg.type is 'cookie'
-        return done false unless typeof msg.key is 'string'
       else if msg.type is 'services'
         return done false unless Array.isArray msg.args
       else
@@ -39,11 +37,10 @@ client = (opt) ->
     message: (socket, msg) ->
       if msg.type is 'response'
         @callbacks[msg.id] msg.args...
-      else if msg.type is 'cookie'
-        @cookie msg.key, msg.val
+        delete @callbacks[msg.id]
       else if msg.type is 'services'
         @services = msg.args
-        @[k]=@getSender(socket,k) for k in @services
+        @[k] = @getSender(socket,k) for k in @services
         @synced = true
         @emit 'ready', @services
 
@@ -56,40 +53,6 @@ client = (opt) ->
           id: id
           service: service
           args: args
-          cookies: @cookie()
-
-    cookie: (key, val, expires) ->
-      if isBrowser
-        all = ->
-          out = {}
-          for cookie in document.cookie.split ";"
-            pair = cookie.split "="
-            continue unless pair[0] and pair[1]
-            out[pair[0].trim()] = pair[1].trim()
-          return out
-        set = (key, val, expires) ->
-          sExpires = ""
-          sExpires = "; max-age=#{expires}" if typeof expires is 'number'
-          sExpires = "; expires=#{expires}" if typeof expires is 'string'
-          sExpires = "; expires=#{expires.toGMTString()}" if expires.toGMTString if typeof expires is 'object'
-          document.cookie = "#{escape(key)}=#{escape(val)}#{sExpires}"
-          return
-        remove = (key) ->
-          document.cookie = "#{escape(key)}=; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/"
-          return
-      else
-        @cookies ?= {}
-        all = => @cookies
-        set = (key, val, expires) =>
-          @cookies[key] = val
-          return
-        remove = (key) =>
-          delete @cookies[key]
-          return
-      return all() unless key
-      return remove key if key and val is null
-      return all()[key] if key and not val
-      return set key, val, expires if key and val
 
   out.options[k]=v for k,v of opt
   return out
