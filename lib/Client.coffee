@@ -36,7 +36,7 @@ client = (opt) ->
 
     message: (socket, msg) ->
       if msg.type is 'response'
-        @callbacks[msg.id] msg.args...
+        @callbacks[msg.id] msg.args... if @callbacks[msg.id]?
         delete @callbacks[msg.id]
       else if msg.type is 'services'
         @services = msg.args
