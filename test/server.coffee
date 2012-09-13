@@ -9,8 +9,8 @@ getServer = ->
   Vein.createServer
     server: http.createServer().listen randomPort()
 
-getClient = (server) ->
-  Vein.createClient
+getClient = (server) -> 
+  Vein.createClient 
     host: server.server.httpServer.address().address
     port: server.server.httpServer.address().port
     resource: server.options.resource
@@ -42,7 +42,7 @@ describe 'Vein', ->
 
     it 'should call', (done) ->
       serv = getServer()
-      serv.add 'test', (res, numOne, numTwo) ->
+      serv.add 'test', (res, numOne, numTwo) -> 
         numOne.should.equal 5
         numTwo.should.equal 6
         res.reply numOne * numTwo
@@ -57,7 +57,7 @@ describe 'Vein', ->
 
     it 'should call as fn', (done) ->
       serv = getServer()
-      serv.add 'test', (res, numOne, numTwo) ->
+      serv.add 'test', (res, numOne, numTwo) -> 
         numOne.should.equal 5
         numTwo.should.equal 6
         res numOne * numTwo
@@ -92,29 +92,6 @@ describe 'Vein', ->
           done()
 
 describe 'client', ->
-
-  # Protosock is catching errors and handling them via an 'error' method in vein.
-  # The interfaces need to match up for successful error handling.
-  it 'should rethrow errors', (done) ->
-    serv = getServer()
-    client = getClient serv
-
-    # intercept uncaught errors
-    originalListener = process.listeners("uncaughtException").pop()
-    process.once "uncaughtException", (error) ->
-
-      should.exist error, 'expected snakes on a plane'
-      error.toString().should.eql 'Error: snakes on a plane'
-
-      # restore mocha's listener for uncaught errors
-      process.listeners("uncaughtException").push originalListener
-
-      done()
-
-    # throw an error inside client.ready
-    client.ready (services) ->
-      throw new Error 'snakes on a plane'
-
   it 'should work on multiple clients', (done) ->
     serv = getServer()
     client = getClient serv
