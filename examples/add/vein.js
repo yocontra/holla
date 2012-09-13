@@ -2715,7 +2715,9 @@ Transport.prototype.onClose = function () {
       message: function(socket, msg) {
         var k, _i, _len, _ref, _ref1;
         if (msg.type === 'response') {
-          (_ref = this.callbacks)[msg.id].apply(_ref, msg.args);
+          if (this.callbacks[msg.id] != null) {
+            (_ref = this.callbacks)[msg.id].apply(_ref, msg.args);
+          }
           return delete this.callbacks[msg.id];
         } else if (msg.type === 'services') {
           this.services = msg.args;
