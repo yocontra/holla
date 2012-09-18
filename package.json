@@ -1,7 +1,7 @@
 {
    "name":"vein",
    "description":"WebSocket RPC",
-   "version":"0.4.3",
+   "version":"0.4.4",
    "homepage":"http://github.com/wearefractal/vein",
    "repository":"git://github.com/wearefractal/vein.git",
    "author":"Fractal <contact@wearefractal.com> (http://wearefractal.com/)",

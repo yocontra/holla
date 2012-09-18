@@ -15,7 +15,6 @@ vein.use (msg, res, next) ->
 vein.add 'add', (res, args...) ->
   result = 0
   result += arg for arg in args
-  res.cookie 'test', "#{result}"
-  res.reply result
+  res result
 
 console.log 'Server running on port 8080'

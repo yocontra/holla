@@ -1,6 +1,4 @@
-{readdirSync} = require 'fs'
-{join, basename, extname} = require 'path'
-async = require 'async'
+Namespace = require './Namespace'
 
 module.exports = (opt) ->
   out =
@@ -9,26 +7,14 @@ module.exports = (opt) ->
       resource: 'default'
 
     start: ->
-      @services = {}
-      @stack = []
+      @namespaces = {}
+      @ns 'main'
 
-    add: (name, fn) -> @services[name] = fn; @
-    remove: (name) -> delete @services[name]; @
-    addFolder: (folder) ->
-      for file in readdirSync folder
-        ext = extname file
-        serviceName = basename file, ext
-        if require.extensions[ext]?
-          service = require join folder, file
-          @add serviceName, service
-      return @
-
-    use: (fn) -> @stack.push(fn); @
-    runStack: (msg, res, cb) ->
-      return cb() unless @stack.length isnt 0
-      run = (middle, done) => middle msg, res, done
-      async.forEachSeries @stack, run, cb
-      return
+    ns: (name) -> @namespaces[name] ?= new Namespace name
+    add: (args...) -> @ns('main').add args...
+    remove: (args...) -> @ns('main').remove args...
+    addFolder: (args...) -> @ns('main').addFolder args...
+    use: (args...) -> @ns('main').use args...
 
     validate: (socket, msg, done) ->
       return done false unless typeof msg is 'object'
@@ -36,7 +22,9 @@ module.exports = (opt) ->
       if msg.type is 'request'
         return done false unless typeof msg.id is 'string'
         return done false unless typeof msg.service is 'string'
-        return done false unless typeof @services[msg.service] is 'function'
+        return done false unless typeof msg.ns is 'string'
+        return done false unless @namespaces[msg.ns]?
+        return done false unless typeof @namespaces[msg.ns]._services[msg.service] is 'function'
         return done false unless Array.isArray msg.args
       else
         return done false
@@ -44,17 +32,16 @@ module.exports = (opt) ->
 
     invalid: (socket, msg) -> socket.close()
     connect: (socket) ->
+      strut = {}
+      strut[name] = Object.keys ns._services for name, ns of @namespaces
       socket.write
         type: 'services'
-        args: Object.keys @services
+        args: strut
 
     message: (socket, msg) ->
-      try
-        res = @getResponder socket, msg
-        @runStack msg, res, =>
-          @services[msg.service] res, msg.args...
-      catch err
-        @error socket, err
+      res = @getResponder socket, msg
+      @ns(msg.ns)._middle msg, res, =>
+        @ns(msg.ns)._services[msg.service] res, msg.args...
 
     getResponder: (socket, msg) ->
       responder = (args...) ->
@@ -62,6 +49,7 @@ module.exports = (opt) ->
         socket.write
           type: 'response'
           id: msg.id
+          ns: msg.ns
           service: msg.service
           args: args
         return @

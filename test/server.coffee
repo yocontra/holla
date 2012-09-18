@@ -20,24 +20,17 @@ describe 'Vein', ->
     it 'should add', (done) ->
       serv = getServer()
       serv.add 'test', (res) -> res.reply 'test'
-      should.exist serv.services
-      should.exist serv.services.test
       done()
 
     it 'should addFolder', (done) ->
       serv = getServer()
       serv.addFolder join __dirname, "services"
-      should.exist serv.services
-      should.exist serv.services.test
       done()
 
     it 'should remove', (done) ->
       serv = getServer()
       serv.add 'test', (res) -> res.reply 'test'
-      should.exist serv.services
-      should.exist serv.services.test
       serv.remove 'test'
-      should.not.exist serv.services.test
       done()
 
     it 'should call', (done) ->
@@ -52,6 +45,22 @@ describe 'Vein', ->
         client.connected.should.be.true
         services.should.eql ['test']
         client.test 5, 6, (num) ->
+          num.should.equal 30
+          done()
+
+    it 'should call with ns', (done) ->
+      serv = getServer()
+      serv.add 'test', -> throw 'NS confused'
+      serv.ns('wat').add 'test', (res, numOne, numTwo) -> 
+        numOne.should.equal 5
+        numTwo.should.equal 6
+        res.reply numOne * numTwo
+
+      client = getClient serv
+      client.ready (services) ->
+        client.connected.should.be.true
+        services.should.eql ['test']
+        client.ns('wat').test 5, 6, (num) ->
           num.should.equal 30
           done()
 
@@ -88,6 +97,21 @@ describe 'Vein', ->
       client = getClient serv
       client.ready (services) ->
         client.test ->
+          called.should.equal true
+          done()
+
+    it 'should call with ns', (done) ->
+      serv = getServer()
+      called = false
+      serv.ns('wat').use (req, res, next) -> next()
+      serv.ns('wat').use (req, res, next) ->
+        called = true
+        next()
+      serv.ns('wat').add 'test', (res) -> res.reply()
+
+      client = getClient serv
+      client.ready (services) ->
+        client.ns('wat').test ->
           called.should.equal true
           done()
 
