@@ -55,6 +55,7 @@ module.exports = (opt) ->
         return @
 
       responder.reply = responder
+      responder.socket = socket
       return responder
 
       disconnect: -> socket.close()
