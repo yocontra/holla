@@ -50,7 +50,7 @@ client = (opt) ->
         return done false
       return done true
 
-    error: (socket, err) -> throw err
+    error: (socket, err) -> @emit 'error', err, socket
 
     message: (socket, msg) ->
       if msg.type is 'response'
