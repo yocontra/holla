@@ -1,7 +1,9 @@
 http = require 'http'
+https = require 'https'
 should = require 'should'
 Vein = require '../'
 {join} = require 'path'
+fs = require 'fs'
 
 randomPort = -> Math.floor(Math.random() * 2000) + 8000
 
@@ -14,6 +16,20 @@ getClient = (server) ->
     host: server.server.httpServer.address().address
     port: server.server.httpServer.address().port
     resource: server.options.resource
+
+getHTTPSServer = ->
+  opt =
+    key: fs.readFileSync join __dirname, './server.key'
+    cert: fs.readFileSync join __dirname, './server.crt'
+  Vein.createServer
+    server: https.createServer(opt).listen randomPort()
+
+getHTTPSClient = (server) -> 
+  Vein.createClient 
+    host: server.server.httpServer.address().address
+    port: server.server.httpServer.address().port
+    resource: server.options.resource
+    secure: true
 
 describe 'Vein', ->
   describe 'services', ->
@@ -116,6 +132,13 @@ describe 'Vein', ->
           done()
 
 describe 'client', ->
+  it 'should connect over https', (done) ->
+    serv = getHTTPSServer()
+    client = getHTTPSClient serv
+    client.ready (services) ->
+      should.exist services
+      done()
+      
   it 'should work on multiple clients', (done) ->
     serv = getServer()
     client = getClient serv
