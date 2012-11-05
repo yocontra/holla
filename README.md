@@ -133,16 +133,6 @@ vein.getNumber('john', 2, function (msg) {
 });
 ```
   
-### Cookies
-
-You can read/write cookies by using vein.cookie(). This is just nice sugar.
-
-```javascript
-vein.cookie('test', 'hello world'); //write
-console.log(vein.cookie('test')); //read
-vein.cookie('test', null); //delete
-```
-  
 ### Close
 
 If the connection has been closed this will be called.
