@@ -37,7 +37,7 @@ vein.add('multiply', function (res, numOne, numTwo){
 
 ```javascript
 var vein = Vein.createClient();
-vein.on('ready', function (services){
+vein.ready(function (services){
   vein.multiply(2, 5, function (num){
     // num === 10
   });
