@@ -20,55 +20,50 @@ class ClientNamespace
           service: service
           args: args
 
-client = (opt) ->
-  out =
-    options:
-      namespace: 'Vein'
-      resource: 'default'
+client =
+  options:
+    namespace: 'Vein'
+    resource: 'default'
 
-    start: ->
-      @namespaces = {}
+  start: ->
+    @namespaces = {}
 
-    ready: (fn) ->
-      return fn @ns('main')._services, @namespaces if @synced
-      @once 'ready', fn
+  ready: (fn) ->
+    return fn @ns('main')._services, @namespaces if @synced
+    @once 'ready', fn
 
-    ns: (name) -> @namespaces[name]
-    validate: (socket, msg, done) ->
-      return done false unless typeof msg is 'object'
-      return done false unless typeof msg.type is 'string'
-      if msg.type is 'response'
-        return done false unless typeof msg.id is 'string'
-        return done false unless typeof msg.ns is 'string'
-        return done false unless @ns(msg.ns)?
-        return done false unless typeof msg.service is 'string'
-        return done false unless typeof @ns(msg.ns)._callbacks[msg.id] is 'function'
-        return done false unless Array.isArray msg.args
-      else if msg.type is 'services'
-        return done false unless typeof msg.args is 'object'
-      else
-        return done false
-      return done true
+  ns: (name) -> @namespaces[name]
+  validate: (socket, msg, done) ->
+    return done false unless typeof msg is 'object'
+    return done false unless typeof msg.type is 'string'
+    if msg.type is 'response'
+      return done false unless typeof msg.id is 'string'
+      return done false unless typeof msg.ns is 'string'
+      return done false unless @ns(msg.ns)?
+      return done false unless typeof msg.service is 'string'
+      return done false unless typeof @ns(msg.ns)._callbacks[msg.id] is 'function'
+      return done false unless Array.isArray msg.args
+    else if msg.type is 'services'
+      return done false unless typeof msg.args is 'object'
+    else
+      return done false
+    return done true
 
-    error: (socket, err) -> @emit 'error', err, socket
+  error: (socket, err) -> @emit 'error', err, socket
 
-    message: (socket, msg) ->
-      if msg.type is 'response'
-        @ns(msg.ns)._callbacks[msg.id] msg.args...
-        delete @ns(msg.ns)._callbacks[msg.id]
-      else if msg.type is 'services'
-        @namespaces[k] = new ClientNamespace(socket, k, v) for k,v of msg.args
-        # clone main services
-        @[k]=@ns('main')[k] for k in msg.args.main
+  message: (socket, msg) ->
+    if msg.type is 'response'
+      @ns(msg.ns)._callbacks[msg.id] msg.args...
+      delete @ns(msg.ns)._callbacks[msg.id]
+    else if msg.type is 'services'
+      @namespaces[k] = new ClientNamespace(socket, k, v) for k,v of msg.args
+      # clone main services
+      @[k]=@ns('main')[k] for k in msg.args.main
 
-        @synced = true
-        @emit 'ready', @ns('main')._services, @namespaces
-
-  out.options[k]=v for k,v of opt
-  return out
+      @synced = true
+      @emit 'ready', @ns('main')._services, @namespaces
 
 if isBrowser
-  window.Vein = createClient: (opt={}) -> ProtoSock.createClient client opt
-  define(->Vein) if typeof define is 'function'
+  window.Vein = createClient: ProtoSock.createClientWrapper client
 else
   module.exports = client

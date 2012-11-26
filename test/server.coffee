@@ -8,26 +8,24 @@ fs = require 'fs'
 randomPort = -> Math.floor(Math.random() * 2000) + 8000
 
 getServer = ->
-  Vein.createServer
-    server: http.createServer().listen randomPort()
+  Vein.createServer http.createServer().listen randomPort()
 
 getClient = (server) -> 
   Vein.createClient 
-    host: server.server.httpServer.address().address
-    port: server.server.httpServer.address().port
+    host: server.httpServer.address().address
+    port: server.httpServer.address().port
     resource: server.options.resource
 
 getHTTPSServer = ->
   opt =
     key: fs.readFileSync join __dirname, './server.key'
     cert: fs.readFileSync join __dirname, './server.crt'
-  Vein.createServer
-    server: https.createServer(opt).listen randomPort()
+  Vein.createServer https.createServer(opt).listen randomPort()
 
-getHTTPSClient = (server) -> 
+getHTTPSClient = (server) ->
   Vein.createClient 
-    host: server.server.httpServer.address().address
-    port: server.server.httpServer.address().port
+    host: server.httpServer.address().address
+    port: server.httpServer.address().port
     resource: server.options.resource
     secure: true
 

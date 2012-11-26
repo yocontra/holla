@@ -26,7 +26,7 @@ Vein uses ES5 features so be sure to include es5shim on your page.
 ```javascript
 var Vein = require('vein');
 var server = http.createServer().listen(8080);
-var vein = Vein.createServer({server: server});
+var vein = Vein.createServer(server);
 
 vein.add('multiply', function (res, numOne, numTwo){
   res.reply(numOne * numTwo);
@@ -50,13 +50,12 @@ vein.ready(function (services){
 
 ```
 -- Options --
-server - required, the http server to hook
 resource - change to allow multiple servers on one port (default: "default")
 ```
 
 ```javascript
 var Vein = require('vein');
-var vein = Vein.createServer({options});
+var vein = Vein.createServer(httpServer, {options});
 ```
 
 ### Adding services

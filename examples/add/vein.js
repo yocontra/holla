@@ -6,7 +6,7 @@
  * @api public.
  */
 
-exports.version = '0.3.3';
+exports.version = '0.3.9';
 
 /**
  * Protocol version.
@@ -846,7 +846,7 @@ var XHR = require('./polling-xhr')
   , JSONP = require('./polling-jsonp')
   , websocket = require('./websocket')
   , flashsocket = require('./flashsocket')
-  , util = require('../util')
+  , util = require('../util');
 
 /**
  * Export transports.
@@ -869,9 +869,16 @@ function polling (opts) {
     , isXProtocol = false;
 
   if (global.location) {
-    xd = opts.host != global.location.hostname
-      || global.location.port != opts.port;
-    isXProtocol = (opts.secure !== (global.location.protocol === 'https:'));
+    var isSSL = 'https:' == location.protocol;
+    var port = location.port;
+
+    // some user agents have empty `location.port`
+    if (Number(port) != port) {
+      port = isSSL ? 443 : 80;
+    }
+
+    xd = opts.host != location.hostname || port != opts.port;
+    isXProtocol = opts.secure != isSSL;
   }
 
   xhr = util.request(xd);
@@ -894,13 +901,19 @@ function polling (opts) {
  */
 
 var WS = require('./websocket')
-  , util = require('../util')
+  , util = require('../util');
 
 /**
  * Module exports.
  */
 
 module.exports = FlashWS;
+
+/**
+ * Obfuscated key for Blue Coat.
+ */
+
+var xobject = global[['Active'].concat('Object').join('X')];
 
 /**
  * FlashWS constructor.
@@ -945,7 +958,7 @@ FlashWS.prototype.doOpen = function () {
     return function () {
       var str = Array.prototype.join.call(arguments, ' ');
       // debug: [websocketjs %s] %s, type, str
-    }
+    };
   };
 
   WEB_SOCKET_LOGGER = { log: log('debug'), error: log('error') };
@@ -1008,9 +1021,8 @@ FlashWS.prototype.write = function() {
  */
 
 FlashWS.prototype.ready = function (fn) {
-  if (typeof WebSocket == 'undefined'
-    || !('__initialize' in WebSocket) || !swfobject
-  ) {
+  if (typeof WebSocket == 'undefined' ||
+    !('__initialize' in WebSocket) || !swfobject) {
     return;
   }
 
@@ -1057,10 +1069,10 @@ FlashWS.prototype.check = function () {
     return false;
   }
 
-  if (window.ActiveXObject) {
+  if (xobject) {
     var control = null;
     try {
-      control = new ActiveXObject('ShockwaveFlash.ShockwaveFlash');
+      control = new xobject('ShockwaveFlash.ShockwaveFlash');
     } catch (e) { }
     if (control) {
       return true;
@@ -1096,8 +1108,8 @@ var scripts = {};
 function create (path, fn) {
   if (scripts[path]) return fn();
 
-  var el = document.createElement('script')
-    , loaded = false
+  var el = document.createElement('script');
+  var loaded = false;
 
   // debug: loading "%s", path
   el.onload = el.onreadystatechange = function () {
@@ -1144,7 +1156,7 @@ function load (arr, fn) {
 
 var Polling = require('./polling')
   , EventEmitter = require('../event-emitter')
-  , util = require('../util')
+  , util = require('../util');
 
 /**
  * Module exports.
@@ -1152,6 +1164,12 @@ var Polling = require('./polling')
 
 module.exports = XHR;
 module.exports.Request = Request;
+
+/**
+ * Obfuscated key for Blue Coat.
+ */
+
+var xobject = global[['Active'].concat('Object').join('X')];
 
 /**
  * Empty function
@@ -1170,8 +1188,8 @@ function XHR (opts) {
   Polling.call(this, opts);
 
   if (global.location) {
-    this.xd = opts.host != global.location.hostname
-      || global.location.port != opts.port;
+    this.xd = opts.host != global.location.hostname ||
+      global.location.port != opts.port;
   }
 };
 
@@ -1217,8 +1235,8 @@ XHR.prototype.request = function (opts) {
  */
 
 XHR.prototype.doWrite = function (data, fn) {
-  var req = this.request({ method: 'POST', data: data })
-    , self = this
+  var req = this.request({ method: 'POST', data: data });
+  var self = this;
   req.on('success', fn);
   req.on('error', function (err) {
     self.onError('xhr post error', err);
@@ -1234,8 +1252,8 @@ XHR.prototype.doWrite = function (data, fn) {
 
 XHR.prototype.doPoll = function () {
   // debug: xhr poll
-  var req = this.request()
-    , self = this
+  var req = this.request();
+  var self = this;
   req.on('data', function (data) {
     self.onData(data);
   });
@@ -1274,8 +1292,8 @@ util.inherits(Request, EventEmitter);
  */
 
 Request.prototype.create = function () {
-  var xhr = this.xhr = util.request(this.xd)
-    , self = this
+  var xhr = this.xhr = util.request(this.xd);
+  var self = this;
 
   xhr.open(this.method, this.uri, this.async);
 
@@ -1328,7 +1346,7 @@ Request.prototype.create = function () {
   // debug: sending xhr with url %s | data %s, this.uri, this.data
   xhr.send(this.data);
 
-  if (global.ActiveXObject) {
+  if (xobject) {
     this.index = Request.requestsCount++;
     Request.requests[this.index] = this;
   }
@@ -1343,7 +1361,7 @@ Request.prototype.create = function () {
 Request.prototype.onSuccess = function () {
   this.emit('success');
   this.cleanup();
-}
+};
 
 /**
  * Called if we have data.
@@ -1354,7 +1372,7 @@ Request.prototype.onSuccess = function () {
 Request.prototype.onData = function (data) {
   this.emit('data', data);
   this.onSuccess();
-}
+};
 
 /**
  * Called upon error.
@@ -1365,7 +1383,7 @@ Request.prototype.onData = function (data) {
 Request.prototype.onError = function (err) {
   this.emit('error', err);
   this.cleanup();
-}
+};
 
 /**
  * Cleans up house.
@@ -1384,12 +1402,12 @@ Request.prototype.cleanup = function () {
     this.xhr.abort();
   } catch(e) {}
 
-  if (global.ActiveXObject) {
+  if (xobject) {
     delete Request.requests[this.index];
   }
 
   this.xhr = null;
-}
+};
 
 /**
  * Aborts the request.
@@ -1401,7 +1419,7 @@ Request.prototype.abort = function () {
   this.cleanup();
 };
 
-if (global.ActiveXObject) {
+if (xobject) {
   Request.requestsCount = 0;
   Request.requests = {};
 
@@ -1575,7 +1593,7 @@ function ws () {
 var util = require('./util')
   , transports = require('./transports')
   , debug = require('debug')('engine-client:socket')
-  , EventEmitter = require('./event-emitter')
+  , EventEmitter = require('./event-emitter');
 
 /**
  * Module exports.
@@ -1596,13 +1614,13 @@ function Socket (opts) {
     opts = arguments[1] || {};
     opts.host = uri.host;
     opts.secure = uri.protocol == 'https' || uri.protocol == 'wss';
-    opts.port = uri.port || (opts.secure ? 443 : 80);
+    opts.port = uri.port;
   }
 
   opts = opts || {};
-  this.secure = opts.secure || false;
-  this.host = opts.host || opts.hostname || 'localhost';
-  this.port = opts.port || 80;
+  this.secure = null != opts.secure ? opts.secure : (global.location && 'https:' == location.protocol);
+  this.host = opts.host || opts.hostname || (global.location ? location.hostname : 'localhost');
+  this.port = opts.port || (global.location && location.port ? location.port : (this.secure ? 443 : 80));
   this.query = opts.query || {};
   this.query.uid = rnd();
   this.upgrade = false !== opts.upgrade;
@@ -1618,6 +1636,9 @@ function Socket (opts) {
   this.writeBuffer = [];
   this.policyPort = opts.policyPort || 843;
   this.open();
+
+  Socket.sockets.push(this);
+  Socket.sockets.evs.emit('add', this);
 };
 
 /**
@@ -1625,6 +1646,13 @@ function Socket (opts) {
  */
 
 util.inherits(Socket, EventEmitter);
+
+/**
+ * Static EventEmitter.
+ */
+
+Socket.sockets = [];
+Socket.sockets.evs = new EventEmitter;
 
 /**
  * Creates transport of the given type.
@@ -1636,7 +1664,7 @@ util.inherits(Socket, EventEmitter);
 
 Socket.prototype.createTransport = function (name) {
   debug('creating transport "%s"', name);
-  var query = clone(this.query)
+  var query = clone(this.query);
   query.transport = name;
 
   if (this.id) {
@@ -1712,7 +1740,7 @@ Socket.prototype.setTransport = function (transport) {
     })
     .on('close', function () {
       self.onClose('transport close');
-    })
+    });
 };
 
 /**
@@ -1725,7 +1753,7 @@ Socket.prototype.setTransport = function (transport) {
 Socket.prototype.probe = function (name) {
   debug('probing transport "%s"', name);
   var transport = this.createTransport(name, { probe: 1 })
-    , self = this
+    , self = this;
 
   transport.once('open', function () {
     debug('probe transport "%s" opened', name);
@@ -1806,6 +1834,8 @@ Socket.prototype.onPacket = function (packet) {
   if ('opening' == this.readyState || 'open' == this.readyState) {
     debug('socket receive: type "%s", data "%s"', packet.type, packet.data);
 
+    this.emit('packet', packet);
+
     // Socket is live - any packet counts
     this.emit('heartbeat');
 
@@ -1829,7 +1859,7 @@ Socket.prototype.onPacket = function (packet) {
         var event = { data: packet.data };
         event.toString = function () {
           return packet.data;
-        }
+        };
         this.onmessage && this.onmessage.call(this, event);
         break;
     }
@@ -1866,13 +1896,13 @@ Socket.prototype.onHandshake = function (data) {
  * @api private
  */
 
-Socket.prototype.onHeartbeat = function(){
+Socket.prototype.onHeartbeat = function (timeout) {
   clearTimeout(this.pingTimeoutTimer);
   var self = this;
   self.pingTimeoutTimer = setTimeout(function () {
     if ('closed' == self.readyState) return;
     self.onClose('ping timeout');
-  }, this.pingTimeout);
+  }, timeout || (self.pingInterval + self.pingTimeout));
 };
 
 /**
@@ -1885,11 +1915,10 @@ Socket.prototype.onHeartbeat = function(){
 Socket.prototype.ping = function () {
   var self = this;
   clearTimeout(self.pingIntervalTimer);
-  clearTimeout(self.pingTimeoutTimer);
   self.pingIntervalTimer = setTimeout(function () {
     debug('writing ping packet - expecting pong within %sms', self.pingTimeout);
-    self.emit('heartbeat');
     self.sendPacket('ping');
+    self.onHeartbeat(self.pingTimeout);
   }, self.pingInterval);
 };
 
@@ -1900,8 +1929,8 @@ Socket.prototype.ping = function () {
  */
 
 Socket.prototype.flush = function () {
-  if ('closed' != this.readyState && this.transport.writable
-    && !this.upgrading && this.writeBuffer.length) {
+  if ('closed' != this.readyState && this.transport.writable &&
+    !this.upgrading && this.writeBuffer.length) {
     debug('flushing %d packets in socket', this.writeBuffer.length);
     this.transport.send(this.writeBuffer);
     this.writeBuffer = [];
@@ -1932,6 +1961,7 @@ Socket.prototype.send = function (msg) {
 
 Socket.prototype.sendPacket = function (type, data) {
   var packet = { type: type, data: data };
+  this.emit('packetCreate', packet);
   this.writeBuffer.push(packet);
   this.flush();
 };
@@ -1947,6 +1977,7 @@ Socket.prototype.close = function () {
     this.onClose('forced close');
     debug('socket closing - telling transport to close');
     this.transport.close();
+    this.transport.removeAllListeners();
   }
 
   return this;
@@ -1975,6 +2006,7 @@ Socket.prototype.onClose = function (reason, desc) {
     this.readyState = 'closed';
     this.emit('close', reason, desc);
     this.onclose && this.onclose.call(this);
+    this.id = null;
   }
 };
 
@@ -2449,7 +2481,11 @@ Transport.prototype.onClose = function () {
 
     __extends(Client, _super);
 
-    function Client(plugin) {
+    function Client(plugin, options) {
+      var eiopts, k, v;
+      if (options == null) {
+        options = {};
+      }
       this.handleClose = __bind(this.handleClose, this);
 
       this.handleError = __bind(this.handleError, this);
@@ -2458,10 +2494,13 @@ Transport.prototype.onClose = function () {
 
       this.handleConnection = __bind(this.handleConnection, this);
 
-      var eiopts, k, v;
       for (k in plugin) {
         v = plugin[k];
         this[k] = v;
+      }
+      for (k in options) {
+        v = options[k];
+        this.options[k] = v;
       }
       this.isServer = false;
       this.isClient = true;
@@ -2560,18 +2599,21 @@ Transport.prototype.onClose = function () {
   util = require('./util');
 
   ps = {
-    createClient: function(plugin) {
-      var Client, defaultClient, err, newPlugin;
+    createClientWrapper: function(plugin) {
+      return function(opt) {
+        return ps.createClient(plugin, opt);
+      };
+    },
+    createClient: function(plugin, opt) {
+      var Client, defaultClient, newPlugin;
       Client = require('./Client');
       defaultClient = require('./defaultClient');
       newPlugin = util.mergePlugins(defaultClient, plugin);
-      err = util.validatePlugin(newPlugin);
-      if (err != null) {
-        throw new Error("Plugin validation failed: " + err);
-      }
-      return new Client(newPlugin);
+      return new Client(newPlugin, opt);
     }
   };
+
+
 
 
 
@@ -2631,26 +2673,6 @@ Transport.prototype.onClose = function () {
         }
       }
       return newPlugin;
-    },
-    validatePlugin: function(plugin) {
-      if (typeof plugin.options !== 'object') {
-        return 'missing options object';
-      }
-      if (typeof plugin.options.namespace !== 'string') {
-        return 'namespace option required';
-      }
-      if (typeof plugin.options.resource !== 'string') {
-        return 'resource option required';
-      }
-      if (typeof plugin.inbound !== 'function') {
-        return 'missing inbound formatter';
-      }
-      if (typeof plugin.outbound !== 'function') {
-        return 'missing outbound formatter';
-      }
-      if (typeof plugin.validate !== 'function') {
-        return 'missing validate';
-      }
     },
     isBrowser: function() {
 
@@ -2778,105 +2800,87 @@ Transport.prototype.onClose = function () {
 
   })();
 
-  client = function(opt) {
-    var k, out, v;
-    out = {
-      options: {
-        namespace: 'Vein',
-        resource: 'default'
-      },
-      start: function() {
-        return this.namespaces = {};
-      },
-      ready: function(fn) {
-        if (this.synced) {
-          return fn(this.ns('main')._services, this.namespaces);
-        }
-        return this.once('ready', fn);
-      },
-      ns: function(name) {
-        return this.namespaces[name];
-      },
-      validate: function(socket, msg, done) {
-        if (typeof msg !== 'object') {
-          return done(false);
-        }
-        if (typeof msg.type !== 'string') {
-          return done(false);
-        }
-        if (msg.type === 'response') {
-          if (typeof msg.id !== 'string') {
-            return done(false);
-          }
-          if (typeof msg.ns !== 'string') {
-            return done(false);
-          }
-          if (this.ns(msg.ns) == null) {
-            return done(false);
-          }
-          if (typeof msg.service !== 'string') {
-            return done(false);
-          }
-          if (typeof this.ns(msg.ns)._callbacks[msg.id] !== 'function') {
-            return done(false);
-          }
-          if (!Array.isArray(msg.args)) {
-            return done(false);
-          }
-        } else if (msg.type === 'services') {
-          if (typeof msg.args !== 'object') {
-            return done(false);
-          }
-        } else {
-          return done(false);
-        }
-        return done(true);
-      },
-      error: function(socket, err) {
-        return this.emit('error', err, socket);
-      },
-      message: function(socket, msg) {
-        var k, v, _i, _len, _ref, _ref1, _ref2;
-        if (msg.type === 'response') {
-          (_ref = this.ns(msg.ns)._callbacks)[msg.id].apply(_ref, msg.args);
-          return delete this.ns(msg.ns)._callbacks[msg.id];
-        } else if (msg.type === 'services') {
-          _ref1 = msg.args;
-          for (k in _ref1) {
-            v = _ref1[k];
-            this.namespaces[k] = new ClientNamespace(socket, k, v);
-          }
-          _ref2 = msg.args.main;
-          for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
-            k = _ref2[_i];
-            this[k] = this.ns('main')[k];
-          }
-          this.synced = true;
-          return this.emit('ready', this.ns('main')._services, this.namespaces);
-        }
+  client = {
+    options: {
+      namespace: 'Vein',
+      resource: 'default'
+    },
+    start: function() {
+      return this.namespaces = {};
+    },
+    ready: function(fn) {
+      if (this.synced) {
+        return fn(this.ns('main')._services, this.namespaces);
       }
-    };
-    for (k in opt) {
-      v = opt[k];
-      out.options[k] = v;
+      return this.once('ready', fn);
+    },
+    ns: function(name) {
+      return this.namespaces[name];
+    },
+    validate: function(socket, msg, done) {
+      if (typeof msg !== 'object') {
+        return done(false);
+      }
+      if (typeof msg.type !== 'string') {
+        return done(false);
+      }
+      if (msg.type === 'response') {
+        if (typeof msg.id !== 'string') {
+          return done(false);
+        }
+        if (typeof msg.ns !== 'string') {
+          return done(false);
+        }
+        if (this.ns(msg.ns) == null) {
+          return done(false);
+        }
+        if (typeof msg.service !== 'string') {
+          return done(false);
+        }
+        if (typeof this.ns(msg.ns)._callbacks[msg.id] !== 'function') {
+          return done(false);
+        }
+        if (!Array.isArray(msg.args)) {
+          return done(false);
+        }
+      } else if (msg.type === 'services') {
+        if (typeof msg.args !== 'object') {
+          return done(false);
+        }
+      } else {
+        return done(false);
+      }
+      return done(true);
+    },
+    error: function(socket, err) {
+      return this.emit('error', err, socket);
+    },
+    message: function(socket, msg) {
+      var k, v, _i, _len, _ref, _ref1, _ref2;
+      if (msg.type === 'response') {
+        (_ref = this.ns(msg.ns)._callbacks)[msg.id].apply(_ref, msg.args);
+        return delete this.ns(msg.ns)._callbacks[msg.id];
+      } else if (msg.type === 'services') {
+        _ref1 = msg.args;
+        for (k in _ref1) {
+          v = _ref1[k];
+          this.namespaces[k] = new ClientNamespace(socket, k, v);
+        }
+        _ref2 = msg.args.main;
+        for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+          k = _ref2[_i];
+          this[k] = this.ns('main')[k];
+        }
+        this.synced = true;
+        return this.emit('ready', this.ns('main')._services, this.namespaces);
+      }
     }
-    return out;
   };
 
   if (isBrowser) {
     window.Vein = {
-      createClient: function(opt) {
-        if (opt == null) {
-          opt = {};
-        }
-        return ProtoSock.createClient(client(opt));
-      }
+      createClient: ProtoSock.createClientWrapper(client)
     };
-    if (typeof define === 'function') {
-      define(function() {
-        return Vein;
-      });
-    }
   } else {
     module.exports = client;
   }

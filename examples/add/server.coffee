@@ -6,7 +6,7 @@ app = connect()
 app.use connect.static __dirname
 server = app.listen 8080
 
-vein = Vein.createServer server: server
+vein = Vein.createServer server
 
 vein.use (msg, res, next) ->
   console.log msg.service
