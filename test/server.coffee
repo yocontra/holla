@@ -62,6 +62,19 @@ describe 'Vein', ->
           num.should.equal 30
           done()
 
+    it 'should call without client callback', (done) ->
+      serv = getServer()
+      serv.add 'test', (res, numOne, numTwo) -> 
+        numOne.should.equal 5
+        numTwo.should.equal 6
+        done()
+
+      client = getClient serv
+      client.ready (services) ->
+        client.connected.should.be.true
+        services.should.eql ['test']
+        client.test 5, 6
+
     it 'should call with ns', (done) ->
       serv = getServer()
       serv.add 'test', -> throw 'NS confused'

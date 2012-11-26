@@ -12,7 +12,10 @@ class ClientNamespace
   _getSender: (service) ->
       (args..., cb) =>
         id = getId()
-        @_callbacks[id] = cb
+        if typeof cb is 'function'
+          @_callbacks[id] = cb
+        else
+          args.push cb
         @_socket.write
           type: 'request'
           id: id
