@@ -2785,7 +2785,11 @@ Transport.prototype.onClose = function () {
         var args, cb, id, _i;
         args = 2 <= arguments.length ? __slice.call(arguments, 0, _i = arguments.length - 1) : (_i = 0, []), cb = arguments[_i++];
         id = getId();
-        _this._callbacks[id] = cb;
+        if (typeof cb === 'function') {
+          _this._callbacks[id] = cb;
+        } else {
+          args.push(cb);
+        }
         return _this._socket.write({
           type: 'request',
           id: id,
