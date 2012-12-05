@@ -50,13 +50,14 @@ describe 'Vein', ->
     it 'should call', (done) ->
       serv = getServer()
       serv.add 'test', (res, numOne, numTwo) -> 
+        should.exist numOne
+        should.exist numTwo
         numOne.should.equal 5
         numTwo.should.equal 6
         res.reply numOne * numTwo
 
       client = getClient serv
       client.ready (services) ->
-        client.connected.should.be.true
         services.should.eql ['test']
         client.test 5, 6, (num) ->
           num.should.equal 30
@@ -71,7 +72,6 @@ describe 'Vein', ->
 
       client = getClient serv
       client.ready (services) ->
-        client.connected.should.be.true
         services.should.eql ['test']
         client.test 5, 6
 
@@ -85,7 +85,6 @@ describe 'Vein', ->
 
       client = getClient serv
       client.ready (services) ->
-        client.connected.should.be.true
         services.should.eql ['test']
         client.ns('wat').test 5, 6, (num) ->
           num.should.equal 30
@@ -100,7 +99,6 @@ describe 'Vein', ->
 
       client = getClient serv
       client.ready (services) ->
-        client.connected.should.be.true
         services.should.eql ['test']
         client.test 5, 6, (num) ->
           num.should.equal 30

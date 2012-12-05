@@ -5,9 +5,15 @@ getId = =>
   return rand()+rand()+rand()
 
 class ClientNamespace
-  constructor: (@_socket, @_name, @_services) ->
+  constructor: (@_socket, @_name) ->
+    @_services = []
     @_callbacks = {}
-    @[service] = @_getSender service for service in @_services
+
+  add: (svcs) ->
+    for service in svcs
+      @_services = svcs
+      @[service] = @_getSender service
+    return @
 
   _getSender: (service) ->
       (args..., cb) =>
@@ -59,7 +65,13 @@ client =
       @ns(msg.ns)._callbacks[msg.id] msg.args...
       delete @ns(msg.ns)._callbacks[msg.id]
     else if msg.type is 'services'
-      @namespaces[k] = new ClientNamespace(socket, k, v) for k,v of msg.args
+      for k,v of msg.args
+        if @namespaces[k]
+          @namespaces[k].add v
+        else
+          @namespaces[k] = new ClientNamespace socket, k
+          @namespaces[k].add v
+
       # clone main services
       @[k]=@ns('main')[k] for k in msg.args.main
 

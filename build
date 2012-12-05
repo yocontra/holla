@@ -4,7 +4,7 @@ mkdir dist
 coffee -o dist -c lib/Client.coffee
 
 # build
-cat components/protosock/protosock.js > vein.js
+cat node_modules/protosock/protosock.js > vein.js
 cat dist/Client.js >> vein.js
 
 # minify
