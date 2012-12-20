@@ -32,6 +32,11 @@ vein.add('multiply', function (res, numOne, numTwo){
   res.reply(numOne * numTwo);
 });
 ```
+Note: Express 3 is no longer a httpServer so you need to do something like:  
+```javascript
+var server = require('http').createServer(app).listen(8080);
+```
+before passing it to Vein.createServer
 
 ### Client
 
