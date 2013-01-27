@@ -1,15 +1,15 @@
-![status](https://secure.travis-ci.org/wearefractal/vein.png?branch=master)
+![status](https://secure.travis-ci.org/wearefractal/holla.png?branch=master)
 
 ## Information
 
 <table>
 <tr>
 <td>Package</td>
-<td>vein</td>
+<td>holla</td>
 </tr>
 <tr>
 <td>Description</td>
-<td>RPC via WebSockets</td>
+<td>WebRTC Sugar</td>
 </tr>
 <tr>
 <td>Node Version</td>
@@ -17,139 +17,84 @@
 </tr>
 </table>
 
-Vein uses ES5 features so be sure to include es5shim on your page.
-
 ## Example
 
 ### Server
 
 ```javascript
-var Vein = require('vein');
+var holla = require('holla');
 var server = http.createServer().listen(8080);
-var vein = Vein.createServer(server);
 
-vein.add('multiply', function (res, numOne, numTwo){
-  res.reply(numOne * numTwo);
-});
+var rtc = holla.createServer(server);
+
+var users = {};
+rtc.identify = function (req, cb) {
+  users[req.name] = req.socket.id;
+  cb();
+};
+
+rtc.getId = function (name, cb) {
+  cb(users[name]);
+};
+
+rtc.close = function (req, cb) {
+  delete users[req.name];
+  cb();
+};
+
+
+console.log 'Server running on port 8080'
 ```
 Note: Express 3 is no longer a httpServer so you need to do something like:  
 ```javascript
 var server = require('http').createServer(app).listen(8080);
 ```
-before passing it to Vein.createServer
+before passing it to holla.createServer
 
 ### Client
 
+Sending a call:
+
 ```javascript
-var vein = Vein.createClient();
-vein.ready(function (services){
-  vein.multiply(2, 5, function (num){
-    // num === 10
+var server = holla.connect();
+server.identify("tom", function(worked) {
+  var call = server.call("bob");
+  call.on("answered", function() {
+    console.log("Remote user answered the call");
+  });
+
+  holla.createFullStream(function(err, stream) {
+    if(err) return console.log(err);
+    call.addStream(stream);
+    holla.pipe(stream, $("#me"));
   });
 });
 ```
 
-## Server Usage
-
-### Create
-
-```
--- Options --
-resource - change to allow multiple servers on one port (default: "default")
-```
+Receiving a call:
 
 ```javascript
-var Vein = require('vein');
-var vein = Vein.createServer(httpServer, {options});
-```
+var server = holla.connect();
+server.identify("bob", function(worked) {
+  server.on("call", function(call) {
+    console.log("Inbound call", call);
+    call.answer();
+    holla.createFullStream(function(err, stream) {
+      if(err) return console.log(err);
+      call.addStream(stream);
+      holla.pipe(stream, $("#me"));
 
-### Adding services
-
-Arguments passed to res.reply() will be applied to the callback on the client
-
-```javascript
-vein.add('getNumber', function (res, name, num) {
-  res.reply("Hey there " + name + " I got your number " + num);
-});
-```
-
-### Middleware
-
-You can use middleware to add layers in front of your services. Any arguments passed into next will be thrown as an error on the client and end the middleware chain.
-
-```javascript
-vein.use(function(req, res, next){
-  if (req.service == 'login') {
-    next();
-  } else {
-    if (res.cookie('login') == 'success!') {
-      next();
-    } else {
-      res.disconnect();
-    }
-  }
-});
-```
-
-### Testing
-
-Vein supports calling the res object as a function. This makes it easier to integrate vanilla-JS services into vein. The only difference is that you still have to put the callback first (this is to prevent headaches with variable arguments from the client).
-
-```javascript
-vein.add('echoUser', function (res, username, password) {
-  res(username, password);
-});
-```
-
-## Client Usage
-
-### Create
-
-```
--- Options --
-host - server location (default: window.location.hostname)
-port - server port (default: window.location.port)
-secure - use SSL (default: window.location.protocol)
-resource - change to allow multiple servers on one port (default: "default")
-```
-
-```javascript
-var vein = Vein.createClient({options});
-```
-
-### Ready
-
-When the connection has been established your callback will be called with an array of services available.
-
-```javascript
-vein.on('ready', function (services) {
-  //Start doing stuff!
-});
-```
-
-### Calling services
-
-When calling a service the format is vein.serviceName(args..., callback)
-
-```javascript
-vein.getNumber('john', 2, function (msg) {
-  console.log(msg);
-});
-```
-  
-### Close
-
-If the connection has been closed this will be called.
-
-```javascript
-vein.on('close', function (reason) {
-  console.log("Connection lost due to", reason);
+      call.ready(function(stream) {
+        holla.pipe(stream, $("#them"));
+      });
+    });
+  });
 });
 ```
 
 ## Examples
 
-You can view a tiny addition sample and more in the [example folder.](https://github.com/wearefractal/vein/tree/master/examples)
+You can view more examples in the [example folder.](https://github.com/wearefractal/holla/tree/master/examples)
 
 ## LICENSE
 
