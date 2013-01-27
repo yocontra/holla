@@ -1,8 +1,0 @@
-{
-  "name": "vein",
-  "version": "0.5.0",
-  "main": "./vein.js",
-  "dependencies": {
-    "protosock": "latest"
-  }
-}

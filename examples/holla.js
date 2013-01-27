@@ -1,4 +1,4 @@
-(function(){var global = this;function debug(){return debug};function require(p, parent){ var path = require.resolve(p) , mod = require.modules[path]; if (!mod) throw new Error('failed to require "' + p + '" from ' + parent); if (!mod.exports) { mod.exports = {}; mod.call(mod.exports, mod, mod.exports, require.relative(path), global); } return mod.exports;}require.modules = {};require.resolve = function(path){ var orig = path , reg = path + '.js' , index = path + '/index.js'; return require.modules[reg] && reg || require.modules[index] && index || orig;};require.register = function(path, fn){ require.modules[path] = fn;};require.relative = function(parent) { return function(p){ if ('debug' == p) return debug; if ('.' != p.charAt(0)) return require(p); var path = parent.split('/') , segs = p.split('/'); path.pop(); for (var i = 0; i < segs.length; i++) { var seg = segs[i]; if ('..' == seg) path.pop(); else if ('.' != seg) path.push(seg); } return require(path.join('/'), parent); };};require.register("node_modules/engine.io-client/lib/engine.io-client.js", function(module, exports, require, global){
+(function(){var global = this;function debug(){return debug};function require(p, parent){ var path = require.resolve(p) , mod = require.modules[path]; if (!mod) throw new Error('failed to require "' + p + '" from ' + parent); if (!mod.exports) { mod.exports = {}; mod.call(mod.exports, mod, mod.exports, require.relative(path), global); } return mod.exports;}require.modules = {};require.resolve = function(path){ var orig = path , reg = path + '.js' , index = path + '/index.js'; return require.modules[reg] && reg || require.modules[index] && index || orig;};require.register = function(path, fn){ require.modules[path] = fn;};require.relative = function(parent) { return function(p){ if ('debug' == p) return debug; if ('.' != p.charAt(0)) return require(p); var path = parent.split('/') , segs = p.split('/'); path.pop(); for (var i = 0; i < segs.length; i++) { var seg = segs[i]; if ('..' == seg) path.pop(); else if ('.' != seg) path.push(seg); } return require(path.join('/'), parent); };};require.register("engine.io-client.js", function(module, exports, require, global){
 
 /**
  * Client version.
@@ -58,7 +58,7 @@ exports.Transport = require('./transport');
 
 exports.transports = require('./transports');
 
-});require.register("node_modules/engine.io-client/lib/event-emitter.js", function(module, exports, require, global){
+});require.register("event-emitter.js", function(module, exports, require, global){
 
 /**
  * Module exports.
@@ -249,7 +249,7 @@ EventEmitter.prototype.addEventListener = EventEmitter.prototype.on;
 EventEmitter.prototype.removeEventListener = EventEmitter.prototype.removeListener;
 EventEmitter.prototype.dispatchEvent = EventEmitter.prototype.emit;
 
-});require.register("node_modules/engine.io-client/lib/parser.js", function(module, exports, require, global){
+});require.register("parser.js", function(module, exports, require, global){
 /**
  * Module dependencies.
  */
@@ -414,7 +414,7 @@ exports.decodePayload = function (data) {
   return packets;
 };
 
-});require.register("node_modules/engine.io-client/lib/socket.js", function(module, exports, require, global){
+});require.register("socket.js", function(module, exports, require, global){
 /**
  * Module dependencies.
  */
@@ -880,7 +880,7 @@ function rnd () {
   return String(Math.random()).substr(5) + String(Math.random()).substr(5);
 }
 
-});require.register("node_modules/engine.io-client/lib/transport.js", function(module, exports, require, global){
+});require.register("transport.js", function(module, exports, require, global){
 
 /**
  * Module dependencies.
@@ -1023,7 +1023,7 @@ Transport.prototype.onClose = function () {
   this.emit('close');
 };
 
-});require.register("node_modules/engine.io-client/lib/transports/flashsocket.js", function(module, exports, require, global){
+});require.register("transports/flashsocket.js", function(module, exports, require, global){
 
 /**
  * Module dependencies.
@@ -1278,7 +1278,7 @@ function load (arr, fn) {
   process(0);
 };
 
-});require.register("node_modules/engine.io-client/lib/transports/index.js", function(module, exports, require, global){
+});require.register("transports/index.js", function(module, exports, require, global){
 
 /**
  * Module dependencies
@@ -1336,7 +1336,7 @@ function polling (opts) {
   }
 };
 
-});require.register("node_modules/engine.io-client/lib/transports/polling-jsonp.js", function(module, exports, require, global){
+});require.register("transports/polling-jsonp.js", function(module, exports, require, global){
 
 /**
  * Module requirements.
@@ -1553,7 +1553,7 @@ JSONPPolling.prototype.doWrite = function (data, fn) {
   }
 };
 
-});require.register("node_modules/engine.io-client/lib/transports/polling-xhr.js", function(module, exports, require, global){
+});require.register("transports/polling-xhr.js", function(module, exports, require, global){
 /**
  * Module requirements.
  */
@@ -1836,7 +1836,7 @@ if (xobject) {
   });
 }
 
-});require.register("node_modules/engine.io-client/lib/transports/polling.js", function(module, exports, require, global){
+});require.register("transports/polling.js", function(module, exports, require, global){
 /**
  * Module dependencies.
  */
@@ -2041,7 +2041,7 @@ Polling.prototype.uri = function () {
   return schema + '://' + this.host + port + this.path + query;
 };
 
-});require.register("node_modules/engine.io-client/lib/transports/websocket.js", function(module, exports, require, global){
+});require.register("transports/websocket.js", function(module, exports, require, global){
 
 /**
  * Module dependencies.
@@ -2194,7 +2194,7 @@ function ws () {
   return global.WebSocket || global.MozWebSocket;
 }
 
-});require.register("node_modules/engine.io-client/lib/util.js", function(module, exports, require, global){
+});require.register("util.js", function(module, exports, require, global){
 
 /**
  * Status of page load.
@@ -2455,519 +2455,357 @@ exports.qs = function (obj) {
   return str;
 };
 
-});require.register("Client.js", function(module, exports, require, global){
-// Generated by CoffeeScript 1.4.0
-(function() {
-  var Client, EventEmitter, engineClient, getDelay, isBrowser, util,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-  util = require('./util');
-
-  isBrowser = util.isBrowser();
-
-  if (isBrowser) {
-    engineClient = require('node_modules/engine.io-client/lib/engine.io-client');
-    EventEmitter = engineClient.EventEmitter;
-  } else {
-    engineClient = require('engine.io-client');
-    EventEmitter = require('events').EventEmitter;
-  }
-
-  util.extendSocket(engineClient.Socket);
-
-  getDelay = function(a) {
-    if (a > 10) {
-      return 15000;
-    } else if (a > 5) {
-      return 5000;
-    } else if (a > 3) {
-      return 1000;
-    }
-    return 1000;
-  };
-
-  Client = (function(_super) {
-
-    __extends(Client, _super);
-
-    function Client(plugin, options) {
-      var eiopts, k, v, _base, _base1, _ref, _ref1;
-      if (options == null) {
-        options = {};
-      }
-      this.reconnect = __bind(this.reconnect, this);
-
-      this.handleClose = __bind(this.handleClose, this);
-
-      this.handleError = __bind(this.handleError, this);
-
-      this.handleMessage = __bind(this.handleMessage, this);
-
-      this.handleConnection = __bind(this.handleConnection, this);
-
-      for (k in plugin) {
-        v = plugin[k];
-        this[k] = v;
-      }
-      for (k in options) {
-        v = options[k];
-        this.options[k] = v;
-      }
-      if ((_ref = (_base = this.options).reconnect) == null) {
-        _base.reconnect = true;
-      }
-      if ((_ref1 = (_base1 = this.options).reconnectLimit) == null) {
-        _base1.reconnectLimit = Infinity;
-      }
-      this.isServer = false;
-      this.isClient = true;
-      this.isBrowser = isBrowser;
-      eiopts = {
-        host: this.options.host,
-        port: this.options.port,
-        secure: this.options.secure,
-        path: "/" + this.options.namespace,
-        resource: this.options.resource,
-        transports: this.options.transports,
-        upgrade: this.options.upgrade,
-        flashPath: this.options.flashPath,
-        policyPort: this.options.policyPort,
-        forceJSONP: this.options.forceJSONP,
-        forceBust: this.options.forceBust,
-        debug: this.options.debug
-      };
-      this.ssocket = new engineClient.Socket(eiopts);
-      this.ssocket.parent = this;
-      this.ssocket.once('open', this.handleConnection);
-      this.ssocket.on('error', this.handleError);
-      this.ssocket.on('message', this.handleMessage);
-      this.ssocket.on('close', this.handleClose);
-      this.start();
-      return;
-    }
-
-    Client.prototype.disconnect = function() {
-      this.ssocket.disconnect();
-      return this;
-    };
-
-    Client.prototype.handleConnection = function() {
-      this.emit('connected');
-      return this.connect(this.ssocket);
-    };
-
-    Client.prototype.handleMessage = function(msg) {
-      var _this = this;
-      this.emit('inbound', this.ssocket, msg);
-      return this.inbound(this.ssocket, msg, function(formatted) {
-        return _this.validate(_this.ssocket, formatted, function(valid) {
-          if (valid) {
-            _this.emit('message', _this.ssocket, formatted);
-            return _this.message(_this.ssocket, formatted);
-          } else {
-            _this.emit('invalid', _this.ssocket, formatted);
-            return _this.invalid(_this.ssocket, formatted);
-          }
-        });
-      });
-    };
-
-    Client.prototype.handleError = function(err) {
-      if (typeof err === 'string') {
-        err = new Error(err);
-      }
-      return this.error(this.ssocket, err);
-    };
-
-    Client.prototype.handleClose = function(reason) {
-      var _this = this;
-      if (this.ssocket.reconnecting) {
-        return;
-      }
-      if (this.options.reconnect) {
-        return this.reconnect(function(err) {
-          if (err == null) {
-            return;
-          }
-          _this.emit('close', _this.ssocket, reason);
-          return _this.close(_this.ssocket, reason);
-        });
-      } else {
-        this.emit('close', this.ssocket, reason);
-        return this.close(this.ssocket, reason);
-      }
-    };
-
-    Client.prototype.reconnect = function(cb) {
-      var attempts, connect, done, err, maxAttempts,
-        _this = this;
-      if (this.ssocket.reconnecting) {
-        return cb("Already reconnecting");
-      }
-      this.ssocket.reconnecting = true;
-      if (this.ssocket.readyState === 'open') {
-        this.ssocket.disconnect();
-      }
-      maxAttempts = this.options.reconnectLimit;
-      attempts = 0;
-      done = function() {
-        _this.ssocket.reconnecting = false;
-        return cb();
-      };
-      err = function(e) {
-        _this.ssocket.reconnecting = false;
-        return cb(e);
-      };
-      this.ssocket.once('open', done);
-      connect = function() {
-        if (!_this.ssocket.reconnecting) {
-          return;
-        }
-        if (attempts >= maxAttempts) {
-          return err("Exceeded max attempts");
-        }
-        attempts++;
-        _this.ssocket.open();
-        return setTimeout(connect, getDelay(attempts));
-      };
-      return setTimeout(connect, getDelay(attempts));
-    };
-
-    return Client;
-
-  })(EventEmitter);
-
-  module.exports = Client;
-
-}).call(this);
-
-});require.register("defaultClient.js", function(module, exports, require, global){
-// Generated by CoffeeScript 1.4.0
-(function() {
-  var def;
-
-  def = {
-    options: {},
-    start: function() {},
-    inbound: function(socket, msg, done) {
-      var parsed;
-      try {
-        parsed = JSON.parse(msg);
-      } catch (e) {
-        this.error(socket, e);
-      }
-      done(parsed);
-      return done;
-    },
-    outbound: function(socket, msg, done) {
-      var parsed;
-      try {
-        parsed = JSON.stringify(msg);
-      } catch (e) {
-        this.error(socket, e);
-      }
-      done(parsed);
-    },
-    validate: function(socket, msg, done) {
-      return done(true);
-    },
-    invalid: function() {},
-    connect: function() {},
-    message: function() {},
-    error: function() {},
-    close: function() {}
-  };
-
-
-
-
-
-
-
-
-
-
-
-  def.options = {
-    host: window.location.hostname,
-    port: (window.location.port.length > 0 ? parseInt(window.location.port) : 80),
-    secure: window.location.protocol === 'https:'
-  };
-
-  if (def.options.secure) {
-    def.options.port = 443;
-  }
-
-  module.exports = def;
-
-}).call(this);
-
-});require.register("main.js", function(module, exports, require, global){
-// Generated by CoffeeScript 1.4.0
-(function() {
-  var ps, util;
-
-  util = require('./util');
-
-  ps = {
-    createClientWrapper: function(plugin) {
-      return function(opt) {
-        return ps.createClient(plugin, opt);
-      };
-    },
-    createClient: function(plugin, opt) {
-      var Client, defaultClient, newPlugin;
-      Client = require('./Client');
-      defaultClient = require('./defaultClient');
-      newPlugin = util.mergePlugins(defaultClient, plugin);
-      return new Client(newPlugin, opt);
-    }
-  };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  window.ProtoSock = ps;
-
-}).call(this);
-
-});require.register("Socket.js", function(module, exports, require, global){
-// Generated by CoffeeScript 1.4.0
-(function() {
-
-  module.exports = {
-    write: function(msg) {
-      var _this = this;
-      this.parent.outbound(this, msg, function(fmt) {
-        return _this.send(fmt);
-      });
-      return this;
-    },
-    disconnect: function(r) {
-      this.close(r);
-      return this;
-    }
-  };
-
-}).call(this);
-
-});require.register("util.js", function(module, exports, require, global){
-// Generated by CoffeeScript 1.4.0
-(function() {
-  var util,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    __slice = [].slice;
-
-  module.exports = util = {
-    extendSocket: function(Socket) {
-      var nu;
-      nu = require('./Socket');
-      return __extends(Socket.prototype, nu);
-    },
-    mergePlugins: function() {
-      var args, k, newPlugin, plugin, v, _i, _len;
-      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      newPlugin = {};
-      for (_i = 0, _len = args.length; _i < _len; _i++) {
-        plugin = args[_i];
-        for (k in plugin) {
-          v = plugin[k];
-          if (typeof v === 'object' && k !== 'server') {
-            newPlugin[k] = util.mergePlugins(newPlugin[k], v);
-          } else {
-            newPlugin[k] = v;
-          }
-        }
-      }
-      return newPlugin;
-    },
-    isBrowser: function() {
-
-
-
-
-      return true;
-    }
-  };
-
-}).call(this);
-
-});main = require('main');
+});var exp = require('engine.io-client');if ("undefined" != typeof module) module.exports = exp;else eio = exp;
 })();
 // Generated by CoffeeScript 1.4.0
 (function() {
-  var ClientNamespace, client, getId, isBrowser,
-    _this = this,
-    __slice = [].slice;
+  var Call, EventEmitter, PeerConnection, RTC, URL, getUserMedia, holla,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
-  isBrowser = typeof window !== 'undefined';
+  EventEmitter = eio.EventEmitter;
 
-  getId = function() {
-    var rand;
-    rand = function() {
-      return (((1 + Math.random()) * 0x10000000) | 0).toString(16);
-    };
-    return rand() + rand() + rand();
-  };
+  PeerConnection = window.PeerConnection || window.webkitPeerConnection00 || window.webkitRTCPeerConnection;
 
-  ClientNamespace = (function() {
+  URL = window.URL || window.webkitURL || window.msURL || window.oURL;
 
-    function ClientNamespace(_socket, _name) {
-      this._socket = _socket;
-      this._name = _name;
-      this._services = [];
-      this._callbacks = {};
+  getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+
+  /*
+  
+  Client A sends
+  
+  type: "offer"
+  to: "B"
+  args: null
+  
+  ------
+  
+  Client B gets
+  
+  type: "offer"
+  from: "wat"
+  args: null
+  
+  ------
+  
+  Client B sends
+  
+  type: "answer"
+  to: "B"
+  args:
+    accepted: true
+  
+  ------
+  
+  Client A gets ICECAND
+  
+  type: "candidate"
+  to: "B"
+  args:
+    candidate: "wat"
+  
+  ------
+  
+  Client B gets ICECAND
+  
+  type: "candidate"
+  to: "A"
+  args: 
+    candidate: "wat"
+  
+  ------
+  
+  Client A sends
+  
+  type: "sdp"
+  to: "B"
+  args:
+    description: "wat"
+  
+  ------
+  
+  Client B sends
+  
+  type: "sdp"
+  to: "A"
+  args:
+    description: "wat"
+  ------
+  */
+
+
+  RTC = (function(_super) {
+
+    __extends(RTC, _super);
+
+    function RTC(opts) {
+      var _ref, _ref1, _ref2, _ref3,
+        _this = this;
+      if (opts == null) {
+        opts = {};
+      }
+      if ((_ref = opts.host) == null) {
+        opts.host = window.location.hostname;
+      }
+      if ((_ref1 = opts.port) == null) {
+        opts.port = (window.location.port.length > 0 ? parseInt(window.location.port) : 80);
+      }
+      if ((_ref2 = opts.secure) == null) {
+        opts.secure = window.location.protocol === 'https:';
+      }
+      if ((_ref3 = opts.path) == null) {
+        opts.path = "/holla";
+      }
+      this.socket = new eio.Socket(opts);
+      this.socket.on("open", this.emit.bind("connected"));
+      this.socket.on("close", this.emit.bind("disconnected"));
+      this.socket.on("error", this.emit.bind("error"));
+      this.socket.on("message", function(msg) {
+        var c;
+        msg = JSON.parse(msg);
+        if (msg.type !== "offer") {
+          return;
+        }
+        c = new Call(_this, msg.from, false);
+        _this.emit("call", c);
+      });
     }
 
-    ClientNamespace.prototype.add = function(svcs) {
-      var service, _i, _len;
-      for (_i = 0, _len = svcs.length; _i < _len; _i++) {
-        service = svcs[_i];
-        this._services = svcs;
-        this[service] = this._getSender(service);
+    RTC.prototype.identify = function(name, cb) {
+      var handle,
+        _this = this;
+      this.socket.send(JSON.stringify({
+        type: "identify",
+        args: {
+          name: name
+        }
+      }));
+      handle = function(msg) {
+        msg = JSON.parse(msg);
+        if (msg.type !== "identify") {
+          return;
+        }
+        _this.socket.removeListener("message", handle);
+        return cb(msg.args.result);
+      };
+      return this.socket.on("message", handle);
+    };
+
+    RTC.prototype.call = function(user) {
+      return new Call(this, user, true);
+    };
+
+    return RTC;
+
+  })(EventEmitter);
+
+  Call = (function(_super) {
+
+    __extends(Call, _super);
+
+    function Call(parent, user, isCaller) {
+      var _this = this;
+      this.parent = parent;
+      this.user = user;
+      this.isCaller = isCaller;
+      this.handleMessage = __bind(this.handleMessage, this);
+
+      this.startTime = new Date(Date.now());
+      this.socket = this.parent.socket;
+      this.pc = new PeerConnection(holla.config);
+      this.pc.onconnecting = function() {
+        console.log("connecting");
+        return _this.emit('connecting');
+      };
+      this.pc.onopen = function() {
+        console.log("connected");
+        return _this.emit('connected');
+      };
+      this.pc.onicecandidate = function(evt) {
+        _this._candidate = evt.candidate;
+        console.log(evt);
+        return _this.emit("ICEcandidate", evt.candidate);
+      };
+      this.pc.onaddstream = function(evt) {
+        this.remoteStream = evt.stream;
+        this._ready = true;
+        return this.emit("ready", this.remoteStream);
+      };
+      if (this.isCaller) {
+        this.socket.send(JSON.stringify({
+          type: "offer",
+          to: this.user
+        }));
       }
+      this.emit("calling");
+      this.socket.on("message", this.handleMessage);
+    }
+
+    Call.prototype.handleMessage = function(msg) {
+      msg = JSON.parse(msg);
+      console.log(this.user, msg);
+      if (msg.from !== this.user) {
+        return;
+      }
+      if (msg.type === "answer") {
+        if (!msg.args.accepted) {
+          return this.emit("rejected");
+        }
+        this.emit("answered");
+        return this.initICE();
+      } else if (msg.type === "candidate") {
+        this.pc.addIceCandidate(new RTCIceCandidate(msg.args.candidate));
+        return this.initSDP();
+      } else if (msg.type === "sdp") {
+        return this.pc.setRemoteDescription(new RTCSessionDescription(msg.args.description));
+      } else if (msg.type === "hangup") {
+        return this.emit("hangup");
+      }
+    };
+
+    Call.prototype.connections = [];
+
+    Call.prototype.addStream = function(s) {
+      return this.pc.addStream(s);
+    };
+
+    Call.prototype.ready = function(fn) {
+      if (this._ready) {
+        return fn(this.remoteStream);
+      } else {
+        return this.once('ready', fn);
+      }
+    };
+
+    Call.prototype.duration = function() {
+      var e, s;
+      if (this.endTime != null) {
+        s = this.endTime.getTime();
+      }
+      if (s == null) {
+        s = Date.now();
+      }
+      e = this.startTime.getTime();
+      return (s - e) / 1000;
+    };
+
+    Call.prototype.answer = function() {
+      this.socket.send(JSON.stringify({
+        type: "answer",
+        to: this.user,
+        args: {
+          accepted: true
+        }
+      }));
+      return this.initICE();
+    };
+
+    Call.prototype.decline = function() {
+      return this.socket.send(JSON.stringify({
+        type: "answer",
+        to: this.user,
+        args: {
+          accepted: false
+        }
+      }));
+    };
+
+    Call.prototype.end = function() {
+      this.endTime = Date.now();
       return this;
     };
 
-    ClientNamespace.prototype._getSender = function(service) {
-      var _this = this;
-      return function() {
-        var args, cb, id, _i;
-        args = 2 <= arguments.length ? __slice.call(arguments, 0, _i = arguments.length - 1) : (_i = 0, []), cb = arguments[_i++];
-        id = getId();
-        if (typeof cb === 'function') {
-          _this._callbacks[id] = cb;
-        } else {
-          args.push(cb);
-        }
-        return _this._socket.write({
-          type: 'request',
-          id: id,
-          ns: _this._name,
-          service: service,
-          args: args
-        });
+    Call.prototype.initICE = function() {
+      var send,
+        _this = this;
+      send = function(candidate) {
+        return _this.socket.send(JSON.stringify({
+          type: "candidate",
+          to: _this.user,
+          args: {
+            candidate: candidate
+          }
+        }));
       };
+      if (this._candidate) {
+        return send(this._candidate);
+      } else {
+        return this.on("ICEcandidate", send);
+      }
     };
 
-    return ClientNamespace;
-
-  })();
-
-  client = {
-    options: {
-      namespace: 'Vein',
-      resource: 'default'
-    },
-    start: function() {
-      return this.namespaces = {};
-    },
-    ready: function(fn) {
-      if (this.synced) {
-        return fn(this.ns('main')._services, this.namespaces);
-      }
-      return this.once('ready', fn);
-    },
-    ns: function(name) {
-      return this.namespaces[name];
-    },
-    validate: function(socket, msg, done) {
-      if (typeof msg !== 'object') {
-        return done(false);
-      }
-      if (typeof msg.type !== 'string') {
-        return done(false);
-      }
-      if (msg.type === 'response') {
-        if (typeof msg.id !== 'string') {
-          return done(false);
-        }
-        if (typeof msg.ns !== 'string') {
-          return done(false);
-        }
-        if (this.ns(msg.ns) == null) {
-          return done(false);
-        }
-        if (typeof msg.service !== 'string') {
-          return done(false);
-        }
-        if (typeof this.ns(msg.ns)._callbacks[msg.id] !== 'function') {
-          return done(false);
-        }
-        if (!Array.isArray(msg.args)) {
-          return done(false);
-        }
-      } else if (msg.type === 'services') {
-        if (typeof msg.args !== 'object') {
-          return done(false);
-        }
+    Call.prototype.initSDP = function() {
+      var done,
+        _this = this;
+      done = function(desc) {
+        _this.pc.setLocalDescription(desc);
+        return _this.socket.send(JSON.stringify({
+          type: "sdp",
+          to: _this.user,
+          args: desc
+        }));
+      };
+      if (this.isCaller) {
+        return this.pc.createOffer(done);
       } else {
-        return done(false);
+        return this.pc.createAnswer(this.pc.remoteDescription, done);
       }
-      return done(true);
+    };
+
+    return Call;
+
+  })(EventEmitter);
+
+  holla = {
+    Call: Call,
+    RTC: RTC,
+    connect: function(host) {
+      return new RTC(host);
     },
-    error: function(socket, err) {
-      return this.emit('error', err, socket);
+    config: {
+      iceServers: [
+        {
+          url: "stun:stun.l.google.com:19302"
+        }
+      ]
     },
-    message: function(socket, msg) {
-      var k, v, _i, _len, _ref, _ref1, _ref2;
-      if (msg.type === 'response') {
-        (_ref = this.ns(msg.ns)._callbacks)[msg.id].apply(_ref, msg.args);
-        return delete this.ns(msg.ns)._callbacks[msg.id];
-      } else if (msg.type === 'services') {
-        _ref1 = msg.args;
-        for (k in _ref1) {
-          v = _ref1[k];
-          if (this.namespaces[k]) {
-            this.namespaces[k].add(v);
-          } else {
-            this.namespaces[k] = new ClientNamespace(socket, k);
-            this.namespaces[k].add(v);
-          }
-        }
-        _ref2 = msg.args.main;
-        for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
-          k = _ref2[_i];
-          this[k] = this.ns('main')[k];
-        }
-        this.synced = true;
-        return this.emit('ready', this.ns('main')._services, this.namespaces);
+    streamToBlob: function(s) {
+      return URL.createObjectURL(s);
+    },
+    pipe: function(stream, el) {
+      var uri;
+      uri = holla.streamToBlob(stream);
+      if (typeof el === "string") {
+        document.getElementById(el).src;
+      } else if (el.jquery) {
+        el.attr('src', uri);
+      } else {
+        el.src = uri;
       }
+      return holla;
+    },
+    createStream: function(opt, cb) {
+      var err, succ;
+      if (getUserMedia == null) {
+        return cb("Missing getUserMedia");
+      }
+      err = cb;
+      succ = function(s) {
+        return cb(null, s);
+      };
+      getUserMedia.call(navigator, opt, succ, err);
+      return holla;
+    },
+    createFullStream: function(cb) {
+      return holla.createStream({
+        video: true,
+        audio: true
+      }, cb);
     }
   };
 
-  if (isBrowser) {
-    window.Vein = {
-      createClient: ProtoSock.createClientWrapper(client)
-    };
-  } else {
-    module.exports = client;
-  }
+  window.holla = holla;
 
 }).call(this);

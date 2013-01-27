@@ -1,16 +1,17 @@
 {
-   "name":"vein",
-   "description":"WebSocket RPC",
+   "name":"holla",
+   "description":"WebSocket RTC Signaling",
    "version":"0.5.1",
-   "homepage":"http://github.com/wearefractal/vein",
-   "repository":"git://github.com/wearefractal/vein.git",
+   "homepage":"http://github.com/wearefractal/holla",
+   "repository":"git://github.com/wearefractal/holla.git",
    "author":"Fractal <contact@wearefractal.com> (http://wearefractal.com/)",
    "main":"./index.js",
 
    "dependencies":{
       "coffee-script":"*",
       "async":"*",
-      "protosock":"*"
+      "engine.io-client":"0.3.10",
+      "engine.io":"0.3.10"
    },
    "devDependencies":{
       "mocha":"*",
@@ -27,7 +28,7 @@
    "licenses":[
       {
          "type":"MIT",
-         "url":"http://github.com/wearefractal/vein/raw/master/LICENSE"
+         "url":"http://github.com/wearefractal/holla/raw/master/LICENSE"
       }
    ]
 }

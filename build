@@ -1,17 +1,11 @@
-# compile
-rm -rf dist
-mkdir dist
-coffee -o dist -c lib/Client.coffee
+coffee -j holla.js -c lib/holla
 
-# build
-cat node_modules/protosock/protosock.js > vein.js
-cat dist/Client.js >> vein.js
+# Prepend deps
+cat node_modules/engine.io-client/dist/engine.io.js | cat - holla.js > /tmp/out && mv /tmp/out holla.js
 
-# minify
-node_modules/.bin/uglifyjs -nc --unsafe -mt -o vein.min.js vein.js
-echo "File size (minified): " && cat vein.min.js | wc -c
-echo "File size (gzipped): " && cat vein.min.js | gzip -9f  | wc -c
-cp ./vein.js ./examples/add/vein.js
+# Minify
+uglifyjs -nc --unsafe -mt -o holla.min.js holla.js
+echo "File size (minified): " && cat holla.min.js | wc -c
+echo "File size (gzipped): " && cat holla.min.js | gzip -9f  | wc -c
 
-# clean
-rm -rf dist
+cp holla.js examples/holla.js

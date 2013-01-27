@@ -1,60 +1,91 @@
-Namespace = require './Namespace'
+{EventEmitter} = require 'events'
+engineServer = require 'engine.io'
 
-module.exports =
-  options:
-    namespace: 'Vein'
-    resource: 'default'
+class Server extends EventEmitter
+  constructor: (@httpServer, @options={}) ->
+    @options.path ?= "/holla"
+    @options.destroyUpgrade ?= false
+    @server = engineServer.attach @httpServer, @options
+    @server.httpServer = @httpServer
+    @server.on 'connection', @handleConnection
 
-  start: ->
-    @namespaces = {}
-    @ns 'main'
+  handleConnection: (socket) =>
+    socket.on 'message', (msg) =>
+      console.log socket.id, msg
+      try
+        msg = JSON.parse msg
+      catch e
+        return
+      return unless msg.type and typeof msg.type is "string"
+      return if msg.args and typeof msg.args isnt "object"
 
-  ns: (name) -> @namespaces[name] ?= new Namespace name
-  add: (args...) -> @ns('main').add args...
-  remove: (args...) -> @ns('main').remove args...
-  addFolder: (args...) -> @ns('main').addFolder args...
-  use: (args...) -> @ns('main').use args...
+      if msg.type is "identify"
+        return unless msg.args.name
+        req =
+          name: msg.args.name
+          socket: socket
+        @identify req, (res=true) ->
+          socket.identity = msg.args.name if res?
+          socket.send JSON.stringify
+            type: "identify"
+            args:
+              result: res
 
-  validate: (socket, msg, done) ->
-    return done false unless typeof msg is 'object'
-    return done false unless typeof msg.type is 'string'
-    if msg.type is 'request'
-      return done false unless typeof msg.id is 'string'
-      return done false unless typeof msg.service is 'string'
-      return done false unless typeof msg.ns is 'string'
-      return done false unless @namespaces[msg.ns]?
-      return done false unless typeof @namespaces[msg.ns]._services[msg.service] is 'function'
-      return done false unless Array.isArray msg.args
-    else
-      return done false
-    return done true
+      else if msg.type is "offer"
+        return unless msg.to
+        return unless socket.identity
+        @getId msg.to, (id) =>
+          @server.clients[id].send JSON.stringify
+            type: "offer"
+            from: socket.identity
 
-  invalid: (socket, msg) -> socket.close()
-  connect: (socket) ->
-    strut = {}
-    strut[name] = Object.keys ns._services for name, ns of @namespaces
-    socket.write
-      type: 'services'
-      args: strut
+      else if msg.type is "answer"
+        return unless msg.to
+        return unless msg.args.accepted?
+        return unless socket.identity
+        @getId msg.to, (id) =>
+          @server.clients[id].send JSON.stringify
+            type: "answer"
+            from: socket.identity
+            args:
+              accepted: msg.args.accepted
 
-  message: (socket, msg) ->
-    res = @getResponder socket, msg
-    @ns(msg.ns)._middle msg, res, =>
-      @ns(msg.ns)._services[msg.service] res, msg.args...
+      else if msg.type is "candidate"
+        return unless msg.to
+        return unless msg.args.candidate
+        return unless socket.identity
+        @getId msg.to, (id) =>
+          @server.clients[id].send JSON.stringify
+            type: "candidate"
+            from: socket.identity
+            args:
+              candidate: msg.args.candidate
 
-  getResponder: (socket, msg) ->
-    responder = (args...) ->
-      # TODO: enforce a reply-once policy
-      socket.write
-        type: 'response'
-        id: msg.id
-        ns: msg.ns
-        service: msg.service
-        args: args
-      return @
+      else if msg.type is "sdp"
+        return unless msg.to
+        return unless msg.args
+        return unless socket.identity
+        # TODO: only resend exactly whats needed on msg.args
+        @getId msg.to, (id) =>
+          @server.clients[id].send JSON.stringify
+            type: "sdp"
+            from: socket.identity
+            args: msg.args
+      
+      
+    socket.on 'error', (err) ->
+      req =
+        name: socket.name
+        reason: err
+        socket: socket
+      @error? req
 
-    responder.reply = responder
-    responder.socket = socket
-    return responder
+    socket.on 'close', (reason) ->
+      req =
+        name: socket.name
+        reason: reason
+        socket: socket
 
-    disconnect: -> socket.close()
+      @close? req
+
+module.exports = Server
