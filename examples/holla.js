@@ -2569,6 +2569,11 @@ exports.qs = function (obj) {
       this.socket.on("message", function(msg) {
         var c;
         msg = JSON.parse(msg);
+        if (msg.type === "presence") {
+          _this.emit("presence", msg.args);
+          _this.emit("presence." + msg.args.name, msg.args.online);
+          return;
+        }
         if (msg.type !== "offer") {
           return;
         }
@@ -2592,6 +2597,9 @@ exports.qs = function (obj) {
           return;
         }
         _this.socket.removeListener("message", handle);
+        if (msg.args.result === true) {
+          _this.user = name;
+        }
         return cb(msg.args.result);
       };
       return this.socket.on("message", handle);
@@ -2633,16 +2641,14 @@ exports.qs = function (obj) {
       this.pc = new PeerConnection(holla.config);
       window.pc = this.pc;
       this.pc.onconnecting = function() {
-        console.log("connecting");
         return _this.emit('connecting');
       };
       this.pc.onopen = function() {
-        console.log("connected");
         return _this.emit('connected');
       };
       this.pc.onicecandidate = function(evt) {
         if (evt.candidate) {
-          return _this.socket.send(JSON.stringify({
+          _this.socket.send(JSON.stringify({
             type: "candidate",
             to: _this.user,
             args: {
@@ -2654,13 +2660,12 @@ exports.qs = function (obj) {
       return this.pc.onaddstream = function(evt) {
         _this.remoteStream = evt.stream;
         _this._ready = true;
-        return _this.emit("ready", _this.remoteStream);
+        _this.emit("ready", _this.remoteStream);
       };
     };
 
     Call.prototype.handleMessage = function(msg) {
       msg = JSON.parse(msg);
-      console.log(this.user, msg);
       if (msg.from !== this.user) {
         return;
       }
@@ -2669,19 +2674,22 @@ exports.qs = function (obj) {
           return this.emit("rejected");
         }
         this.emit("answered");
-        return this.initSDP();
+        this.initSDP();
       } else if (msg.type === "candidate") {
-        return this.pc.addIceCandidate(new IceCandidate(msg.args.candidate));
+        this.pc.addIceCandidate(new IceCandidate(msg.args.candidate));
       } else if (msg.type === "sdp") {
         this.pc.setRemoteDescription(new SessionDescription(msg.args));
-        return this.emit("sdp");
+        this.emit("sdp");
       } else if (msg.type === "hangup") {
-        return this.emit("hangup");
+        this.emit("hangup");
+      } else if (msg.type === "chat") {
+        this.emit("chat", msg.args.message);
       }
     };
 
     Call.prototype.addStream = function(s) {
-      return this.pc.addStream(s);
+      this.pc.addStream(s);
+      return this;
     };
 
     Call.prototype.ready = function(fn) {
@@ -2703,6 +2711,17 @@ exports.qs = function (obj) {
       }
       e = this.startTime.getTime();
       return (s - e) / 1000;
+    };
+
+    Call.prototype.chat = function(msg) {
+      this.socket.send(JSON.stringify({
+        type: "chat",
+        to: this.user,
+        args: {
+          message: msg
+        }
+      }));
+      return this;
     };
 
     Call.prototype.answer = function() {

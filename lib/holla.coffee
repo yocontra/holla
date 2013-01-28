@@ -83,6 +83,10 @@ class RTC extends EventEmitter
     @socket.on "error", @emit.bind "error"
     @socket.on "message", (msg) =>
       msg = JSON.parse msg
+      if msg.type is "presence"
+        @emit "presence", msg.args
+        @emit "presence.#{msg.args.name}", msg.args.online
+        return
       return unless msg.type is "offer"
       c = new Call @, msg.from, false
       @emit "call", c
@@ -98,6 +102,7 @@ class RTC extends EventEmitter
       msg = JSON.parse msg
       return unless msg.type is "identify"
       @socket.removeListener "message", handle
+      @user = name if msg.args.result is true
       cb msg.args.result
     @socket.on "message", handle
 
@@ -119,12 +124,8 @@ class Call extends EventEmitter
   createConnection: ->
     @pc = new PeerConnection holla.config
     window.pc = @pc
-    @pc.onconnecting = =>
-      console.log "connecting"
-      @emit 'connecting'
-    @pc.onopen = =>
-      console.log "connected"
-      @emit 'connected'
+    @pc.onconnecting = => @emit 'connecting'
+    @pc.onopen = => @emit 'connected'
     @pc.onicecandidate = (evt) =>
       if evt.candidate
         @socket.send JSON.stringify
@@ -132,30 +133,35 @@ class Call extends EventEmitter
           to: @user
           args:
             candidate: evt.candidate
+      return
 
     @pc.onaddstream = (evt) =>
       @remoteStream = evt.stream
       @_ready = true
       @emit "ready", @remoteStream
+      return
 
   handleMessage: (msg) =>
     msg = JSON.parse msg
-    console.log @user, msg
-    return unless msg.from is @user # not us
-    if msg.type is "answer" # step 1
-      # caller gets answer and sends ICE
+    return unless msg.from is @user
+    if msg.type is "answer"
       return @emit "rejected" unless msg.args.accepted
       @emit "answered"
       @initSDP()
-    else if msg.type is "candidate" # step 2
+    else if msg.type is "candidate"
       @pc.addIceCandidate new IceCandidate msg.args.candidate
-    else if msg.type is "sdp" # step 3
+    else if msg.type is "sdp"
       @pc.setRemoteDescription new SessionDescription msg.args
       @emit "sdp"
     else if msg.type is "hangup"
       @emit "hangup"
+    else if msg.type is "chat"
+      @emit "chat", msg.args.message
+    return
 
-  addStream: (s) -> @pc.addStream s
+  addStream: (s) -> 
+    @pc.addStream s
+    return @
 
   ready: (fn) ->
     if @_ready
@@ -169,6 +175,14 @@ class Call extends EventEmitter
     s ?= Date.now()
     e = @startTime.getTime()
     return (s-e)/1000
+
+  chat: (msg) ->
+    @socket.send JSON.stringify
+      type: "chat"
+      to: @user
+      args:
+        message: msg
+    return @
 
   answer: ->
     @startTime = new Date
@@ -215,8 +229,6 @@ class Call extends EventEmitter
       else
         @on "sdp", =>
           @pc.createAnswer done, err
-
-
 
 
 holla =

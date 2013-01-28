@@ -9,6 +9,15 @@ class Server extends EventEmitter
     @server.httpServer = @httpServer
     @server.on 'connection', @handleConnection
 
+  presence: (user, presence, users) ->
+    for id in users
+      @server.clients[id]?.send JSON.stringify
+        type: "presence"
+        args:
+          name: user
+          online: presence.online
+    return
+
   handleConnection: (socket) =>
     socket.on 'message', (msg) =>
       console.log socket.id, msg
@@ -85,6 +94,19 @@ class Server extends EventEmitter
             args:
               sdp: msg.args.sdp
               type: msg.args.type
+
+      else if msg.type is "chat"
+        return unless msg.to
+        return unless msg.args
+        return unless msg.args.message
+        return unless socket.identity
+        @getId msg.to, (id) =>
+          @server.clients[id]?.send JSON.stringify
+            type: "chat"
+            from: socket.identity
+            args:
+              message: msg.args.message
+
       
       
     socket.on 'error', (err) ->
