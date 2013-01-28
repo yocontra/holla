@@ -40,6 +40,14 @@ class Server extends EventEmitter
             type: "offer"
             from: socket.identity
 
+      else if msg.type is "hangup"
+        return unless msg.to
+        return unless socket.identity
+        @getId msg.to, (id) =>
+          @server.clients[id]?.send JSON.stringify
+            type: "hangup"
+            from: socket.identity
+
       else if msg.type is "answer"
         return unless msg.to
         return unless msg.args

@@ -2686,10 +2686,11 @@ exports.qs = function (obj) {
 
     Call.prototype.ready = function(fn) {
       if (this._ready) {
-        return fn(this.remoteStream);
+        fn(this.remoteStream);
       } else {
-        return this.once('ready', fn);
+        this.once('ready', fn);
       }
+      return this;
     };
 
     Call.prototype.duration = function() {
@@ -2713,21 +2714,29 @@ exports.qs = function (obj) {
           accepted: true
         }
       }));
-      return this.initSDP();
+      this.initSDP();
+      return this;
     };
 
     Call.prototype.decline = function() {
-      return this.socket.send(JSON.stringify({
+      this.socket.send(JSON.stringify({
         type: "answer",
         to: this.user,
         args: {
           accepted: false
         }
       }));
+      return this;
     };
 
     Call.prototype.end = function() {
       this.endTime = new Date;
+      this.pc.close();
+      this.socket.send(JSON.stringify({
+        type: "hangup",
+        to: this.user
+      }));
+      this.emit("hangup");
       return this;
     };
 

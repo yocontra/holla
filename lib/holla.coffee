@@ -154,7 +154,6 @@ class Call extends EventEmitter
       @emit "sdp"
     else if msg.type is "hangup"
       @emit "hangup"
-      # TODO: stuff
 
   addStream: (s) -> @pc.addStream s
 
@@ -163,6 +162,7 @@ class Call extends EventEmitter
       fn @remoteStream
     else
       @once 'ready', fn
+    return @
 
   duration: ->
     s = @endTime.getTime() if @endTime?
@@ -178,6 +178,7 @@ class Call extends EventEmitter
       args:
         accepted: true
     @initSDP()
+    return @
 
   decline: ->
     @socket.send JSON.stringify
@@ -185,9 +186,15 @@ class Call extends EventEmitter
       to: @user
       args:
         accepted: false
+    return @
 
   end: ->
     @endTime = new Date
+    @pc.close()
+    @socket.send JSON.stringify
+      type: "hangup"
+      to: @user
+    @emit "hangup"
     return @
 
   initSDP: ->
