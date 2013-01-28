@@ -1,34 +1,36 @@
 {
-   "name":"holla",
-   "description":"WebSocket RTC Signaling",
-   "version":"0.5.1",
-   "homepage":"http://github.com/wearefractal/holla",
-   "repository":"git://github.com/wearefractal/holla.git",
-   "author":"Fractal <contact@wearefractal.com> (http://wearefractal.com/)",
-   "main":"./index.js",
-
-   "dependencies":{
-      "coffee-script":"*",
-      "async":"*",
-      "engine.io-client":"0.3.10",
-      "engine.io":"0.3.10"
+   "name": "holla",
+   "description": "WebSocket RTC Signaling",
+   "version": "0.5.1-5",
+   "homepage": "http://github.com/wearefractal/holla",
+   "repository": "git://github.com/wearefractal/holla.git",
+   "author": "Fractal <contact@wearefractal.com> (http://wearefractal.com/)",
+   "main": "./index.js",
+   "dependencies": {
+      "coffee-script": "*",
+      "async": "*",
+      "engine.io-client": "0.3.10",
+      "engine.io": "0.3.10",
+      "connect": "*"
    },
-   "devDependencies":{
-      "mocha":"*",
-      "should":"*",
-      "connect":"*",
-      "uglify-js":"*"
+   "devDependencies": {
+      "mocha": "*",
+      "should": "*",
+      "connect": "*",
+      "uglify-js": "*"
    },
-   "scripts":{
-      "test":"mocha --compilers coffee:coffee-script --reporter spec"
+   "scripts": {
+      "test": "mocha --compilers coffee:coffee-script --reporter spec",
+      "start": "examples/server.coffee"
    },
-   "engines":{
-      "node":">= 0.6.0"
+   "engines": {
+      "node": ">= 0.6.0"
    },
-   "licenses":[
+   "licenses": [
       {
-         "type":"MIT",
-         "url":"http://github.com/wearefractal/holla/raw/master/LICENSE"
+         "type": "MIT",
+         "url": "http://github.com/wearefractal/holla/raw/master/LICENSE"
       }
-   ]
+   ],
+   "subdomain": "holla"
 }

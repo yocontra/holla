@@ -36,7 +36,7 @@ class Server extends EventEmitter
         return unless msg.to
         return unless socket.identity
         @getId msg.to, (id) =>
-          @server.clients[id].send JSON.stringify
+          @server.clients[id]?.send JSON.stringify
             type: "offer"
             from: socket.identity
 
@@ -46,7 +46,7 @@ class Server extends EventEmitter
         return unless msg.args.accepted?
         return unless socket.identity
         @getId msg.to, (id) =>
-          @server.clients[id].send JSON.stringify
+          @server.clients[id]?.send JSON.stringify
             type: "answer"
             from: socket.identity
             args:
@@ -58,7 +58,7 @@ class Server extends EventEmitter
         return unless msg.args.candidate
         return unless socket.identity
         @getId msg.to, (id) =>
-          @server.clients[id].send JSON.stringify
+          @server.clients[id]?.send JSON.stringify
             type: "candidate"
             from: socket.identity
             args:
@@ -71,7 +71,7 @@ class Server extends EventEmitter
         return unless msg.args.type
         return unless socket.identity
         @getId msg.to, (id) =>
-          @server.clients[id].send JSON.stringify
+          @server.clients[id]?.send JSON.stringify
             type: "sdp"
             from: socket.identity
             args:
