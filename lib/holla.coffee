@@ -1,5 +1,7 @@
 {EventEmitter} = eio
 PeerConnection = window.PeerConnection or window.webkitPeerConnection00 or window.webkitRTCPeerConnection
+IceCandidate = window.RTCIceCandidate
+SessionDescription = window.RTCSessionDescription
 URL = window.URL or window.webkitURL or window.msURL or window.oURL
 getUserMedia = navigator.getUserMedia or navigator.webkitGetUserMedia or navigator.mozGetUserMedia or navigator.msGetUserMedia
 
@@ -103,11 +105,20 @@ class RTC extends EventEmitter
 
 class Call extends EventEmitter
   constructor: (@parent, @user, @isCaller) ->
-    @startTime = new Date Date.now()
+    @startTime = new Date
     @socket = @parent.socket
 
-    @pc = new PeerConnection holla.config
+    @createConnection()
+    if @isCaller
+      @socket.send JSON.stringify
+        type: "offer"
+        to: @user
+    @emit "calling"
+    @socket.on "message", @handleMessage
 
+  createConnection: ->
+    @pc = new PeerConnection holla.config
+    window.pc = @pc
     @pc.onconnecting = =>
       console.log "connecting"
       @emit 'connecting'
@@ -115,22 +126,17 @@ class Call extends EventEmitter
       console.log "connected"
       @emit 'connected'
     @pc.onicecandidate = (evt) =>
-      @_candidate = evt.candidate
-      console.log evt
-      @emit "ICEcandidate", evt.candidate
+      if evt.candidate
+        @socket.send JSON.stringify
+          type: "candidate"
+          to: @user
+          args:
+            candidate: evt.candidate
 
-    @pc.onaddstream = (evt) ->
+    @pc.onaddstream = (evt) =>
       @remoteStream = evt.stream
       @_ready = true
       @emit "ready", @remoteStream
-
-    if @isCaller
-      @socket.send JSON.stringify
-        type: "offer"
-        to: @user
-
-    @emit "calling"
-    @socket.on "message", @handleMessage
 
   handleMessage: (msg) =>
     msg = JSON.parse msg
@@ -140,17 +146,16 @@ class Call extends EventEmitter
       # caller gets answer and sends ICE
       return @emit "rejected" unless msg.args.accepted
       @emit "answered"
-      @initICE()
-    else if msg.type is "candidate" # step 2
-      @pc.addIceCandidate new RTCIceCandidate msg.args.candidate
       @initSDP()
+    else if msg.type is "candidate" # step 2
+      @pc.addIceCandidate new IceCandidate msg.args.candidate
     else if msg.type is "sdp" # step 3
-      @pc.setRemoteDescription new RTCSessionDescription msg.args.description
+      @pc.setRemoteDescription new SessionDescription msg.args
+      @emit "sdp"
     else if msg.type is "hangup"
       @emit "hangup"
       # TODO: stuff
 
-  connections: []
   addStream: (s) -> @pc.addStream s
 
   ready: (fn) ->
@@ -166,12 +171,13 @@ class Call extends EventEmitter
     return (s-e)/1000
 
   answer: ->
+    @startTime = new Date
     @socket.send JSON.stringify
       type: "answer"
       to: @user
       args:
         accepted: true
-    @initICE()
+    @initSDP()
 
   decline: ->
     @socket.send JSON.stringify
@@ -181,20 +187,8 @@ class Call extends EventEmitter
         accepted: false
 
   end: ->
-    @endTime = Date.now()
+    @endTime = new Date
     return @
-
-  initICE: ->
-    send = (candidate) =>
-      @socket.send JSON.stringify
-        type: "candidate"
-        to: @user
-        args:
-          candidate: candidate
-    if @_candidate
-      send @_candidate
-    else
-      @on "ICEcandidate", send
 
   initSDP: ->
     done = (desc) =>
@@ -203,10 +197,18 @@ class Call extends EventEmitter
         type: "sdp"
         to: @user
         args: desc
+
+    err = (e) -> console.log e
+
     if @isCaller
-      @pc.createOffer done
+      @pc.createOffer done, err
     else
-      @pc.createAnswer @pc.remoteDescription, done
+      if @pc.remoteDescription
+        @pc.createAnswer done, err
+      else
+        @on "sdp", =>
+          @pc.createAnswer done, err
+
 
 
 
@@ -216,7 +218,15 @@ holla =
   connect: (host) -> new RTC host
   config:
     iceServers: [
-      url: "stun:stun.l.google.com:19302"
+        url: "stun:stun.l.google.com:19302"
+      ,
+        url: "stun:stun1.l.google.com:19302"
+      ,
+        url: "stun:stun2.l.google.com:19302"
+      ,
+        url: "stun:stun3.l.google.com:19302"
+      ,
+        url: "stun:stun4.l.google.com:19302"
     ]
 
   streamToBlob: (s) -> URL.createObjectURL s

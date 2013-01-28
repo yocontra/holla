@@ -20,6 +20,7 @@ class Server extends EventEmitter
       return if msg.args and typeof msg.args isnt "object"
 
       if msg.type is "identify"
+        return unless msg.args
         return unless msg.args.name
         req =
           name: msg.args.name
@@ -41,6 +42,7 @@ class Server extends EventEmitter
 
       else if msg.type is "answer"
         return unless msg.to
+        return unless msg.args
         return unless msg.args.accepted?
         return unless socket.identity
         @getId msg.to, (id) =>
@@ -52,6 +54,7 @@ class Server extends EventEmitter
 
       else if msg.type is "candidate"
         return unless msg.to
+        return unless msg.args
         return unless msg.args.candidate
         return unless socket.identity
         @getId msg.to, (id) =>
@@ -64,13 +67,16 @@ class Server extends EventEmitter
       else if msg.type is "sdp"
         return unless msg.to
         return unless msg.args
+        return unless msg.args.sdp
+        return unless msg.args.type
         return unless socket.identity
-        # TODO: only resend exactly whats needed on msg.args
         @getId msg.to, (id) =>
           @server.clients[id].send JSON.stringify
             type: "sdp"
             from: socket.identity
-            args: msg.args
+            args:
+              sdp: msg.args.sdp
+              type: msg.args.type
       
       
     socket.on 'error', (err) ->
