@@ -109,14 +109,14 @@ class Server extends EventEmitter
 
       
       
-    socket.on 'error', (err) ->
+    socket.on 'error', (err) =>
       req =
         name: socket.name
         reason: err
         socket: socket
       @error? req
 
-    socket.on 'close', (reason) ->
+    socket.on 'close', (reason) =>
       req =
         name: socket.name
         reason: reason
