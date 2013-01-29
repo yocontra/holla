@@ -2476,70 +2476,6 @@ exports.qs = function (obj) {
 
   getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
 
-  /*
-  
-  Client A sends
-  
-  type: "offer"
-  to: "B"
-  args: null
-  
-  ------
-  
-  Client B gets
-  
-  type: "offer"
-  from: "wat"
-  args: null
-  
-  ------
-  
-  Client B sends
-  
-  type: "answer"
-  to: "B"
-  args:
-    accepted: true
-  
-  ------
-  
-  Client A gets ICECAND
-  
-  type: "candidate"
-  to: "B"
-  args:
-    candidate: "wat"
-  
-  ------
-  
-  Client B gets ICECAND
-  
-  type: "candidate"
-  to: "A"
-  args: 
-    candidate: "wat"
-  
-  ------
-  
-  Client A sends
-  
-  type: "sdp"
-  to: "B"
-  args:
-    description: "wat"
-  
-  ------
-  
-  Client B sends
-  
-  type: "sdp"
-  to: "A"
-  args:
-    description: "wat"
-  ------
-  */
-
-
   RTC = (function(_super) {
 
     __extends(RTC, _super);
@@ -2793,6 +2729,7 @@ exports.qs = function (obj) {
   holla = {
     Call: Call,
     RTC: RTC,
+    supported: (PeerConnection != null) && (getUserMedia != null),
     connect: function(host) {
       return new RTC(host);
     },
@@ -2800,14 +2737,6 @@ exports.qs = function (obj) {
       iceServers: [
         {
           url: "stun:stun.l.google.com:19302"
-        }, {
-          url: "stun:stun1.l.google.com:19302"
-        }, {
-          url: "stun:stun2.l.google.com:19302"
-        }, {
-          url: "stun:stun3.l.google.com:19302"
-        }, {
-          url: "stun:stun4.l.google.com:19302"
         }
       ]
     },

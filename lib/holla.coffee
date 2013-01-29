@@ -5,71 +5,6 @@ SessionDescription = window.RTCSessionDescription
 URL = window.URL or window.webkitURL or window.msURL or window.oURL
 getUserMedia = navigator.getUserMedia or navigator.webkitGetUserMedia or navigator.mozGetUserMedia or navigator.msGetUserMedia
 
-###
-
-Client A sends
-
-type: "offer"
-to: "B"
-args: null
-
-------
-
-Client B gets
-
-type: "offer"
-from: "wat"
-args: null
-
-------
-
-Client B sends
-
-type: "answer"
-to: "B"
-args:
-  accepted: true
-
-------
-
-Client A gets ICECAND
-
-type: "candidate"
-to: "B"
-args:
-  candidate: "wat"
-
-------
-
-Client B gets ICECAND
-
-type: "candidate"
-to: "A"
-args: 
-  candidate: "wat"
-
-------
-
-Client A sends
-
-type: "sdp"
-to: "B"
-args:
-  description: "wat"
-
-------
-
-Client B sends
-
-type: "sdp"
-to: "A"
-args:
-  description: "wat"
-------
-
-
-###
-
 class RTC extends EventEmitter
   constructor: (opts={}) ->
     opts.host ?= window.location.hostname
@@ -234,19 +169,10 @@ class Call extends EventEmitter
 holla =
   Call: Call
   RTC: RTC
+  supported: PeerConnection? and getUserMedia?
   connect: (host) -> new RTC host
   config:
-    iceServers: [
-        url: "stun:stun.l.google.com:19302"
-      ,
-        url: "stun:stun1.l.google.com:19302"
-      ,
-        url: "stun:stun2.l.google.com:19302"
-      ,
-        url: "stun:stun3.l.google.com:19302"
-      ,
-        url: "stun:stun4.l.google.com:19302"
-    ]
+    iceServers: [url: "stun:stun.l.google.com:19302"]
 
   streamToBlob: (s) -> URL.createObjectURL s
   pipe: (stream, el) ->

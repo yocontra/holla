@@ -1,6 +1,20 @@
 var server = holla.connect();
 
+var sendChat = function(){
+  var msg = $("#whatSay").val();
+  if (msg === "") return;
+  this.chat(msg);
+  $("#chat").append("<b>"+server.user+"</b>: " + msg + "<br/>");
+  $("#whatSay").val('');
+};
+
+var handleChat = function(msg){
+  $("#chat").append("<b>"+this.user+"</b>: " + msg + "<br/>");
+};
+
 $(function(){
+  $("#me").hide();
+  $("#them").hide();
   $("#whoCall").hide();
   $("#hangup").hide();
   $("#messages").hide();
@@ -15,6 +29,8 @@ $(function(){
 
   $("#whoAmI").change(function(){
     var name = $("#whoAmI").val();
+    $("#me").show();
+    $("#them").show();
     $("#whoAmI").remove();
     $("#whoCall").show();
     $("#hangup").show();
@@ -41,16 +57,8 @@ $(function(){
             call.end();
           });
 
-          $("#whatSay").change(function(){
-            var msg = $("#whatSay").val();
-            if (msg === "") return;
-            call.chat(msg);
-            $("#chat").append("<b>"+server.user+"</b>: " + msg + "<br/>");
-            $("#whatSay").val('');
-          });
-          call.on("chat", function(msg){
-            $("#chat").append("<b>"+call.user+"</b>: " + msg + "<br/>");
-          });
+          $("#whatSay").change(sendChat.bind(call));
+          call.on("chat", handleChat.bind(call));
         });
 
         //place outbound
@@ -67,16 +75,8 @@ $(function(){
           $("#hangup").click(function(){
             call.end();
           });
-          $("#whatSay").change(function(){
-            var msg = $("#whatSay").val();
-            if (msg === "") return;
-            call.chat(msg);
-            $("#chat").append("<b>"+server.user+"</b>: " + msg + "<br/>");
-            $("#whatSay").val('');
-          });
-          call.on("chat", function(msg){
-            $("#chat").append("<b>"+call.user+"</b>: " + msg + "<br/>");
-          });
+          $("#whatSay").change(sendChat.bind(call));
+          call.on("chat", handleChat.bind(call));
         });
 
       });
