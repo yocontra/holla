@@ -162,7 +162,7 @@ class Call extends EventEmitter
       if @pc.remoteDescription
         @pc.createAnswer done, err
       else
-        @on "sdp", =>
+        @once "sdp", =>
           @pc.createAnswer done, err
 
 

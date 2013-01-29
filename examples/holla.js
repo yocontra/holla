@@ -2715,7 +2715,7 @@ exports.qs = function (obj) {
         if (this.pc.remoteDescription) {
           return this.pc.createAnswer(done, err);
         } else {
-          return this.on("sdp", function() {
+          return this.once("sdp", function() {
             return _this.pc.createAnswer(done, err);
           });
         }
