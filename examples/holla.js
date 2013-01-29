@@ -2561,7 +2561,7 @@ exports.qs = function (obj) {
 
       this.startTime = new Date;
       this.socket = this.parent.socket;
-      this.createConnection();
+      this.pc = this.createConnection();
       if (this.isCaller) {
         this.socket.send(JSON.stringify({
           type: "offer",
@@ -2573,16 +2573,16 @@ exports.qs = function (obj) {
     }
 
     Call.prototype.createConnection = function() {
-      var _this = this;
-      this.pc = new PeerConnection(holla.config);
-      window.pc = this.pc;
-      this.pc.onconnecting = function() {
-        return _this.emit('connecting');
+      var pc,
+        _this = this;
+      pc = new PeerConnection(holla.config);
+      pc.onconnecting = function() {
+        _this.emit('connecting');
       };
-      this.pc.onopen = function() {
-        return _this.emit('connected');
+      pc.onopen = function() {
+        _this.emit('connected');
       };
-      this.pc.onicecandidate = function(evt) {
+      pc.onicecandidate = function(evt) {
         if (evt.candidate) {
           _this.socket.send(JSON.stringify({
             type: "candidate",
@@ -2593,11 +2593,15 @@ exports.qs = function (obj) {
           }));
         }
       };
-      return this.pc.onaddstream = function(evt) {
+      pc.onaddstream = function(evt) {
         _this.remoteStream = evt.stream;
         _this._ready = true;
         _this.emit("ready", _this.remoteStream);
       };
+      pc.onremovestream = function(evt) {
+        console.log(evt);
+      };
+      return pc;
     };
 
     Call.prototype.handleMessage = function(msg) {
@@ -2711,15 +2715,13 @@ exports.qs = function (obj) {
       };
       if (this.isCaller) {
         return this.pc.createOffer(done, err);
-      } else {
-        if (this.pc.remoteDescription) {
-          return this.pc.createAnswer(done, err);
-        } else {
-          return this.once("sdp", function() {
-            return _this.pc.createAnswer(done, err);
-          });
-        }
       }
+      if (this.pc.remoteDescription) {
+        return this.pc.createAnswer(done, err);
+      }
+      return this.once("sdp", function() {
+        return _this.pc.createAnswer(done, err);
+      });
     };
 
     return Call;

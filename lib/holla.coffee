@@ -48,7 +48,7 @@ class Call extends EventEmitter
     @startTime = new Date
     @socket = @parent.socket
 
-    @createConnection()
+    @pc = @createConnection()
     if @isCaller
       @socket.send JSON.stringify
         type: "offer"
@@ -57,11 +57,14 @@ class Call extends EventEmitter
     @socket.on "message", @handleMessage
 
   createConnection: ->
-    @pc = new PeerConnection holla.config
-    window.pc = @pc
-    @pc.onconnecting = => @emit 'connecting'
-    @pc.onopen = => @emit 'connected'
-    @pc.onicecandidate = (evt) =>
+    pc = new PeerConnection holla.config
+    pc.onconnecting = =>
+      @emit 'connecting'
+      return
+    pc.onopen = =>
+      @emit 'connected'
+      return
+    pc.onicecandidate = (evt) =>
       if evt.candidate
         @socket.send JSON.stringify
           type: "candidate"
@@ -70,11 +73,16 @@ class Call extends EventEmitter
             candidate: evt.candidate
       return
 
-    @pc.onaddstream = (evt) =>
+    pc.onaddstream = (evt) =>
       @remoteStream = evt.stream
       @_ready = true
       @emit "ready", @remoteStream
       return
+    pc.onremovestream = (evt) =>
+      console.log evt
+      return
+
+    return pc
 
   handleMessage: (msg) =>
     msg = JSON.parse msg
@@ -156,14 +164,10 @@ class Call extends EventEmitter
 
     err = (e) -> console.log e
 
-    if @isCaller
-      @pc.createOffer done, err
-    else
-      if @pc.remoteDescription
-        @pc.createAnswer done, err
-      else
-        @once "sdp", =>
-          @pc.createAnswer done, err
+    return @pc.createOffer done, err if @isCaller
+    return @pc.createAnswer done, err if @pc.remoteDescription
+    @once "sdp", =>
+      @pc.createAnswer done, err
 
 
 holla =
