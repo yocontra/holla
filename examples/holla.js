@@ -2535,14 +2535,24 @@ exports.qs = function (obj) {
         _this.socket.removeListener("message", handle);
         if (msg.args.result === true) {
           _this.user = name;
+          _this.authorized = true;
+          _this.emit("authorized");
         }
-        return cb(msg.args.result);
+        return typeof cb === "function" ? cb(msg.args.result) : void 0;
       };
       return this.socket.on("message", handle);
     };
 
     RTC.prototype.call = function(user) {
       return new Call(this, user, true);
+    };
+
+    RTC.prototype.ready = function(fn) {
+      if (this.authorized) {
+        return fn();
+      } else {
+        return this.once('authorized', fn);
+      }
     };
 
     return RTC;

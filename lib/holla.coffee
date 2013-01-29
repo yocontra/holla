@@ -37,11 +37,20 @@ class RTC extends EventEmitter
       msg = JSON.parse msg
       return unless msg.type is "identify"
       @socket.removeListener "message", handle
-      @user = name if msg.args.result is true
-      cb msg.args.result
+      if msg.args.result is true
+        @user = name
+        @authorized = true
+        @emit "authorized"
+      cb? msg.args.result
     @socket.on "message", handle
 
   call: (user) -> new Call @, user, true
+
+  ready: (fn) ->
+    if @authorized
+      fn()
+    else
+      @once 'authorized', fn
 
 class Call extends EventEmitter
   constructor: (@parent, @user, @isCaller) ->
