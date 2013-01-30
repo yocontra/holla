@@ -35,7 +35,7 @@ class Server extends EventEmitter
           name: msg.args.name
           socket: socket
         @identify req, (res=true) ->
-          socket.identity = msg.args.name if res?
+          socket.identity ?= msg.args.name if res is true
           socket.send JSON.stringify
             type: "identify"
             args:
