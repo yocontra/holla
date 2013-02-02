@@ -37,10 +37,11 @@ $(function(){
     $("#messages").show();
 
     holla.createFullStream(function(err, stream) {
+      if (err) throw err;
       holla.pipe(stream, $("#me"));
 
       // accept inbound
-      server.identify(name, function(worked) {
+      server.register(name, function(worked) {
         server.on("call", function(call) {
           console.log("Inbound call", call);
 

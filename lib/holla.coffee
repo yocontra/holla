@@ -27,15 +27,15 @@ class RTC extends EventEmitter
       @emit "call", c
       return
 
-  identify: (name, cb) ->
+  register: (name, cb) ->
     @socket.send JSON.stringify
-      type: "identify"
+      type: "register"
       args:
         name: name
 
     handle = (msg) =>
       msg = JSON.parse msg
-      return unless msg.type is "identify"
+      return unless msg.type is "register"
       @socket.removeListener "message", handle
       if msg.args.result is true
         @user = name
@@ -205,7 +205,8 @@ holla =
     getUserMedia.call navigator, opt, succ, err
     return holla
 
-  createFullStream: (cb) ->
-    holla.createStream {video:true,audio:true}, cb
+  createFullStream: (cb) -> holla.createStream {video:true,audio:true}, cb
+  createVideoStream: (cb) -> holla.createStream {video:true,audio:false}, cb
+  createAudioStream: (cb) -> holla.createStream {video:true,audio:false}, cb
 
 window.holla = holla

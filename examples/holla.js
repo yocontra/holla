@@ -2518,18 +2518,18 @@ exports.qs = function (obj) {
       });
     }
 
-    RTC.prototype.identify = function(name, cb) {
+    RTC.prototype.register = function(name, cb) {
       var handle,
         _this = this;
       this.socket.send(JSON.stringify({
-        type: "identify",
+        type: "register",
         args: {
           name: name
         }
       }));
       handle = function(msg) {
         msg = JSON.parse(msg);
-        if (msg.type !== "identify") {
+        if (msg.type !== "register") {
           return;
         }
         _this.socket.removeListener("message", handle);
@@ -2783,6 +2783,18 @@ exports.qs = function (obj) {
       return holla.createStream({
         video: true,
         audio: true
+      }, cb);
+    },
+    createVideoStream: function(cb) {
+      return holla.createStream({
+        video: true,
+        audio: false
+      }, cb);
+    },
+    createAudioStream: function(cb) {
+      return holla.createStream({
+        video: true,
+        audio: false
       }, cb);
     }
   };

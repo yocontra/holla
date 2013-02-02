@@ -1,0 +1,35 @@
+.rtc-reflect {
+  -webkit-box-reflect: below 1 -webkit-gradient(linear, left top, left bottom, color-stop(0.5, transparent), color-stop(1.0, rgba(255, 255, 255, 0.5)));
+}
+
+.rtc-fadein {
+  -webkit-transition-property: opacity;
+  -moz-transition-property: opacity;
+  -o-transition-property: opacity;
+  -ms-transition-property: opacity;
+  transition-property: opacity;
+
+  -webkit-transition-duration: 550ms;
+  -moz-transition-duration: 550ms;
+  -o-transition-duration: 550ms;
+  -ms-transition-duration: 550ms;
+  transition-duration: 550ms;
+
+  -webkit-transition-timing-function: ease-in-out;
+  -moz-transition-timing-function: ease-in-out;
+  -o-transition-timing-function: ease-in-out;
+  -ms-transition-timing-function: ease-in-out;
+  transition-timing-function: ease-in-out;
+}
+
+.rtc-grayscale {
+  -webkit-filter: grayscale(1);
+}
+
+.rtc-sepia {
+  -webkit-filter: sepia(1);
+}
+
+.rtc-blur {
+  -webkit-filter: blur(3px);
+}
