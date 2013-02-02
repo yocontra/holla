@@ -174,10 +174,11 @@ Declines the call (inbound only)
 
 Ends the call (hangup and close connection)
 
-### .ready(fn)
+#### .ready(fn)
 
 Will call fn when the call has been connected and is ready to go or if it is already.
-### Events
+
+#### Events
 
 Call will emit calling, connecting, connected, hangup, and chat events
 
