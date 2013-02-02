@@ -24,24 +24,7 @@
 ```javascript
 var holla = require('holla');
 var server = http.createServer().listen(8080);
-
 var rtc = holla.createServer(server);
-
-var users = {};
-rtc.identify = function (req, cb) {
-  users[req.name] = req.socket.id;
-  cb();
-};
-
-rtc.getId = function (name, cb) {
-  cb(users[name]);
-};
-
-rtc.close = function (req, cb) {
-  delete users[req.name];
-  cb();
-};
-
 
 console.log 'Server running on port 8080'
 ```
@@ -56,17 +39,19 @@ before passing it to holla.createServer
 Sending a call:
 
 ```javascript
-var server = holla.connect();
-server.identify("tom", function(worked) {
-  var call = server.call("bob");
-  call.on("answered", function() {
-    console.log("Remote user answered the call");
-  });
-
+var rtc = holla.connect();
+rtc.register("tom", function(worked) {
   holla.createFullStream(function(err, stream) {
-    if(err) return console.log(err);
+
+    var call = rtc.call("bob");
     call.addStream(stream);
     holla.pipe(stream, $("#me"));
+
+    call.on("answered", function() {
+      console.log("Remote user answered the call");
+    });
+
+    console.log("Calling ", call.user);
   });
 });
 ```
@@ -74,20 +59,23 @@ server.identify("tom", function(worked) {
 Receiving a call:
 
 ```javascript
-var server = holla.connect();
-server.identify("bob", function(worked) {
-  server.on("call", function(call) {
-    console.log("Inbound call", call);
-    call.answer();
+var rtc = holla.connect();
+rtc.register("bob", function(worked) {
+  rtc.on("call", function(call) {
+    console.log("Inbound call from ", call.user);
+
     holla.createFullStream(function(err, stream) {
-      if(err) return console.log(err);
+
       call.addStream(stream);
+      call.answer();
       holla.pipe(stream, $("#me"));
 
       call.ready(function(stream) {
         holla.pipe(stream, $("#them"));
       });
+
     });
+
   });
 });
 ```
@@ -95,6 +83,11 @@ server.identify("bob", function(worked) {
 ## Examples
 
 You can view more examples in the [example folder.](https://github.com/wearefractal/holla/tree/master/examples)
+
+## Demo
+
+There is a crappy demo up at [holla.jit.su](http://holla.jit.su)
+
 
 ## LICENSE
 
