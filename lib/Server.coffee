@@ -26,8 +26,20 @@ class Server extends EventEmitter
     @server.httpServer = @httpServer
     @server.on 'connection', @handleConnection
 
+    if @options.presence
+      @on 'register', (req) =>
+        @updatePresence
+          name: req.socket.identity
+          socket: req.socket
+          online: true
+
+      @on 'unregister', (req) =>
+        @updatePresence
+          name: req.socket.identity
+          socket: req.socket
+          online: false
+
   updatePresence: (preq) ->
-    return unless @options.presence
     @adapter.getPresenceTargets preq, (sockets) =>
       for id in sockets
         @server.clients[id]?.send JSON.stringify
@@ -35,6 +47,7 @@ class Server extends EventEmitter
           args:
             name: preq.name
             online: preq.online
+      return
     return
 
   handleConnection: (socket) =>
@@ -58,26 +71,29 @@ class Server extends EventEmitter
         name: msg.args.name
         socket: socket
       @adapter.register req, (err) ->
-        socket.identity ?= msg.args.name unless err?
+        unless err?
+          socket.identity ?= msg.args.name
+          @emit "register", req
         socket.send JSON.stringify
           type: "register"
           args:
             result: !err
-            error: err
-
-        preq =
-          name: socket.identity
-          socket: socket
-          online: true
-        @updatePresence preq
 
     else if msg.type is "offer"
       return unless msg.to
       return unless socket.identity
       @getId msg.to, (id) =>
-        @server.clients[id]?.send JSON.stringify
+        return unless @server.clients[id]?
+        @server.clients[id].send JSON.stringify
           type: "offer"
           from: socket.identity
+
+        req =
+          name: socket.identity
+          socket: socket.identity
+          to: msg.to
+
+        @emit "offer", req
 
     else if msg.type is "hangup"
       return unless msg.to
@@ -86,6 +102,13 @@ class Server extends EventEmitter
         @server.clients[id]?.send JSON.stringify
           type: "hangup"
           from: socket.identity
+
+        req =
+          name: socket.identity
+          socket: socket.identity
+          to: msg.to
+
+        @emit "hangup", req
 
     else if msg.type is "answer"
       return unless msg.to
@@ -98,6 +121,14 @@ class Server extends EventEmitter
           from: socket.identity
           args:
             accepted: msg.args.accepted
+
+        req =
+          name: socket.identity
+          socket: socket.identity
+          to: msg.to
+          accepted: msg.args.accepted
+
+        @emit "answer", req
 
     else if msg.type is "candidate"
       return unless msg.to
@@ -137,6 +168,14 @@ class Server extends EventEmitter
           args:
             message: msg.args.message
 
+        req =
+          name: socket.identity
+          socket: socket.identity
+          to: msg.to
+          message: msg.args.message
+
+        @emit "chat", req
+
   handleError: (socket, err) =>
     req =
       name: socket.identity
@@ -152,10 +191,6 @@ class Server extends EventEmitter
 
     @emit "close", req
     @adapter.unregister req, =>
-      preq =
-        name: socket.identity
-        socket: socket
-        online: false
-      @updatePresence preq
+      @emit "unregister", req
 
 module.exports = Server

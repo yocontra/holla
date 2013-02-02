@@ -26,7 +26,7 @@ var holla = require('holla');
 var server = http.createServer().listen(8080);
 var rtc = holla.createServer(server);
 
-console.log 'Server running on port 8080'
+console.log('Server running on port 8080');
 ```
 Note: Express 3 is no longer a httpServer so you need to do something like:  
 ```javascript
