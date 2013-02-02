@@ -70,7 +70,7 @@ class Server extends EventEmitter
       req =
         name: msg.args.name
         socket: socket
-      @adapter.register req, (err) ->
+      @adapter.register req, (err) =>
         unless err?
           socket.identity ?= msg.args.name
           @emit "register", req
@@ -82,7 +82,7 @@ class Server extends EventEmitter
     else if msg.type is "offer"
       return unless msg.to
       return unless socket.identity
-      @getId msg.to, (id) =>
+      @adapter.getId msg.to, (id) =>
         return unless @server.clients[id]?
         @server.clients[id].send JSON.stringify
           type: "offer"
@@ -98,7 +98,7 @@ class Server extends EventEmitter
     else if msg.type is "hangup"
       return unless msg.to
       return unless socket.identity
-      @getId msg.to, (id) =>
+      @adapter.getId msg.to, (id) =>
         @server.clients[id]?.send JSON.stringify
           type: "hangup"
           from: socket.identity
@@ -115,7 +115,7 @@ class Server extends EventEmitter
       return unless msg.args
       return unless msg.args.accepted?
       return unless socket.identity
-      @getId msg.to, (id) =>
+      @adapter.getId msg.to, (id) =>
         @server.clients[id]?.send JSON.stringify
           type: "answer"
           from: socket.identity
@@ -135,7 +135,7 @@ class Server extends EventEmitter
       return unless msg.args
       return unless msg.args.candidate
       return unless socket.identity
-      @getId msg.to, (id) =>
+      @adapter.getId msg.to, (id) =>
         @server.clients[id]?.send JSON.stringify
           type: "candidate"
           from: socket.identity
@@ -148,7 +148,7 @@ class Server extends EventEmitter
       return unless msg.args.sdp
       return unless msg.args.type
       return unless socket.identity
-      @getId msg.to, (id) =>
+      @adapter.getId msg.to, (id) =>
         @server.clients[id]?.send JSON.stringify
           type: "sdp"
           from: socket.identity
@@ -161,7 +161,7 @@ class Server extends EventEmitter
       return unless msg.args
       return unless msg.args.message
       return unless socket.identity
-      @getId msg.to, (id) =>
+      @adapter.getId msg.to, (id) =>
         @server.clients[id]?.send JSON.stringify
           type: "chat"
           from: socket.identity

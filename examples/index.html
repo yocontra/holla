@@ -5,6 +5,7 @@
     <script src="http://code.jquery.com/jquery.min.js"></script>
     <script src="holla.js"></script>
     <script src="test.js"></script>
+    <link rel="stylesheet" href="effects.css">
     <style>
       body {
         height: 100%;
@@ -13,18 +14,10 @@
         background: url(http://subtlepatterns.subtlepatterns.netdna-cdn.com/patterns/low_contrast_linen.png);
       }
       video {
-        box-shadow: 0px 0px 8px 1px #222;
         width: 460px;
       }
       #videos {
         float: left;
-      }
-      .flip {
-        transform: rotateY(180deg);
-        -webkit-transform: rotateY(180deg);
-        -ms-transform: rotateY(180deg);
-        -moz-transform: rotateY(180deg);
-        -o-transform: rotateY(180deg);
       }
     </style>
   </head>
@@ -34,7 +27,7 @@
     <button id="hangup">Hangup</button>
     <br/>
     <div id="videos">
-      <video id="me" autoplay="true" muted></video>
+      <video id="me" autoplay="true" muted="true"></video>
       <br/>
       <video id="them" autoplay="true"></video>
     </div>
