@@ -123,57 +123,60 @@ Registers your connection with the server under a name. cb receives true or fals
 
 Creates a call to user with name. Returns a Call instance
 
-### .ready(fn)
+#### .ready(fn)
 
 fn gets called when connection is registered or if it already has been.
 
-### Events
+#### Events
 
 RTC will emit connected, authorized, disconnected, error, presence, and call events.
 
 
 ### Call
 
-### .isCaller
+#### .isCaller
 
 true or false if you started this call.
 
-### .user
+#### .user
 
 Name of the user on the other end.
 
-### .startTime
+#### .startTime
 
 Date of the call start.
 
-### .endTime
+#### .endTime
 
 Date of the call end.
 
-### .duration()
+#### .duration()
 
 Duration of the call.
 
-### .addStream(stream)
+#### .addStream(stream)
 
 Adds your WebRTC stream to the call. Must be done before answering or sending a call.
 
-### .chat(msg)
+#### .chat(msg)
 
 Sends a chat message
 
-### .answer()
+#### .answer()
 
 Accepts the call (inbound only)
 
-### .decline()
+#### .decline()
 
 Declines the call (inbound only)
 
-### .end()
+#### .end()
 
 Ends the call (hangup and close connection)
 
+### .ready(fn)
+
+Will call fn when the call has been connected and is ready to go or if it is already.
 ### Events
 
 Call will emit calling, connecting, connected, hangup, and chat events
