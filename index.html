@@ -1,0 +1,254 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Holla by wearefractal</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/respond.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!--[if lt IE 8]>
+    <link rel="stylesheet" href="stylesheets/ie.css">
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+      <div id="header">
+        <nav>
+          <li class="fork"><a href="https://github.com/wearefractal/holla">View On GitHub</a></li>
+          <li class="downloads"><a href="https://github.com/wearefractal/holla/zipball/master">ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/wearefractal/holla/tarball/master">TAR</a></li>
+          <li class="title">DOWNLOADS</li>
+        </nav>
+      </div><!-- end header -->
+
+    <div class="wrapper">
+
+      <section>
+        <div id="title">
+          <h1>Holla</h1>
+          <p>The easiest way to make apps using WebRTC</p>
+          <hr>
+          <span class="credits left">Project maintained by <a href="https://github.com/wearefractal">wearefractal</a></span>
+          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="http://twitter.com/#!/michigangraham">mattgraham</a></span>
+        </div>
+
+        <p><img src="https://secure.travis-ci.org/wearefractal/holla.png?branch=master" alt="status"></p>
+
+<h2>Information</h2>
+
+<table>
+<tr>
+<td>Package</td>
+<td>holla</td>
+</tr>
+<tr>
+<td>Description</td>
+<td>WebRTC Sugar</td>
+</tr>
+<tr>
+<td>Node Version</td>
+<td>&gt;= 0.6</td>
+</tr>
+</table><h2>Example</h2>
+
+<h3>Server</h3>
+
+<div class="highlight"><pre><span class="kd">var</span> <span class="nx">holla</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'holla'</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">server</span> <span class="o">=</span> <span class="nx">http</span><span class="p">.</span><span class="nx">createServer</span><span class="p">().</span><span class="nx">listen</span><span class="p">(</span><span class="mi">8080</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">rtc</span> <span class="o">=</span> <span class="nx">holla</span><span class="p">.</span><span class="nx">createServer</span><span class="p">(</span><span class="nx">server</span><span class="p">);</span>
+
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">'Server running on port 8080'</span><span class="p">);</span>
+</pre></div>
+
+<p>Note: Express 3 is no longer a httpServer so you need to do something like:  </p>
+
+<div class="highlight"><pre><span class="kd">var</span> <span class="nx">server</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'http'</span><span class="p">).</span><span class="nx">createServer</span><span class="p">(</span><span class="nx">app</span><span class="p">).</span><span class="nx">listen</span><span class="p">(</span><span class="mi">8080</span><span class="p">);</span>
+</pre></div>
+
+<p>before passing it to holla.createServer</p>
+
+<h3>Client</h3>
+
+<p>Sending a call:</p>
+
+<div class="highlight"><pre><span class="kd">var</span> <span class="nx">rtc</span> <span class="o">=</span> <span class="nx">holla</span><span class="p">.</span><span class="nx">connect</span><span class="p">();</span>
+<span class="nx">rtc</span><span class="p">.</span><span class="nx">register</span><span class="p">(</span><span class="s2">"tom"</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">worked</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nx">holla</span><span class="p">.</span><span class="nx">createFullStream</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">stream</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="kd">var</span> <span class="nx">call</span> <span class="o">=</span> <span class="nx">rtc</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="s2">"bob"</span><span class="p">);</span>
+    <span class="nx">call</span><span class="p">.</span><span class="nx">addStream</span><span class="p">(</span><span class="nx">stream</span><span class="p">);</span>
+    <span class="nx">holla</span><span class="p">.</span><span class="nx">pipe</span><span class="p">(</span><span class="nx">stream</span><span class="p">,</span> <span class="nx">$</span><span class="p">(</span><span class="s2">"#me"</span><span class="p">));</span>
+
+    <span class="nx">call</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s2">"answered"</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+      <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">"Remote user answered the call"</span><span class="p">);</span>
+    <span class="p">});</span>
+
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">"Calling "</span><span class="p">,</span> <span class="nx">call</span><span class="p">.</span><span class="nx">user</span><span class="p">);</span>
+  <span class="p">});</span>
+<span class="p">});</span>
+</pre></div>
+
+<p>Receiving a call:</p>
+
+<div class="highlight"><pre><span class="kd">var</span> <span class="nx">rtc</span> <span class="o">=</span> <span class="nx">holla</span><span class="p">.</span><span class="nx">connect</span><span class="p">();</span>
+<span class="nx">rtc</span><span class="p">.</span><span class="nx">register</span><span class="p">(</span><span class="s2">"bob"</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">worked</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nx">rtc</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s2">"call"</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">call</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">"Inbound call from "</span><span class="p">,</span> <span class="nx">call</span><span class="p">.</span><span class="nx">user</span><span class="p">);</span>
+
+    <span class="nx">holla</span><span class="p">.</span><span class="nx">createFullStream</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">stream</span><span class="p">)</span> <span class="p">{</span>
+
+      <span class="nx">call</span><span class="p">.</span><span class="nx">addStream</span><span class="p">(</span><span class="nx">stream</span><span class="p">);</span>
+      <span class="nx">call</span><span class="p">.</span><span class="nx">answer</span><span class="p">();</span>
+      <span class="nx">holla</span><span class="p">.</span><span class="nx">pipe</span><span class="p">(</span><span class="nx">stream</span><span class="p">,</span> <span class="nx">$</span><span class="p">(</span><span class="s2">"#me"</span><span class="p">));</span>
+
+      <span class="nx">call</span><span class="p">.</span><span class="nx">ready</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">stream</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">holla</span><span class="p">.</span><span class="nx">pipe</span><span class="p">(</span><span class="nx">stream</span><span class="p">,</span> <span class="nx">$</span><span class="p">(</span><span class="s2">"#them"</span><span class="p">));</span>
+      <span class="p">});</span>
+
+    <span class="p">});</span>
+
+  <span class="p">});</span>
+<span class="p">});</span>
+</pre></div>
+
+<h2>Client</h2>
+
+<h3>holla</h3>
+
+<h4>.supported</h4>
+
+<p>true or false if WebRTC is supported in the browser</p>
+
+<h4>.connect(host)</h4>
+
+<p>Takes a host (<a href="http://site.com:8080">http://site.com:8080</a>) - defaults to window.location.href. Returns an RTC instance</p>
+
+<h4>.pipe(stream, el)</h4>
+
+<p>Pipes a WebRTC video stream to a video element. el can be a string (id), jquery element, or dom node.</p>
+
+<h4>.createStream(opt, cb)</h4>
+
+<p>Creates a WebRTC stream - opt looks like <code>{video:true,audio:true}</code> depending on the stream you want. cb signature is <code>(err, stream)</code></p>
+
+<h4>createFullStream(cb)</h4>
+
+<p>Sugar for <code>.createStream({video:true,audio:true}, cb)</code></p>
+
+<h4>createVideoStream(cb)</h4>
+
+<p>Sugar for <code>.createStream({video:true,audio:false}, cb)</code></p>
+
+<h4>createAudioStream(cb)</h4>
+
+<p>Sugar for <code>.createStream({video:false,audio:true}, cb)</code></p>
+
+<h3>RTC</h3>
+
+<h4>.register(name, cb)</h4>
+
+<p>Registers your connection with the server under a name. cb receives true or false if it worked. cb is optional.</p>
+
+<h4>.call(name)</h4>
+
+<p>Creates a call to user with name. Returns a Call instance</p>
+
+<h3>.ready(fn)</h3>
+
+<p>fn gets called when connection is registered or if it already has been.</p>
+
+<h3>Events</h3>
+
+<p>RTC will emit connected, authorized, disconnected, error, presence, and call events.</p>
+
+<h3>Call</h3>
+
+<h3>.isCaller</h3>
+
+<p>true or false if you started this call.</p>
+
+<h3>.user</h3>
+
+<p>Name of the user on the other end.</p>
+
+<h3>.startTime</h3>
+
+<p>Date of the call start.</p>
+
+<h3>.endTime</h3>
+
+<p>Date of the call end.</p>
+
+<h3>.duration()</h3>
+
+<p>Duration of the call.</p>
+
+<h3>.addStream(stream)</h3>
+
+<p>Adds your WebRTC stream to the call. Must be done before answering or sending a call.</p>
+
+<h3>.chat(msg)</h3>
+
+<p>Sends a chat message</p>
+
+<h3>.answer()</h3>
+
+<p>Accepts the call (inbound only)</p>
+
+<h3>.decline()</h3>
+
+<p>Declines the call (inbound only)</p>
+
+<h3>.end()</h3>
+
+<p>Ends the call (hangup and close connection)</p>
+
+<h3>Events</h3>
+
+<p>Call will emit calling, connecting, connected, hangup, and chat events</p>
+
+<h2>Examples</h2>
+
+<p>You can view more examples in the <a href="https://github.com/wearefractal/holla/tree/master/examples">example folder.</a></p>
+
+<h2>Demo</h2>
+
+<p>There is a crappy demo up at <a href="http://holla.jit.su">holla.jit.su</a></p>
+
+<h2>LICENSE</h2>
+
+<p>(MIT License)</p>
+
+<p>Copyright (c) 2012 Fractal <a href="mailto:contact@wearefractal.com">contact@wearefractal.com</a></p>
+
+<p>Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:</p>
+
+<p>The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.</p>
+
+<p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
+      </section>
+
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
