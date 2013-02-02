@@ -159,55 +159,59 @@
 
 <p>Creates a call to user with name. Returns a Call instance</p>
 
-<h3>.ready(fn)</h3>
+<h4>.ready(fn)</h4>
 
 <p>fn gets called when connection is registered or if it already has been.</p>
 
-<h3>Events</h3>
+<h4>Events</h4>
 
 <p>RTC will emit connected, authorized, disconnected, error, presence, and call events.</p>
 
 <h3>Call</h3>
 
-<h3>.isCaller</h3>
+<h4>.isCaller</h4>
 
 <p>true or false if you started this call.</p>
 
-<h3>.user</h3>
+<h4>.user</h4>
 
 <p>Name of the user on the other end.</p>
 
-<h3>.startTime</h3>
+<h4>.startTime</h4>
 
 <p>Date of the call start.</p>
 
-<h3>.endTime</h3>
+<h4>.endTime</h4>
 
 <p>Date of the call end.</p>
 
-<h3>.duration()</h3>
+<h4>.duration()</h4>
 
 <p>Duration of the call.</p>
 
-<h3>.addStream(stream)</h3>
+<h4>.addStream(stream)</h4>
 
 <p>Adds your WebRTC stream to the call. Must be done before answering or sending a call.</p>
 
-<h3>.chat(msg)</h3>
+<h4>.chat(msg)</h4>
 
 <p>Sends a chat message</p>
 
-<h3>.answer()</h3>
+<h4>.answer()</h4>
 
 <p>Accepts the call (inbound only)</p>
 
-<h3>.decline()</h3>
+<h4>.decline()</h4>
 
 <p>Declines the call (inbound only)</p>
 
-<h3>.end()</h3>
+<h4>.end()</h4>
 
 <p>Ends the call (hangup and close connection)</p>
+
+<h3>.ready(fn)</h3>
+
+<p>Will call fn when the call has been connected and is ready to go or if it is already.</p>
 
 <h3>Events</h3>
 
