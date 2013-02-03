@@ -22,10 +22,13 @@ class RTC extends EventEmitter
         @emit "presence", msg.args
         @emit "presence.#{msg.args.name}", msg.args.online
         return
-      return unless msg.type is "offer"
-      c = new Call @, msg.from, false
-      @emit "call", c
-      return
+      else if msg.type is "chat"
+        @emit "chat", msg.args.message
+        return
+      else if msg.type is "offer"
+        c = new Call @, msg.from, false
+        @emit "call", c
+        return
 
   register: (name, cb) ->
     @socket.send JSON.stringify
@@ -44,13 +47,23 @@ class RTC extends EventEmitter
       cb? msg.args.result
     @socket.on "message", handle
 
+    return @
+
   call: (user) -> new Call @, user, true
+  chat: (user, msg) ->
+    @socket.send JSON.stringify
+      type: "chat"
+      to: user
+      args:
+        message: msg
+    return @
 
   ready: (fn) ->
     if @authorized
       fn()
     else
       @once 'authorized', fn
+    return @
 
 class Call extends EventEmitter
   constructor: (@parent, @user, @isCaller) ->
@@ -129,11 +142,7 @@ class Call extends EventEmitter
     return (s-e)/1000
 
   chat: (msg) ->
-    @socket.send JSON.stringify
-      type: "chat"
-      to: @user
-      args:
-        message: msg
+    @parent.chat @user, msg
     return @
 
   answer: ->

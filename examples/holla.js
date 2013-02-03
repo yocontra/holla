@@ -2508,13 +2508,12 @@ exports.qs = function (obj) {
         if (msg.type === "presence") {
           _this.emit("presence", msg.args);
           _this.emit("presence." + msg.args.name, msg.args.online);
-          return;
+        } else if (msg.type === "chat") {
+          _this.emit("chat", msg.args.message);
+        } else if (msg.type === "offer") {
+          c = new Call(_this, msg.from, false);
+          _this.emit("call", c);
         }
-        if (msg.type !== "offer") {
-          return;
-        }
-        c = new Call(_this, msg.from, false);
-        _this.emit("call", c);
       });
     }
 
@@ -2540,19 +2539,32 @@ exports.qs = function (obj) {
         }
         return typeof cb === "function" ? cb(msg.args.result) : void 0;
       };
-      return this.socket.on("message", handle);
+      this.socket.on("message", handle);
+      return this;
     };
 
     RTC.prototype.call = function(user) {
       return new Call(this, user, true);
     };
 
+    RTC.prototype.chat = function(user, msg) {
+      this.socket.send(JSON.stringify({
+        type: "chat",
+        to: user,
+        args: {
+          message: msg
+        }
+      }));
+      return this;
+    };
+
     RTC.prototype.ready = function(fn) {
       if (this.authorized) {
-        return fn();
+        fn();
       } else {
-        return this.once('authorized', fn);
+        this.once('authorized', fn);
       }
+      return this;
     };
 
     return RTC;
@@ -2664,13 +2676,7 @@ exports.qs = function (obj) {
     };
 
     Call.prototype.chat = function(msg) {
-      this.socket.send(JSON.stringify({
-        type: "chat",
-        to: this.user,
-        args: {
-          message: msg
-        }
-      }));
+      this.parent.chat(this.user, msg);
       return this;
     };
 

@@ -33,6 +33,8 @@ class Server extends EventEmitter
         else
           @adapter[k]=v
 
+    @options.presence ?= true
+    @options.debug ?= false
     @options.path ?= "/holla"
     @options.destroyUpgrade ?= false
     @server = engineServer.attach @httpServer, @options
