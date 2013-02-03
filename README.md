@@ -80,6 +80,108 @@ rtc.register("bob", function(worked) {
 });
 ```
 
+## Client
+
+### holla
+
+#### .supported
+
+true or false if WebRTC is supported in the browser
+
+#### .connect(host)
+
+Takes a host (http://site.com:8080) - defaults to window.location.href. Returns an RTC instance
+
+#### .pipe(stream, el)
+
+Pipes a WebRTC video stream to a video element. el can be a string (id), jquery element, or dom node.
+
+#### .createStream(opt, cb)
+
+Creates a WebRTC stream - opt looks like ```{video:true,audio:true}``` depending on the stream you want. cb signature is ```(err, stream)```
+
+#### createFullStream(cb)
+
+Sugar for ```.createStream({video:true,audio:true}, cb)```
+
+#### createVideoStream(cb)
+
+Sugar for ```.createStream({video:true,audio:false}, cb)```
+
+#### createAudioStream(cb)
+
+Sugar for ```.createStream({video:false,audio:true}, cb)```
+
+
+### RTC
+
+#### .register(name, cb)
+
+Registers your connection with the server under a name. cb receives true or false if it worked. cb is optional.
+
+#### .call(name)
+
+Creates a call to user with name. Returns a Call instance
+
+#### .ready(fn)
+
+fn gets called when connection is registered or if it already has been.
+
+#### Events
+
+RTC will emit connected, authorized, disconnected, error, presence, and call events.
+
+
+### Call
+
+#### .isCaller
+
+true or false if you started this call.
+
+#### .user
+
+Name of the user on the other end.
+
+#### .startTime
+
+Date of the call start.
+
+#### .endTime
+
+Date of the call end.
+
+#### .duration()
+
+Duration of the call.
+
+#### .addStream(stream)
+
+Adds your WebRTC stream to the call. Must be done before answering or sending a call.
+
+#### .chat(msg)
+
+Sends a chat message
+
+#### .answer()
+
+Accepts the call (inbound only)
+
+#### .decline()
+
+Declines the call (inbound only)
+
+#### .end()
+
+Ends the call (hangup and close connection)
+
+#### .ready(fn)
+
+Will call fn when the call has been connected and is ready to go or if it is already.
+
+#### Events
+
+Call will emit calling, connecting, connected, hangup, and chat events
+
 ## Examples
 
 You can view more examples in the [example folder.](https://github.com/wearefractal/holla/tree/master/examples)
