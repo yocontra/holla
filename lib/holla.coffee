@@ -1,7 +1,7 @@
 {EventEmitter} = eio
-PeerConnection = window.PeerConnection or window.webkitPeerConnection00 or window.webkitRTCPeerConnection
-IceCandidate = window.RTCIceCandidate
-SessionDescription = window.RTCSessionDescription
+PeerConnection = window.PeerConnection or window.webkitPeerConnection00 or window.webkitRTCPeerConnection or mozRTCPeerConnection
+IceCandidate = window.mozRTCIceCandidate or window.RTCIceCandidate
+SessionDescription = window.mozRTCSessionDescription or window.RTCSessionDescription
 URL = window.URL or window.webkitURL or window.msURL or window.oURL
 getUserMedia = navigator.getUserMedia or navigator.webkitGetUserMedia or navigator.mozGetUserMedia or navigator.msGetUserMedia
 

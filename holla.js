@@ -2466,11 +2466,11 @@ exports.qs = function (obj) {
 
   EventEmitter = eio.EventEmitter;
 
-  PeerConnection = window.PeerConnection || window.webkitPeerConnection00 || window.webkitRTCPeerConnection;
+  PeerConnection = window.PeerConnection || window.webkitPeerConnection00 || window.webkitRTCPeerConnection || mozRTCPeerConnection;
 
-  IceCandidate = window.RTCIceCandidate;
+  IceCandidate = window.mozRTCIceCandidate || window.RTCIceCandidate;
 
-  SessionDescription = window.RTCSessionDescription;
+  SessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription;
 
   URL = window.URL || window.webkitURL || window.msURL || window.oURL;
 
