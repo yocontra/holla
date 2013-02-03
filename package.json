@@ -1,7 +1,7 @@
 {
    "name": "holla",
    "description": "WebSocket RTC Signaling",
-   "version": "0.5.5",
+   "version": "0.5.6",
    "homepage": "http://github.com/wearefractal/holla",
    "repository": "git://github.com/wearefractal/holla.git",
    "author": "Fractal <contact@wearefractal.com> (http://wearefractal.com/)",
