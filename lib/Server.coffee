@@ -4,22 +4,35 @@ engineServer = require 'engine.io'
 defaultAdapter =
   users: {}
   register: (req, cb) ->
-    defaultAdapter.users[req.name] = req.socket.id
+    @users[req.name] = req.socket.id
     cb()
 
   getId: (name, cb) -> 
-    cb defaultAdapter.users[name]
+    cb @users[name]
 
   unregister: (req, cb) ->
-    delete defaultAdapter.users[req.name]
+    delete @users[req.name]
     cb()
 
   getPresenceTargets: (req, cb) ->
-    cb (id for user, id of defaultAdapter.users when user isnt req.name)
+    cb (id for user, id of @users when user isnt req.name)
 
 class Server extends EventEmitter
   constructor: (@httpServer, @options={}) ->
-    @adapter = @options.adapter or defaultAdapter
+    @adapter = {}
+    for k,v of defaultAdapter
+      if typeof v is "function"
+        @adapter[k]=v.bind @adapter
+      else
+        @adapter[k]=v
+
+    if @options.adapter
+      for k,v of @options.adapter
+        if typeof v is "function"
+          @adapter[k]=v.bind @adapter
+        else
+          @adapter[k]=v
+
     @options.path ?= "/holla"
     @options.destroyUpgrade ?= false
     @server = engineServer.attach @httpServer, @options
