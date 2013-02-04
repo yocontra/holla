@@ -1,6 +1,6 @@
 {
   "name": "holla",
-  "version": "0.5.7",
+  "version": "0.5.8",
   "dependencies": {
     "wearefractal/protosock": "*",
     "component/emitter": "*"
