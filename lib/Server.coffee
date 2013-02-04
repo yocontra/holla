@@ -1,6 +1,3 @@
-{EventEmitter} = require 'events'
-engineServer = require 'engine.io'
-
 defaultAdapter =
   users: {}
   register: (req, cb) ->
@@ -17,8 +14,14 @@ defaultAdapter =
   getPresenceTargets: (req, cb) ->
     cb (id for user, id of @users when user isnt req.name)
 
-class Server extends EventEmitter
-  constructor: (@httpServer, @options={}) ->
+module.exports =
+  options:
+    namespace: 'holla'
+    resource: 'default'
+    presence: true
+    debug: false
+
+  start: ->
     @adapter = {}
     for k,v of defaultAdapter
       if typeof v is "function"
@@ -32,14 +35,6 @@ class Server extends EventEmitter
           @adapter[k]=v.bind @adapter
         else
           @adapter[k]=v
-
-    @options.presence ?= true
-    @options.debug ?= false
-    @options.path ?= "/holla"
-    @options.destroyUpgrade ?= false
-    @server = engineServer.attach @httpServer, @options
-    @server.httpServer = @httpServer
-    @server.on 'connection', @handleConnection
 
     if @options.presence
       @on 'register', (req) =>
@@ -57,148 +52,53 @@ class Server extends EventEmitter
   updatePresence: (preq) ->
     @adapter.getPresenceTargets preq, (sockets) =>
       for id in sockets
-        @server.clients[id]?.send JSON.stringify
+        @server.clients[id]?.write
           type: "presence"
           args:
             name: preq.name
             online: preq.online
       return
-    return
 
-  handleConnection: (socket) =>
-    socket.on 'error', @handleError.bind @, socket
-    socket.on 'close', @handleClose.bind @, socket
-    socket.on 'message', @handleMessage.bind @, socket
-
-  handleMessage: (socket, msg) =>
-    console.log socket.id, msg if @options.debug
-    try
-      msg = JSON.parse msg
-    catch e
-      return
-    return unless msg.type and typeof msg.type is "string"
-    return if msg.args and typeof msg.args isnt "object"
-
+  validate: (socket, msg, done) ->
+    if @options.debug
+      console.log socket.id, socket.identity, msg
+    return done false unless typeof msg is 'object'
+    return done false unless typeof msg.type is 'string'
     if msg.type is "register"
-      return unless msg.args
-      return unless msg.args.name
-      req =
-        name: msg.args.name
-        socket: socket
-      @adapter.register req, (err) =>
-        unless err?
-          socket.identity ?= msg.args.name
-          @emit "register", req
-        socket.send JSON.stringify
-          type: "register"
-          args:
-            result: !err
-
+      return done false unless typeof msg.args is 'object'
+      return done false unless typeof msg.args.name is 'string'
     else if msg.type is "offer"
-      return unless msg.to
-      return unless socket.identity
-      @adapter.getId msg.to, (id) =>
-        return unless @server.clients[id]?
-        @server.clients[id].send JSON.stringify
-          type: "offer"
-          from: socket.identity
-
-        req =
-          name: socket.identity
-          socket: socket.identity
-          to: msg.to
-
-        @emit "offer", req
-
+      return done false unless typeof msg.to is 'string'
+      return done false unless socket.identity
     else if msg.type is "hangup"
-      return unless msg.to
-      return unless socket.identity
-      @adapter.getId msg.to, (id) =>
-        @server.clients[id]?.send JSON.stringify
-          type: "hangup"
-          from: socket.identity
-
-        req =
-          name: socket.identity
-          socket: socket.identity
-          to: msg.to
-
-        @emit "hangup", req
-
+      return done false unless typeof msg.to is 'string'
+      return done false unless socket.identity
     else if msg.type is "answer"
-      return unless msg.to
-      return unless msg.args
-      return unless msg.args.accepted?
-      return unless socket.identity
-      @adapter.getId msg.to, (id) =>
-        @server.clients[id]?.send JSON.stringify
-          type: "answer"
-          from: socket.identity
-          args:
-            accepted: msg.args.accepted
-
-        req =
-          name: socket.identity
-          socket: socket.identity
-          to: msg.to
-          accepted: msg.args.accepted
-
-        @emit "answer", req
-
+      return done false unless typeof msg.to is 'string'
+      return done false unless socket.identity
+      return done false unless typeof msg.args is 'object'
+      return done false unless typeof msg.args.accepted is 'boolean'
     else if msg.type is "candidate"
-      return unless msg.to
-      return unless msg.args
-      return unless msg.args.candidate
-      return unless socket.identity
-      @adapter.getId msg.to, (id) =>
-        @server.clients[id]?.send JSON.stringify
-          type: "candidate"
-          from: socket.identity
-          args:
-            candidate: msg.args.candidate
-
+      return done false unless typeof msg.to is 'string'
+      return done false unless socket.identity
+      return done false unless typeof msg.args is 'object'
+      return done false unless typeof msg.args.candidate is 'object'
     else if msg.type is "sdp"
-      return unless msg.to
-      return unless msg.args
-      return unless msg.args.sdp
-      return unless msg.args.type
-      return unless socket.identity
-      @adapter.getId msg.to, (id) =>
-        @server.clients[id]?.send JSON.stringify
-          type: "sdp"
-          from: socket.identity
-          args:
-            sdp: msg.args.sdp
-            type: msg.args.type
-
+      return done false unless typeof msg.to is 'string'
+      return done false unless socket.identity
+      return done false unless typeof msg.args is 'object'
+      return done false unless msg.args.sdp
+      return done false unless msg.args.type
     else if msg.type is "chat"
-      return unless msg.to
-      return unless msg.args
-      return unless msg.args.message
-      return unless socket.identity
-      @adapter.getId msg.to, (id) =>
-        @server.clients[id]?.send JSON.stringify
-          type: "chat"
-          from: socket.identity
-          args:
-            message: msg.args.message
-
-        req =
-          name: socket.identity
-          socket: socket.identity
-          to: msg.to
-          message: msg.args.message
-
-        @emit "chat", req
-
-  handleError: (socket, err) =>
-    req =
-      name: socket.identity
-      reason: err
-      socket: socket
-    @emit "error", req
-
-  handleClose: (socket, reason) =>
+      return done false unless typeof msg.to is 'string'
+      return done false unless socket.identity
+      return done false unless typeof msg.args is 'object'
+      return done false unless typeof msg.args.message is 'string'
+    else
+      return done false
+    return done true
+    
+  close: (socket, reason) ->
     req =
       name: socket.identity
       reason: reason
@@ -208,4 +108,102 @@ class Server extends EventEmitter
     @adapter.unregister req, =>
       @emit "unregister", req
 
-module.exports = Server
+  invalid: (socket, msg) -> socket.close()
+  error: (socket, msg) -> socket.close()
+
+  message: (socket, msg) ->
+    switch msg.type
+      when "register"
+        req =
+          name: msg.args.name
+          socket: socket
+        @adapter.register req, (err) =>
+          unless err?
+            socket.identity ?= msg.args.name
+            @emit "register", req
+          socket.write
+            type: "register"
+            args:
+              result: !err
+
+      when "offer"
+        @adapter.getId msg.to, (id) =>
+          return unless @server.clients[id]?
+          @server.clients[id].write
+            type: "offer"
+            from: socket.identity
+
+          req =
+            name: socket.identity
+            socket: socket.identity
+            to: msg.to
+
+          @emit "offer", req
+
+      when "hangup"
+        @adapter.getId msg.to, (id) =>
+          return unless @server.clients[id]?
+          @server.clients[id].write
+            type: "hangup"
+            from: socket.identity
+
+          req =
+            name: socket.identity
+            socket: socket.identity
+            to: msg.to
+
+          @emit "hangup", req
+
+      when "answer"
+        @adapter.getId msg.to, (id) =>
+          return unless @server.clients[id]?
+          @server.clients[id].write
+            type: "answer"
+            from: socket.identity
+            args:
+              accepted: msg.args.accepted
+
+          req =
+            name: socket.identity
+            socket: socket.identity
+            to: msg.to
+            args:
+              accepted: msg.args.accepted
+
+          @emit "answer", req
+
+      when "candidate"
+        @adapter.getId msg.to, (id) =>
+          return unless @server.clients[id]?
+          @server.clients[id].write
+            type: "candidate"
+            from: socket.identity
+            args:
+              candidate: msg.args.candidate
+
+      when "sdp"
+        @adapter.getId msg.to, (id) =>
+          return unless @server.clients[id]?
+          @server.clients[id].write
+            type: "sdp"
+            from: socket.identity
+            args:
+              sdp: msg.args.sdp
+              type: msg.args.type
+
+      when "chat"
+        @adapter.getId msg.to, (id) =>
+          return unless @server.clients[id]?
+          @server.clients[id].write
+            type: "chat"
+            from: socket.identity
+            args:
+              message: msg.args.message
+
+          req =
+            name: socket.identity
+            socket: socket.identity
+            to: msg.to
+            message: msg.args.message
+
+          @emit "chat", req

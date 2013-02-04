@@ -9,9 +9,8 @@
    "dependencies": {
       "coffee-script": "*",
       "async": "*",
-      "engine.io-client": "0.3.10",
-      "engine.io": "0.3.10",
-      "connect": "*"
+      "protosock": "*",
+      "express": "*"
    },
    "devDependencies": {
       "mocha": "*",

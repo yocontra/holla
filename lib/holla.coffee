@@ -1,57 +1,30 @@
-{EventEmitter} = eio
-PeerConnection = window.PeerConnection or window.webkitPeerConnection00 or window.webkitRTCPeerConnection or mozRTCPeerConnection
-IceCandidate = window.mozRTCIceCandidate or window.RTCIceCandidate
-SessionDescription = window.mozRTCSessionDescription or window.RTCSessionDescription
+Call = require './Call'
+ProtoSock = require 'protosock'
 URL = window.URL or window.webkitURL or window.msURL or window.oURL
 getUserMedia = navigator.getUserMedia or navigator.webkitGetUserMedia or navigator.mozGetUserMedia or navigator.msGetUserMedia
 
-class RTC extends EventEmitter
-  constructor: (opts={}) ->
-    opts.host ?= window.location.hostname
-    opts.port ?= (if window.location.port.length > 0 then parseInt window.location.port else 80)
-    opts.secure ?= (window.location.protocol is 'https:')
-    opts.path ?= "/holla"
-
-    @socket = new eio.Socket opts
-    @socket.on "open", @emit.bind "connected"
-    @socket.on "close", @emit.bind "disconnected"
-    @socket.on "error", @emit.bind "error"
-    @socket.on "message", (msg) =>
-      msg = JSON.parse msg
-      if msg.type is "presence"
-        @emit "presence", msg.args
-        @emit "presence.#{msg.args.name}", msg.args.online
-        return
-      else if msg.type is "chat"
-        @emit "chat", msg.args.message
-        return
-      else if msg.type is "offer"
-        c = new Call @, msg.from, false
-        @emit "call", c
-        return
+client =
+  options:
+    namespace: 'holla'
+    resource: 'default'
+    debug: false
 
   register: (name, cb) ->
-    @socket.send JSON.stringify
+    @ssocket.write
       type: "register"
       args:
         name: name
 
-    handle = (msg) =>
-      msg = JSON.parse msg
-      return unless msg.type is "register"
-      @socket.removeListener "message", handle
-      if msg.args.result is true
+    @once "register", (worked) =>
+      if worked
         @user = name
-        @authorized = true
         @emit "authorized"
-      cb? msg.args.result
-    @socket.on "message", handle
-
-    return @
+      @authorized = worked
+      cb? worked
 
   call: (user) -> new Call @, user, true
   chat: (user, msg) ->
-    @socket.send JSON.stringify
+    @ssocket.write
       type: "chat"
       to: user
       args:
@@ -65,136 +38,82 @@ class RTC extends EventEmitter
       @once 'authorized', fn
     return @
 
-class Call extends EventEmitter
-  constructor: (@parent, @user, @isCaller) ->
-    @startTime = new Date
-    @socket = @parent.socket
-
-    @pc = @createConnection()
-    if @isCaller
-      @socket.send JSON.stringify
-        type: "offer"
-        to: @user
-    @emit "calling"
-    @socket.on "message", @handleMessage
-
-  createConnection: ->
-    pc = new PeerConnection holla.config
-    pc.onconnecting = =>
-      @emit 'connecting'
-      return
-    pc.onopen = =>
-      @emit 'connected'
-      return
-    pc.onicecandidate = (evt) =>
-      if evt.candidate
-        @socket.send JSON.stringify
-          type: "candidate"
-          to: @user
-          args:
-            candidate: evt.candidate
-      return
-
-    pc.onaddstream = (evt) =>
-      @remoteStream = evt.stream
-      @_ready = true
-      @emit "ready", @remoteStream
-      return
-    pc.onremovestream = (evt) =>
-      console.log evt
-      return
-
-    return pc
-
-  handleMessage: (msg) =>
-    msg = JSON.parse msg
-    return unless msg.from is @user
-    if msg.type is "answer"
-      return @emit "rejected" unless msg.args.accepted
-      @emit "answered"
-      @initSDP()
-    else if msg.type is "candidate"
-      @pc.addIceCandidate new IceCandidate msg.args.candidate
+  validate: (socket, msg, done) ->
+    if @options.debug
+      console.log msg
+    return done false unless typeof msg is 'object'
+    return done false unless typeof msg.type is 'string'
+    if msg.type is "register"
+      return done false unless typeof msg.args is 'object'
+      return done false unless typeof msg.args.result is 'boolean'
+    else if msg.type is "offer"
+      return done false unless typeof msg.from is 'string'
+    else if msg.type is "answer"
+      return done false unless typeof msg.args is 'object'
+      return done false unless typeof msg.from is 'string'
+      return done false unless typeof msg.args.accepted is 'boolean'
     else if msg.type is "sdp"
-      @pc.setRemoteDescription new SessionDescription msg.args
-      @emit "sdp"
-    else if msg.type is "hangup"
-      @emit "hangup"
+      return done false unless typeof msg.args is 'object'
+      return done false unless typeof msg.from is 'string'
+      return done false unless msg.args.sdp
+      return done false unless msg.args.type
+    else if msg.type is "candidate"
+      return done false unless typeof msg.args is 'object'
+      return done false unless typeof msg.from is 'string'
+      return done false unless typeof msg.args.candidate is 'object'
     else if msg.type is "chat"
-      @emit "chat", msg.args.message
-    return
-
-  addStream: (s) -> 
-    @pc.addStream s
-    return @
-
-  ready: (fn) ->
-    if @_ready
-      fn @remoteStream
+      return done false unless typeof msg.args is 'object'
+      return done false unless typeof msg.from is 'string'
+      return done false unless typeof msg.args.message is 'string'
+    else if msg.type is "hangup"
+      return done false unless typeof msg.from is 'string'
+    else if msg.type is "presence"
+      return done false unless typeof msg.args is 'object'
+      return done false unless typeof msg.args.name is 'string'
+      return done false unless typeof msg.args.online is 'boolean'
     else
-      @once 'ready', fn
-    return @
+      return done false
+    return done true
 
-  duration: ->
-    s = @endTime.getTime() if @endTime?
-    s ?= Date.now()
-    e = @startTime.getTime()
-    return (s-e)/1000
+  error: (socket, err) -> @emit 'error', err, socket
+  message: (socket, msg) ->
+    switch msg.type
+      when "register"
+        @emit "register", msg.args.result
 
-  chat: (msg) ->
-    @parent.chat @user, msg
-    return @
+      when "offer"
+        c = new Call @, msg.from, false
+        @emit "call", c
 
-  answer: ->
-    @startTime = new Date
-    @socket.send JSON.stringify
-      type: "answer"
-      to: @user
-      args:
-        accepted: true
-    @initSDP()
-    return @
+      when "presence"
+        @emit "presence", msg.args
+        @emit "presence.#{msg.args.name}", msg.args.online
 
-  decline: ->
-    @socket.send JSON.stringify
-      type: "answer"
-      to: @user
-      args:
-        accepted: false
-    return @
+      when "chat"
+        @emit "chat", {from: msg.from, message: msg.args.message}
+        @emit "chat.#{msg.from}", msg.args.message
 
-  end: ->
-    @endTime = new Date
-    @pc.close()
-    @socket.send JSON.stringify
-      type: "hangup"
-      to: @user
-    @emit "hangup"
-    return @
+      when "hangup"
+        @emit "hangup", {from: msg.from}
+        @emit "hangup.#{msg.from}"
 
-  initSDP: ->
-    done = (desc) =>
-      @pc.setLocalDescription desc
-      @socket.send JSON.stringify
-        type: "sdp"
-        to: @user
-        args: desc
+      when "answer"
+        @emit "answer", {from: msg.from, accepted: msg.args.accepted}
+        @emit "answer.#{msg.from}", msg.args.accepted
 
-    err = (e) -> console.log e
+      when "candidate"
+        @emit "candidate", {from: msg.from, candidate: msg.args.candidate}
+        @emit "candidate.#{msg.from}", msg.args.candidate
 
-    return @pc.createOffer done, err if @isCaller
-    return @pc.createAnswer done, err if @pc.remoteDescription
-    @once "sdp", =>
-      @pc.createAnswer done, err
+      when "sdp"
+        @emit "sdp", {from: msg.from, sdp: msg.args.sdp, type: msg.args.type}
+        @emit "sdp.#{msg.from}", msg.args
 
 
 holla =
+  createClient: ProtoSock.createClientWrapper client
   Call: Call
-  RTC: RTC
   supported: PeerConnection? and getUserMedia?
-  connect: (host) -> new RTC host
-  config:
-    iceServers: [url: "stun:stun.l.google.com:19302"]
 
   streamToBlob: (s) -> URL.createObjectURL s
   pipe: (stream, el) ->
@@ -218,4 +137,4 @@ holla =
   createVideoStream: (cb) -> holla.createStream {video:true,audio:false}, cb
   createAudioStream: (cb) -> holla.createStream {video:true,audio:false}, cb
 
-window.holla = holla
+module.exports = holla

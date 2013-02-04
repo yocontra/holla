@@ -1,12 +1,12 @@
 {join} = require 'path'
-connect = require "connect"
+express = require "express"
 holla = require "../index.js"
 
-app = connect()
-app.use connect.static __dirname
-server = app.listen 8080
+app = express()
+app.use express.static __dirname
+server = require('http').createServer(app).listen(8080)
+
 
 rtc = holla.createServer server, {debug:true, presence:true}
-
 
 console.log 'Server running on port 8080'

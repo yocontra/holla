@@ -1,4 +1,4 @@
-var server = holla.connect();
+var server = holla.createClient({debug:true});
 
 var sendChat = function(){
   var msg = $("#whatSay").val();
