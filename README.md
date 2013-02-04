@@ -39,7 +39,7 @@ before passing it to holla.createServer
 Sending a call:
 
 ```javascript
-var rtc = holla.connect();
+var rtc = holla.createClient();
 rtc.register("tom", function(worked) {
   holla.createFullStream(function(err, stream) {
 
@@ -59,7 +59,7 @@ rtc.register("tom", function(worked) {
 Receiving a call:
 
 ```javascript
-var rtc = holla.connect();
+var rtc = holla.createClient();
 rtc.register("bob", function(worked) {
   rtc.on("call", function(call) {
     console.log("Inbound call from ", call.user);
