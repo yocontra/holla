@@ -1,0 +1,13 @@
+{
+  "name": "holla",
+  "repo": "wearefractal/holla",
+  "twitter": "@wearefractal",
+  "description": "WebRTC master library",
+  "version": "0.5.7",
+  "keywords": ["WebRTC","voice","chat","websocket"],
+  "main": "holla.js",
+  "scripts": ["holla.js"],
+  "dependencies": {},
+  "development": {},
+  "license": "MIT"
+}
