@@ -88,9 +88,9 @@ rtc.register("bob", function(worked) {
 
 true or false if WebRTC is supported in the browser
 
-#### .connect(host)
+#### .createClient(options)
 
-Takes a host (http://site.com:8080) - defaults to window.location.href. Returns an RTC instance
+Takes some options to specify host (see source) - defaults to window.location.href. Returns an RTC instance
 
 #### .pipe(stream, el)
 
