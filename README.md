@@ -9,7 +9,7 @@
 </tr>
 <tr>
 <td>Description</td>
-<td>WebRTC Sugar</td>
+<td>A sugary abstraction layer over WebRTC and P2P calling</td>
 </tr>
 <tr>
 <td>Node Version</td>
@@ -190,6 +190,36 @@ You can view more examples in the [example folder.](https://github.com/wearefrac
 
 There is a crappy demo up at [holla.jit.su](http://holla.jit.su)
 
+## Adapters (complex use cases)
+
+The holla server comes with a default adapter that uses an in-memory store and no auth to manage users. If you would like to override these preference just pass your overrides as the second object to ```.createServer(httpServer, {adapter: adapterObject})```.
+
+An example adapter that uses redis instead of in-memory might look something like this (pseudo-code)
+
+```coffee-script
+# assume redis is a node-redis connection
+
+adapter =
+  register: (req, cb) ->
+    client.hset "users", req.name, req.socket.id, cb
+
+  getId: (name, cb) -> 
+    client.hget "users", name (err, id) ->
+      cb id
+
+  unregister: (req, cb) ->
+    client.hget "users", req.name, cb
+
+  getPresenceTargets: (req, cb) ->
+    # these are the people notified on presence changes
+    # this assumes contacts.{name} is a list of names you created somewhere else
+    client.get "contacts.#{req.name}", (err, contacts) ->
+      cb contacts
+```
+
+### Changing the name on register
+
+You can set req.name before calling cb to change the name (useful if you send up a cookie in .register then do a lookup for the real name)
 
 ## LICENSE
 

@@ -1,11 +1,12 @@
 {
    "name": "holla",
-   "description": "WebSocket RTC Signaling",
-   "version": "0.5.8",
+   "description": "A sugary abstraction layer over WebRTC and P2P calling",
+   "version": "0.5.9",
    "homepage": "http://github.com/wearefractal/holla",
    "repository": "git://github.com/wearefractal/holla.git",
    "author": "Fractal <contact@wearefractal.com> (http://wearefractal.com/)",
    "main": "./index.js",
+   "keywords":["webrtc","rtc","calling","call","voip","p2p"],
    "dependencies": {
       "coffee-script": "*",
       "async": "*",
