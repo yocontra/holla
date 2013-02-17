@@ -13,3 +13,5 @@ Conference calls/chats
 Hooks for chat persistence
 
 Scalable communication using redis or something
+
+Unique call/room IDs
