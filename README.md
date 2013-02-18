@@ -208,7 +208,7 @@ adapter =
       cb id
 
   unregister: (req, cb) ->
-    client.hget "users", req.name, cb
+    client.hdel "users", req.name, cb
 
   getPresenceTargets: (req, cb) ->
     # these are the people notified on presence changes
