@@ -53,7 +53,7 @@
 
     <span class="kd">var</span> <span class="nx">call</span> <span class="o">=</span> <span class="nx">rtc</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="s2">"bob"</span><span class="p">);</span>
     <span class="nx">call</span><span class="p">.</span><span class="nx">addStream</span><span class="p">(</span><span class="nx">stream</span><span class="p">);</span>
-    <span class="nx">holla</span><span class="p">.</span><span class="nx">pipe</span><span class="p">(</span><span class="nx">stream</span><span class="p">,</span> <span class="nx">$</span><span class="p">(</span><span class="s2">"#me"</span><span class="p">));</span>
+    <span class="nx">holla</span><span class="p">.</span><span class="nx">pipe</span><span class="p">(</span><span class="nx">stream</span><span class="p">,</span> <span class="nx">$</span><span class="p">(</span><span class="s2">"#myVideo"</span><span class="p">));</span>
 
     <span class="nx">call</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s2">"answered"</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
       <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">"Remote user answered the call"</span><span class="p">);</span>
@@ -75,10 +75,10 @@
 
       <span class="nx">call</span><span class="p">.</span><span class="nx">addStream</span><span class="p">(</span><span class="nx">stream</span><span class="p">);</span>
       <span class="nx">call</span><span class="p">.</span><span class="nx">answer</span><span class="p">();</span>
-      <span class="nx">holla</span><span class="p">.</span><span class="nx">pipe</span><span class="p">(</span><span class="nx">stream</span><span class="p">,</span> <span class="nx">$</span><span class="p">(</span><span class="s2">"#me"</span><span class="p">));</span>
+      <span class="nx">holla</span><span class="p">.</span><span class="nx">pipe</span><span class="p">(</span><span class="nx">stream</span><span class="p">,</span> <span class="nx">$</span><span class="p">(</span><span class="s2">"#myVideo"</span><span class="p">));</span>
 
       <span class="nx">call</span><span class="p">.</span><span class="nx">ready</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">stream</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">holla</span><span class="p">.</span><span class="nx">pipe</span><span class="p">(</span><span class="nx">stream</span><span class="p">,</span> <span class="nx">$</span><span class="p">(</span><span class="s2">"#them"</span><span class="p">));</span>
+        <span class="nx">holla</span><span class="p">.</span><span class="nx">pipe</span><span class="p">(</span><span class="nx">stream</span><span class="p">,</span> <span class="nx">$</span><span class="p">(</span><span class="s2">"#theirVideo"</span><span class="p">));</span>
       <span class="p">});</span>
 
     <span class="p">});</span>
