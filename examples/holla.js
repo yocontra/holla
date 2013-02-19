@@ -3702,7 +3702,7 @@ require.register("holla/dist/RTC.js", function(exports, require, module){
 
   processSDP = function(sdp) {
     var addCrypto, line, out, _i, _len, _ref;
-    if (browser !== 'mozilla') {
+    if (browser !== 'firefox') {
       return sdp;
     }
     addCrypto = "a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
@@ -3741,7 +3741,7 @@ require.register("holla/dist/RTC.js", function(exports, require, module){
     if (!supported) {
       return;
     }
-    if (browser === 'mozilla') {
+    if (browser === 'firefox') {
       PeerConnConfig = {
         iceServers: [
           {
@@ -3769,7 +3769,7 @@ require.register("holla/dist/RTC.js", function(exports, require, module){
           }
         ]
       };
-      if (MediaStream.prototype.getVideoTracks) {
+      if (!MediaStream.prototype.getVideoTracks) {
         MediaStream.prototype.getVideoTracks = function() {
           return this.videoTracks;
         };
@@ -3777,7 +3777,7 @@ require.register("holla/dist/RTC.js", function(exports, require, module){
           return this.audioTracks;
         };
       }
-      if (PeerConnection.prototype.getLocalStreams) {
+      if (!PeerConnection.prototype.getLocalStreams) {
         PeerConnection.prototype.getLocalStreams = function() {
           return this.localStreams;
         };
@@ -3796,6 +3796,7 @@ require.register("holla/dist/RTC.js", function(exports, require, module){
       attachStream: attachStream,
       processSDP: processSDP,
       PeerConnConfig: PeerConnConfig,
+      browser: browser,
       supported: supported
     };
     return out;

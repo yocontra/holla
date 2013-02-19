@@ -9,7 +9,7 @@ browser = (if navigator.mozGetUserMedia then 'firefox' else 'chrome')
 supported = (PeerConnection? and getUserMedia?)
 
 processSDP = (sdp) ->
-  return sdp unless browser is 'mozilla'
+  return sdp unless browser is 'firefox'
   addCrypto = "a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
   out = []
   for line in sdp.split '\r\n'
@@ -31,7 +31,7 @@ attachStream = (uri, el) ->
 
 shim = ->
   return unless supported # no need to shim
-  if browser is 'mozilla'
+  if browser is 'firefox'
     PeerConnConfig =
       iceServers: [
         url: "stun:23.21.150.121"
@@ -48,11 +48,11 @@ shim = ->
       optional: [
         DtlsSrtpKeyAgreement: true
       ]
-    if MediaStream::getVideoTracks
+    unless MediaStream::getVideoTracks
       MediaStream::getVideoTracks = -> @videoTracks
       MediaStream::getAudioTracks = -> @audioTracks
 
-    if PeerConnection::getLocalStreams
+    unless PeerConnection::getLocalStreams
       PeerConnection::getLocalStreams = -> @localStreams
       PeerConnection::getRemoteStreams = -> @remoteStreams
 
@@ -66,6 +66,7 @@ shim = ->
     attachStream: attachStream
     processSDP: processSDP
     PeerConnConfig: PeerConnConfig
+    browser: browser
     supported: supported
   return out
 
