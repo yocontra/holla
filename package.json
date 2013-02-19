@@ -12,7 +12,12 @@
       "calling",
       "call",
       "voip",
-      "p2p"
+      "p2p",
+      "data",
+      "sip",
+      "voice",
+      "phone",
+      "peer"
    ],
    "dependencies": {
       "coffee-script": "*",

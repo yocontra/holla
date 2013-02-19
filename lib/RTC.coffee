@@ -1,15 +1,15 @@
+# begin compatibility insanity
+
 PeerConnection = window.mozRTCPeerConnection or window.PeerConnection or window.webkitPeerConnection00 or window.webkitRTCPeerConnection
 IceCandidate = window.mozRTCIceCandidate or window.RTCIceCandidate
 SessionDescription = window.mozRTCSessionDescription or window.RTCSessionDescription
 MediaStream = window.MediaStream or window.webkitMediaStream
 getUserMedia = navigator.mozGetUserMedia or navigator.getUserMedia or navigator.webkitGetUserMedia or navigator.msGetUserMedia
 URL = window.URL or window.webkitURL or window.msURL or window.oURL
+getUserMedia = getUserMedia.bind navigator
 
 browser = (if navigator.mozGetUserMedia then 'firefox' else 'chrome')
 supported = (PeerConnection? and getUserMedia?)
-
-# scope bind hax
-getUserMedia = getUserMedia.bind navigator
 
 extract = (str, reg) ->
   match = str.match reg
