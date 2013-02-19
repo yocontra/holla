@@ -19,9 +19,10 @@ processSDP = (sdp) ->
   return sdp unless browser is 'firefox'
   addCrypto = "a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
   out = []
+  console.log sdp.split '\r\n'
   for line in sdp.split '\r\n'
     out.push line
-    out.push addCrypto if ('m=' in line)
+    out.push addCrypto if line.indexOf('m=') is 0
   return out.join '\r\n'
 
 attachStream = (uri, el) ->
