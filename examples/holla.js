@@ -456,7 +456,9 @@ debug.skips = [];
  */
 
 debug.enable = function(name) {
-  localStorage.debug = name;
+  try {
+    localStorage.debug = name;
+  } catch(e){}
 
   var split = (name || '').split(/[\s,]+/)
     , len = split.length;
@@ -526,6 +528,7 @@ debug.enabled = function(name) {
 // persist
 
 if (window.localStorage) debug.enable(localStorage.debug);
+
 });
 require.register("LearnBoost-engine.io-client/lib/index.js", function(exports, require, module){
 
@@ -602,7 +605,6 @@ function Socket(uri, opts){
        location.port :
        (this.secure ? 443 : 80));
   this.query = opts.query || {};
-  this.query.uid = rnd();
   this.upgrade = false !== opts.upgrade;
   this.path = (opts.path || '/engine.io').replace(/\/$/, '') + '/';
   this.forceJSONP = !!opts.forceJSONP;
@@ -1056,17 +1058,6 @@ Socket.prototype.filterUpgrades = function (upgrades) {
   }
   return filteredUpgrades;
 };
-
-/**
- * Generates a random uid.
- *
- * @api private
- */
-
-function rnd () {
-  return String(Math.random()).substr(5) + String(Math.random()).substr(5);
-}
-
 });
 require.register("LearnBoost-engine.io-client/lib/transport.js", function(exports, require, module){
 
@@ -2233,6 +2224,7 @@ JSONPPolling.prototype.doClose = function () {
  */
 
 JSONPPolling.prototype.doPoll = function () {
+	var self = this;
   var script = document.createElement('script');
 
   if (this.script) {
@@ -2242,10 +2234,14 @@ JSONPPolling.prototype.doPoll = function () {
 
   script.async = true;
   script.src = this.uri();
+	script.onerror = function(e){
+		self.onError('jsonp poll error',e);
+	}
 
   var insertAt = document.getElementsByTagName('script')[0];
   insertAt.parentNode.insertBefore(script, insertAt);
   this.script = script;
+
 
   if (util.ua.gecko) {
     setTimeout(function () {
@@ -2955,7 +2951,7 @@ require.register("wearefractal-protosock/dist/Client.js", function(exports, requ
     __extends(Client, _super);
 
     function Client(plugin, options) {
-      var eiopts, k, v, _base, _base1, _ref, _ref1;
+      var eiopts, k, v, _base, _base1, _base2, _ref, _ref1, _ref2;
       if (options == null) {
         options = {};
       }
@@ -2982,6 +2978,9 @@ require.register("wearefractal-protosock/dist/Client.js", function(exports, requ
       }
       if ((_ref1 = (_base1 = this.options).reconnectLimit) == null) {
         _base1.reconnectLimit = Infinity;
+      }
+      if ((_ref2 = (_base2 = this.options).reconnectTimeout) == null) {
+        _base2.reconnectTimeout = Infinity;
       }
       this.isServer = false;
       this.isClient = true;
@@ -3012,6 +3011,13 @@ require.register("wearefractal-protosock/dist/Client.js", function(exports, requ
 
     Client.prototype.disconnect = function() {
       this.ssocket.disconnect();
+      return this;
+    };
+
+    Client.prototype.destroy = function() {
+      this.options.reconnect = false;
+      this.ssocket.disconnect();
+      this.emit("destroyed");
       return this;
     };
 
@@ -3063,7 +3069,7 @@ require.register("wearefractal-protosock/dist/Client.js", function(exports, requ
     };
 
     Client.prototype.reconnect = function(cb) {
-      var attempts, connect, done, err, maxAttempts,
+      var attempts, connect, done, err, maxAttempts, start, timeout,
         _this = this;
       if (this.ssocket.reconnecting) {
         return cb("Already reconnecting");
@@ -3072,10 +3078,13 @@ require.register("wearefractal-protosock/dist/Client.js", function(exports, requ
       if (this.ssocket.readyState === 'open') {
         this.ssocket.disconnect();
       }
+      start = Date.now();
       maxAttempts = this.options.reconnectLimit;
+      timeout = this.options.reconnectTimeout;
       attempts = 0;
       done = function() {
         _this.ssocket.reconnecting = false;
+        _this.emit("reconnected");
         return cb();
       };
       err = function(e) {
@@ -3089,6 +3098,9 @@ require.register("wearefractal-protosock/dist/Client.js", function(exports, requ
         }
         if (attempts >= maxAttempts) {
           return err("Exceeded max attempts");
+        }
+        if ((Date.now() - start) > timeout) {
+          return err("Timeout on reconnect");
         }
         attempts++;
         _this.ssocket.open();
@@ -3684,21 +3696,23 @@ require.register("holla/dist/RTC.js", function(exports, require, module){
   var IceCandidate, MediaStream, PeerConnection, SessionDescription, URL, attachStream, browser, getUserMedia, processSDP, shim, supported,
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
-  PeerConnection = window.PeerConnection || window.webkitPeerConnection00 || window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
+  PeerConnection = window.mozRTCPeerConnection || window.PeerConnection || window.webkitPeerConnection00 || window.webkitRTCPeerConnection;
 
-  IceCandidate = window.RTCIceCandidate || window.mozRTCIceCandidate;
+  IceCandidate = window.mozRTCIceCandidate || window.RTCIceCandidate;
 
   SessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription;
 
-  MediaStream = window.webkitMediaStream || window.MediaStream;
+  MediaStream = window.MediaStream || window.webkitMediaStream;
 
-  getUserMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia).bind(navigator);
+  getUserMedia = navigator.mozGetUserMedia || navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.msGetUserMedia;
 
   URL = window.URL || window.webkitURL || window.msURL || window.oURL;
 
   browser = (navigator.mozGetUserMedia ? 'firefox' : 'chrome');
 
   supported = (PeerConnection != null) && (getUserMedia != null);
+
+  getUserMedia = getUserMedia.bind(navigator);
 
   processSDP = function(sdp) {
     var addCrypto, line, out, _i, _len, _ref;

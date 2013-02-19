@@ -1,12 +1,15 @@
-PeerConnection = window.PeerConnection or window.webkitPeerConnection00 or window.webkitRTCPeerConnection or window.mozRTCPeerConnection
-IceCandidate = window.RTCIceCandidate or window.mozRTCIceCandidate 
+PeerConnection = window.mozRTCPeerConnection or window.PeerConnection or window.webkitPeerConnection00 or window.webkitRTCPeerConnection
+IceCandidate = window.mozRTCIceCandidate or window.RTCIceCandidate
 SessionDescription = window.mozRTCSessionDescription or window.RTCSessionDescription
-MediaStream = window.webkitMediaStream or window.MediaStream
-getUserMedia = (navigator.getUserMedia or navigator.webkitGetUserMedia or navigator.mozGetUserMedia or navigator.msGetUserMedia).bind navigator
+MediaStream = window.MediaStream or window.webkitMediaStream
+getUserMedia = navigator.mozGetUserMedia or navigator.getUserMedia or navigator.webkitGetUserMedia or navigator.msGetUserMedia
 URL = window.URL or window.webkitURL or window.msURL or window.oURL
 
 browser = (if navigator.mozGetUserMedia then 'firefox' else 'chrome')
 supported = (PeerConnection? and getUserMedia?)
+
+# scope bind hax
+getUserMedia = getUserMedia.bind navigator
 
 processSDP = (sdp) ->
   return sdp unless browser is 'firefox'
