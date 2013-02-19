@@ -22,9 +22,9 @@ class Call extends EventEmitter
     @parent.on "candidate.#{@user}", (candidate) =>
       @pc.addIceCandidate new RTC.IceCandidate candidate
 
-    @parent.on "sdp.#{@user}", (stuff) =>
-      console.log stuff
-      @pc.setRemoteDescription new RTC.SessionDescription stuff
+    @parent.on "sdp.#{@user}", (desc) =>
+      desc.sdp = RTC.processSDPIn desc.sdp
+      @pc.setRemoteDescription new RTC.SessionDescription desc
       @emit "sdp"
 
     @parent.on "hangup.#{@user}", =>
@@ -102,7 +102,8 @@ class Call extends EventEmitter
 
   end: ->
     @endTime = new Date
-    @pc.close()
+    try
+      @pc.close()
     @socket.write
       type: "hangup"
       to: @user
@@ -111,7 +112,7 @@ class Call extends EventEmitter
 
   initSDP: ->
     done = (desc) =>
-      desc.sdp = RTC.processSDP desc.sdp
+      desc.sdp = RTC.processSDPOut desc.sdp
       @pc.setLocalDescription desc
       @socket.write
         type: "sdp"

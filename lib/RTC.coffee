@@ -11,19 +11,70 @@ mediaConstraints =
   mandatory:
     OfferToReceiveAudio: true
     OfferToReceiveVideo: true
+    MozDontOfferDataChannel: true
+  optional: [
+    DtlsSrtpKeyAgreement: true
+  ]
 
 # scope bind hax
 getUserMedia = getUserMedia.bind navigator
 
-processSDP = (sdp) ->
-  return sdp unless browser is 'firefox'
-  addCrypto = "a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+extract = (str, reg) ->
+  match = str.match reg
+  return (if match? then match[1] else null)
+
+replaceCodec = (line, codec) ->
+  els = line.split ' '
   out = []
-  console.log sdp.split '\r\n'
-  for line in sdp.split '\r\n'
-    out.push line
-    out.push addCrypto if line.indexOf('m=') is 0
-  return out.join '\r\n'
+  for el, idx in els
+    if idx is 3
+      out[idx++] = codec
+    if el isnt codec
+      out[idx++] = el
+
+  return out.join ' '
+
+removeCN = (lines, mLineIdx) ->
+  mLineEls = lines[mLineIdx].split ' '
+  for line, idx in lines when line?
+    payload = extract line, /a=rtpmap:(\d+) CN\/\d+/i
+    if payload?
+      cnPos = mLineEls.indexOf payload
+      if cnPos isnt -1
+        mLineEls.splice cnPos, 1
+      lines.splice idx, 1
+
+  lines[mLineIdx] = mLineEls.join ' '
+  return lines
+
+useOPUS = (sdp) ->
+  lines = sdp.split '\r\n'
+  [mLineIdx] = (idx for line,idx in lines when line.indexOf('m=audio') isnt -1)
+  return sdp unless mLineIdx?
+  for line, idx in lines when line.indexOf('opus/48000') isnt -1
+    payload = extract line, /:(\d+) opus\/48000/i
+    if payload?
+      lines[mLineIdx] = replaceCodec lines[mLineIdx], payload
+    break
+
+  lines = removeCN lines, mLineIdx
+
+  return lines.join '\r\n'
+
+processSDPOut = (sdp) ->
+  out = []
+  if browser is 'firefox'
+    addCrypto = "a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:BAADBAADBAADBAADBAADBAADBAADBAADBAADBAAD"
+    for line in sdp.split '\r\n'
+      out.push line
+      out.push addCrypto if line.indexOf('m=') is 0
+  else
+    for line in sdp.split '\r\n'
+      if line.indexOf("a=ice-options:google-ice") is -1
+        out.push line
+  return useOPUS out.join '\r\n'
+
+processSDPIn = (sdp) -> return sdp
 
 attachStream = (uri, el) ->
   srcAttr = (if browser is 'mozilla' then 'mozSrcObject' else 'src')
@@ -54,7 +105,6 @@ shim = ->
       iceServers: [
         url: "stun:23.21.150.121"
       ]
-      optional: []
 
     MediaStream::getVideoTracks = -> []
     MediaStream::getAudioTracks = -> []
@@ -62,9 +112,6 @@ shim = ->
     PeerConnConfig = 
       iceServers: [
         url: "stun:stun.l.google.com:19302"
-      ]
-      optional: [
-        DtlsSrtpKeyAgreement: true
       ]
     unless MediaStream::getVideoTracks
       MediaStream::getVideoTracks = -> @videoTracks
@@ -82,7 +129,8 @@ shim = ->
     getUserMedia: getUserMedia
     URL: URL
     attachStream: attachStream
-    processSDP: processSDP
+    processSDPIn: processSDPIn
+    processSDPOut: processSDPOut
     PeerConnConfig: PeerConnConfig
     browser: browser
     supported: supported
