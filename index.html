@@ -39,13 +39,17 @@
 </tr>
 <tr>
 <td>Description</td>
-<td>WebRTC Sugar</td>
+<td>A sugary abstraction layer over WebRTC and P2P calling</td>
 </tr>
 <tr>
 <td>Node Version</td>
 <td>&gt;= 0.6</td>
 </tr>
-</table><h2>Example</h2>
+</table><h2>Support</h2>
+
+<p>holla has full support for Chrome 24+ and Firefox 21+ (Currently Nightly)</p>
+
+<h2>Example</h2>
 
 <h3>Server</h3>
 
@@ -67,7 +71,7 @@
 
 <p>Sending a call:</p>
 
-<div class="highlight"><pre><span class="kd">var</span> <span class="nx">rtc</span> <span class="o">=</span> <span class="nx">holla</span><span class="p">.</span><span class="nx">connect</span><span class="p">();</span>
+<div class="highlight"><pre><span class="kd">var</span> <span class="nx">rtc</span> <span class="o">=</span> <span class="nx">holla</span><span class="p">.</span><span class="nx">createClient</span><span class="p">();</span>
 <span class="nx">rtc</span><span class="p">.</span><span class="nx">register</span><span class="p">(</span><span class="s2">"tom"</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">worked</span><span class="p">)</span> <span class="p">{</span>
   <span class="nx">holla</span><span class="p">.</span><span class="nx">createFullStream</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">stream</span><span class="p">)</span> <span class="p">{</span>
 
@@ -86,7 +90,7 @@
 
 <p>Receiving a call:</p>
 
-<div class="highlight"><pre><span class="kd">var</span> <span class="nx">rtc</span> <span class="o">=</span> <span class="nx">holla</span><span class="p">.</span><span class="nx">connect</span><span class="p">();</span>
+<div class="highlight"><pre><span class="kd">var</span> <span class="nx">rtc</span> <span class="o">=</span> <span class="nx">holla</span><span class="p">.</span><span class="nx">createClient</span><span class="p">();</span>
 <span class="nx">rtc</span><span class="p">.</span><span class="nx">register</span><span class="p">(</span><span class="s2">"bob"</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">worked</span><span class="p">)</span> <span class="p">{</span>
   <span class="nx">rtc</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s2">"call"</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">call</span><span class="p">)</span> <span class="p">{</span>
     <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">"Inbound call from "</span><span class="p">,</span> <span class="nx">call</span><span class="p">.</span><span class="nx">user</span><span class="p">);</span>
@@ -115,9 +119,9 @@
 
 <p>true or false if WebRTC is supported in the browser</p>
 
-<h4>.connect(host)</h4>
+<h4>.createClient(options)</h4>
 
-<p>Takes a host (<a href="http://site.com:8080">http://site.com:8080</a>) - defaults to window.location.href. Returns an RTC instance</p>
+<p>Takes some options to specify host (see source) - defaults to window.location.href. Returns an RTC instance</p>
 
 <h4>.pipe(stream, el)</h4>
 
@@ -214,6 +218,40 @@
 <h2>Demo</h2>
 
 <p>There is a crappy demo up at <a href="http://holla.jit.su">holla.jit.su</a></p>
+
+<h2>Adapters (complex use cases)</h2>
+
+<p>The holla server comes with a default adapter that uses an in-memory store and no auth to manage users. If you would like to override these preference just pass your overrides as the second object to <code>.createServer(httpServer, {adapter: adapterObject})</code>.</p>
+
+<p>An example adapter that uses redis instead of in-memory might look something like this (pseudo-code)</p>
+
+<div class="highlight"><pre><span class="c1"># assume redis is a node-redis connection</span>
+
+<span class="nv">adapter =</span>
+  <span class="nv">register: </span><span class="nf">(req, cb) -&gt;</span>
+    <span class="nx">client</span><span class="p">.</span><span class="nx">hset</span> <span class="s">"users"</span><span class="p">,</span> <span class="nx">req</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span> <span class="nx">req</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nx">cb</span>
+
+  <span class="nv">getId: </span><span class="nf">(name, cb) -&gt;</span> 
+    <span class="nx">client</span><span class="p">.</span><span class="nx">hget</span> <span class="s">"users"</span><span class="p">,</span> <span class="nx">name</span> <span class="nf">(err, id) -&gt;</span>
+      <span class="nx">cb</span> <span class="nx">id</span>
+
+  <span class="nv">unregister: </span><span class="nf">(req, cb) -&gt;</span>
+    <span class="nx">client</span><span class="p">.</span><span class="nx">hdel</span> <span class="s">"users"</span><span class="p">,</span> <span class="nx">req</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span> <span class="nx">cb</span>
+
+  <span class="nv">getPresenceTargets: </span><span class="nf">(req, cb) -&gt;</span>
+    <span class="c1"># these are the people notified on presence changes</span>
+    <span class="c1"># this assumes contacts.{name} is a list of names you created somewhere else</span>
+    <span class="nx">client</span><span class="p">.</span><span class="nx">get</span> <span class="s">"contacts.</span><span class="si">#{</span><span class="nx">req</span><span class="p">.</span><span class="nx">name</span><span class="si">}</span><span class="s">"</span><span class="p">,</span> <span class="nf">(err, contacts) -&gt;</span>
+      <span class="nx">cb</span> <span class="nx">contacts</span>
+</pre></div>
+
+<h3>Changing the name on register</h3>
+
+<p>You can set req.name before calling cb to change the name (useful if you send up a cookie in .register then do a lookup for the real name)</p>
+
+<h2>Effects</h2>
+
+<p>There is effects.css in the repository with some common CSS classes you will want when dealing with RTC video tags (flip, shadow, reflect, fadein, etc.). These are prefixed with rtc (example: .rtc-flip)</p>
 
 <h2>LICENSE</h2>
 
