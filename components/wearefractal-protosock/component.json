@@ -1,0 +1,17 @@
+{
+  "name": "protosock",
+  "version": "0.1.9",
+  "dependencies": {
+    "component/emitter": "*",
+    "LearnBoost/engine.io-client": "*"
+  },
+  "main": "dist/main.js",
+  "scripts": [
+    "dist/main.js",
+    "dist/Socket.js",
+    "dist/util.js",
+    "dist/defaultClient.js",
+    "dist/Client.js"
+  ],
+  "repo": "https://raw.github.com/wearefractal/protosock"
+}

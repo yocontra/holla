@@ -7,7 +7,6 @@
 
     <link rel="stylesheet" href="stylesheets/styles.css">
     <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <script src="javascripts/scale.fix.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -16,23 +15,19 @@
   <body>
     <div class="wrapper">
       <header>
-        <h1 class="header">Holla</h1>
-        <p class="header">The easiest way to make apps using WebRTC</p>
+        <h1>Holla</h1>
+        <p>An abstraction over P2P video/voice/data connections using WebRTC</p>
+
+        <p class="view"><a href="https://github.com/wearefractal/holla">View the Project on GitHub <small>wearefractal/holla</small></a></p>
+
 
         <ul>
-          <li class="download"><a class="buttons" href="https://github.com/wearefractal/holla/zipball/master">Download ZIP</a></li>
-          <li class="download"><a class="buttons" href="https://github.com/wearefractal/holla/tarball/master">Download TAR</a></li>
-          <li><a class="buttons github" href="https://github.com/wearefractal/holla">View On GitHub</a></li>
+          <li><a href="https://github.com/wearefractal/holla">Documentation</a></li>
+          <li><a href="https://github.com/wearefractal/holla/tree/master/examples">Examples</a></li>
+          <li><a href="http://holla.jit.su/">Demo</a></li>
         </ul>
-
-        <p class="header">This project is maintained by <a class="header name" href="https://github.com/wearefractal">wearefractal</a></p>
-
-
       </header>
       <section>
-        <h2>Support</h2>
-
-<p>holla has full support for Chrome 24+ and Firefox 21+ (Currently Nightly)</p>
 
 <h2>Example</h2>
 
@@ -56,204 +51,55 @@
 
 <p>Sending a call:</p>
 
-<div class="highlight"><pre><span class="kd">var</span> <span class="nx">rtc</span> <span class="o">=</span> <span class="nx">holla</span><span class="p">.</span><span class="nx">createClient</span><span class="p">();</span>
-
+<div class="highlight"><pre><span class="kd">var</span> <span class="nx">rtc</span> <span class="o">=</span> <span class="nx">holla</span><span class="p">.</span><span class="nx">connect</span><span class="p">();</span>
 <span class="nx">rtc</span><span class="p">.</span><span class="nx">register</span><span class="p">(</span><span class="s2">"tom"</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">worked</span><span class="p">)</span> <span class="p">{</span>
   <span class="nx">holla</span><span class="p">.</span><span class="nx">createFullStream</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">stream</span><span class="p">)</span> <span class="p">{</span>
+
     <span class="kd">var</span> <span class="nx">call</span> <span class="o">=</span> <span class="nx">rtc</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="s2">"bob"</span><span class="p">);</span>
     <span class="nx">call</span><span class="p">.</span><span class="nx">addStream</span><span class="p">(</span><span class="nx">stream</span><span class="p">);</span>
+    <span class="nx">holla</span><span class="p">.</span><span class="nx">pipe</span><span class="p">(</span><span class="nx">stream</span><span class="p">,</span> <span class="nx">$</span><span class="p">(</span><span class="s2">"#me"</span><span class="p">));</span>
+
+    <span class="nx">call</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s2">"answered"</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+      <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">"Remote user answered the call"</span><span class="p">);</span>
+    <span class="p">});</span>
+
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">"Calling "</span><span class="p">,</span> <span class="nx">call</span><span class="p">.</span><span class="nx">user</span><span class="p">);</span>
   <span class="p">});</span>
 <span class="p">});</span>
 </pre></div>
 
 <p>Receiving a call:</p>
 
-<div class="highlight"><pre><span class="kd">var</span> <span class="nx">rtc</span> <span class="o">=</span> <span class="nx">holla</span><span class="p">.</span><span class="nx">createClient</span><span class="p">();</span>
-
+<div class="highlight"><pre><span class="kd">var</span> <span class="nx">rtc</span> <span class="o">=</span> <span class="nx">holla</span><span class="p">.</span><span class="nx">connect</span><span class="p">();</span>
 <span class="nx">rtc</span><span class="p">.</span><span class="nx">register</span><span class="p">(</span><span class="s2">"bob"</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">worked</span><span class="p">)</span> <span class="p">{</span>
   <span class="nx">rtc</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s2">"call"</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">call</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">"Inbound call from "</span><span class="p">,</span> <span class="nx">call</span><span class="p">.</span><span class="nx">user</span><span class="p">);</span>
 
     <span class="nx">holla</span><span class="p">.</span><span class="nx">createFullStream</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">stream</span><span class="p">)</span> <span class="p">{</span>
+
       <span class="nx">call</span><span class="p">.</span><span class="nx">addStream</span><span class="p">(</span><span class="nx">stream</span><span class="p">);</span>
       <span class="nx">call</span><span class="p">.</span><span class="nx">answer</span><span class="p">();</span>
+      <span class="nx">holla</span><span class="p">.</span><span class="nx">pipe</span><span class="p">(</span><span class="nx">stream</span><span class="p">,</span> <span class="nx">$</span><span class="p">(</span><span class="s2">"#me"</span><span class="p">));</span>
+
+      <span class="nx">call</span><span class="p">.</span><span class="nx">ready</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">stream</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">holla</span><span class="p">.</span><span class="nx">pipe</span><span class="p">(</span><span class="nx">stream</span><span class="p">,</span> <span class="nx">$</span><span class="p">(</span><span class="s2">"#them"</span><span class="p">));</span>
+      <span class="p">});</span>
+
     <span class="p">});</span>
 
   <span class="p">});</span>
 <span class="p">});</span>
 </pre></div>
-
-<h2>Client</h2>
-
-<h3>holla</h3>
-
-<h4>.supported</h4>
-
-<p>true or false if WebRTC is supported in the browser</p>
-
-<h4>.createClient(options)</h4>
-
-<p>Takes some options to specify host (see source) - defaults to window.location.href. Returns an RTC instance</p>
-
-<h4>.pipe(stream, el)</h4>
-
-<p>Pipes a WebRTC video stream to a video element. el can be a string (id), jquery element, or dom node.</p>
-
-<h4>.createStream(opt, cb)</h4>
-
-<p>Creates a WebRTC stream - opt looks like <code>{video:true,audio:true}</code> depending on the stream you want. cb signature is <code>(err, stream)</code></p>
-
-<h4>createFullStream(cb)</h4>
-
-<p>Sugar for <code>.createStream({video:true,audio:true}, cb)</code></p>
-
-<h4>createVideoStream(cb)</h4>
-
-<p>Sugar for <code>.createStream({video:true,audio:false}, cb)</code></p>
-
-<h4>createAudioStream(cb)</h4>
-
-<p>Sugar for <code>.createStream({video:false,audio:true}, cb)</code></p>
-
-<h3>RTC</h3>
-
-<h4>.register(name, cb)</h4>
-
-<p>Registers your connection with the server under a name. cb receives true or false if it worked. cb is optional.</p>
-
-<h4>.call(name)</h4>
-
-<p>Creates a call to user with name. Returns a Call instance</p>
-
-<h4>.ready(fn)</h4>
-
-<p>fn gets called when connection is registered or if it already has been.</p>
-
-<h4>Events</h4>
-
-<p>RTC will emit connected, authorized, disconnected, error, presence, and call events.</p>
-
-<h3>Call</h3>
-
-<h4>.isCaller</h4>
-
-<p>true or false if you started this call.</p>
-
-<h4>.user</h4>
-
-<p>Name of the user on the other end.</p>
-
-<h4>.startTime</h4>
-
-<p>Date of the call start.</p>
-
-<h4>.endTime</h4>
-
-<p>Date of the call end.</p>
-
-<h4>.duration()</h4>
-
-<p>Duration of the call.</p>
-
-<h4>.addStream(stream)</h4>
-
-<p>Adds your WebRTC stream to the call. Must be done before answering or sending a call.</p>
-
-<h4>.chat(msg)</h4>
-
-<p>Sends a chat message</p>
-
-<h4>.answer()</h4>
-
-<p>Accepts the call (inbound only)</p>
-
-<h4>.decline()</h4>
-
-<p>Declines the call (inbound only)</p>
-
-<h4>.end()</h4>
-
-<p>Ends the call (hangup and close connection)</p>
-
-<h4>.ready(fn)</h4>
-
-<p>Will call fn when the call has been connected and is ready to go or if it is already.</p>
-
-<h4>Events</h4>
-
-<p>Call will emit calling, connecting, connected, hangup, and chat events</p>
-
-<h2>Examples</h2>
-
-<p>You can view more examples in the <a href="https://github.com/wearefractal/holla/tree/master/examples">example folder.</a></p>
-
-<h2>Demo</h2>
-
-<p>There is a crappy demo up at <a href="http://holla.jit.su">holla.jit.su</a></p>
-
-<h2>Adapters (complex use cases)</h2>
-
-<p>The holla server comes with a default adapter that uses an in-memory store and no auth to manage users. If you would like to override these preference just pass your overrides as the second object to <code>.createServer(httpServer, {adapter: adapterObject})</code>.</p>
-
-<p>An example adapter that uses redis instead of in-memory might look something like this (pseudo-code)</p>
-
-<div class="highlight"><pre><span class="c1"># assume redis is a node-redis connection</span>
-
-<span class="nv">adapter =</span>
-  <span class="nv">register: </span><span class="nf">(req, cb) -&gt;</span>
-    <span class="nx">client</span><span class="p">.</span><span class="nx">hset</span> <span class="s">"users"</span><span class="p">,</span> <span class="nx">req</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span> <span class="nx">req</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nx">cb</span>
-
-  <span class="nv">getId: </span><span class="nf">(name, cb) -&gt;</span> 
-    <span class="nx">client</span><span class="p">.</span><span class="nx">hget</span> <span class="s">"users"</span><span class="p">,</span> <span class="nx">name</span> <span class="nf">(err, id) -&gt;</span>
-      <span class="nx">cb</span> <span class="nx">id</span>
-
-  <span class="nv">unregister: </span><span class="nf">(req, cb) -&gt;</span>
-    <span class="nx">client</span><span class="p">.</span><span class="nx">hdel</span> <span class="s">"users"</span><span class="p">,</span> <span class="nx">req</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span> <span class="nx">cb</span>
-
-  <span class="nv">getPresenceTargets: </span><span class="nf">(req, cb) -&gt;</span>
-    <span class="c1"># these are the people notified on presence changes</span>
-    <span class="c1"># this assumes contacts.{name} is a list of names you created somewhere else</span>
-    <span class="nx">client</span><span class="p">.</span><span class="nx">get</span> <span class="s">"contacts.</span><span class="si">#{</span><span class="nx">req</span><span class="p">.</span><span class="nx">name</span><span class="si">}</span><span class="s">"</span><span class="p">,</span> <span class="nf">(err, contacts) -&gt;</span>
-      <span class="nx">cb</span> <span class="nx">contacts</span>
-</pre></div>
-
-<h3>Changing the name on register</h3>
-
-<p>You can set req.name before calling cb to change the name (useful if you send up a cookie in .register then do a lookup for the real name)</p>
-
-<h2>Effects</h2>
-
-<p>There is effects.css in the repository with some common CSS classes you will want when dealing with RTC video tags (flip, shadow, reflect, fadein, etc.). These are prefixed with rtc (example: .rtc-flip)</p>
-
-<h2>LICENSE</h2>
-
-<p>(MIT License)</p>
-
-<p>Copyright (c) 2012 Fractal <a href="mailto:contact@wearefractal.com">contact@wearefractal.com</a></p>
-
-<p>Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:</p>
-
-<p>The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.</p>
-
-<p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
+    
+    <h2>Example</h2>
+    <p>holla is fully supported in Chrome 24+ and Firefox 21+</p>
+    
       </section>
       <footer>
-        <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
+        <p>This project is created with love by <a href="https://github.com/wearefractal">wearefractal</a></p>
       </footer>
     </div>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
-		
+    <script src="javascripts/scale.fix.js"></script>
+    
   </body>
 </html>
