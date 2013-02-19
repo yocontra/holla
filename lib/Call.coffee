@@ -33,7 +33,7 @@ class Call extends EventEmitter
       @emit "chat", msg
 
   createConnection: ->
-    pc = new RTC.PeerConnection PeerConnConfig
+    pc = new RTC.PeerConnection RTC.PeerConnConfig
     pc.onconnecting = =>
       @emit 'connecting'
       return

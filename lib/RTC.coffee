@@ -1,11 +1,11 @@
-PeerConnection = PeerConnection or webkitPeerConnection00 or webkitRTCPeerConnection or mozRTCPeerConnection
-IceCandidate = RTCIceCandidate or mozRTCIceCandidate 
-SessionDescription = mozRTCSessionDescription or RTCSessionDescription
-MediaStream = webkitMediaStream or MediaStream
+PeerConnection = window.PeerConnection or window.webkitPeerConnection00 or window.webkitRTCPeerConnection or window.mozRTCPeerConnection
+IceCandidate = window.RTCIceCandidate or window.mozRTCIceCandidate 
+SessionDescription = window.mozRTCSessionDescription or window.RTCSessionDescription
+MediaStream = window.webkitMediaStream or window.MediaStream
 getUserMedia = (navigator.getUserMedia or navigator.webkitGetUserMedia or navigator.mozGetUserMedia or navigator.msGetUserMedia).bind navigator
-URL = URL or webkitURL or msURL or oURL
+URL = window.URL or window.webkitURL or window.msURL or window.oURL
 
-browser = (if mozGetUserMedia then 'firefox' else 'chrome')
+browser = (if navigator.mozGetUserMedia then 'firefox' else 'chrome')
 supported = (PeerConnection? and getUserMedia?)
 
 processSDP = (sdp) ->
@@ -27,7 +27,7 @@ attachStream = (uri, el) ->
   else
     el[srcAttr] = uri
     el.play()
-  return stream
+  return el
 
 shim = ->
   return unless supported # no need to shim
@@ -56,15 +56,17 @@ shim = ->
       PeerConnection::getLocalStreams = -> @localStreams
       PeerConnection::getRemoteStreams = -> @remoteStreams
 
-shim()
+  out = 
+    PeerConnection: PeerConnection
+    IceCandidate: IceCandidate
+    SessionDescription: SessionDescription
+    MediaStream: MediaStream
+    getUserMedia: getUserMedia
+    URL: URL
+    attachStream: attachStream
+    processSDP: processSDP
+    PeerConnConfig: PeerConnConfig
+    supported: supported
+  return out
 
-module.exports =
-  PeerConnection: PeerConnection
-  IceCandidate: IceCandidate
-  SessionDescription: SessionDescription
-  MediaStream: MediaStream
-  getUserMedia: getUserMedia
-  URL: URL
-  attachStream: attachStream
-  PeerConnConfig: PeerConnConfig
-  supported: supported
+module.exports = shim()

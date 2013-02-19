@@ -1,6 +1,6 @@
 Call = require './Call'
-ProtoSock = require 'protosock'
 RTC = require './RTC'
+ProtoSock = require 'protosock'
 
 client =
   options:
@@ -112,8 +112,8 @@ client =
 holla =
   createClient: ProtoSock.createClientWrapper client
   Call: Call
-  supported: supported
-
+  supported: RTC.supported
+  config: RTC.PeerConnConfig
   streamToBlob: (s) -> RTC.URL.createObjectURL s
   pipe: (stream, el) ->
     uri = holla.streamToBlob stream

@@ -8,6 +8,7 @@
   "main": "dist/holla.js",
   "scripts": [
     "dist/holla.js",
-    "dist/Call.js"
+    "dist/Call.js",
+    "dist/RTC.js"
   ]
 }
