@@ -1,7 +1,7 @@
 {
    "name": "holla",
    "description": "A sugary abstraction layer over WebRTC and P2P calling",
-   "version": "0.5.9",
+   "version": "0.6.0",
    "homepage": "http://github.com/wearefractal/holla",
    "repository": "git://github.com/wearefractal/holla.git",
    "author": "Fractal <contact@wearefractal.com> (http://wearefractal.com/)",
