@@ -4,7 +4,7 @@ build: components lib
 	@coffee -o dist -c lib/holla.coffee lib/Call.coffee lib/RTC.coffee
 	@component build --standalone holla
 	@mv build/build.js holla.js
-	@rm -rf build
+	@rm -rf build dist
 	@node_modules/.bin/uglifyjs -nc --unsafe -mt -o holla.min.js holla.js
 	@echo "File size (minified): " && cat holla.min.js | wc -c
 	@echo "File size (gzipped): " && cat holla.min.js | gzip -9f  | wc -c
