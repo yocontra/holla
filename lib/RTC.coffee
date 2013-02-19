@@ -69,14 +69,13 @@ processSDPOut = (sdp) ->
 processSDPIn = (sdp) -> return sdp
 
 attachStream = (uri, el) ->
-  srcAttr = (if browser is 'mozilla' then 'mozSrcObject' else 'src')
   if typeof el is "string"
     return attachStream uri, document.getElementById el
   else if el.jquery
-    el.attr srcAttr, uri
+    el.attr 'src', uri
     e.play() for e in el
   else
-    el[srcAttr] = uri
+    el.src = uri
     el.play()
   return el
 
@@ -93,9 +92,6 @@ shim = ->
         OfferToReceiveAudio: true
         OfferToReceiveVideo: true
         MozDontOfferDataChannel: true
-      optional: [
-        DtlsSrtpKeyAgreement: true
-      ]
 
     MediaStream::getVideoTracks = -> []
     MediaStream::getAudioTracks = -> []
@@ -108,9 +104,7 @@ shim = ->
       mandatory:
         OfferToReceiveAudio: true
         OfferToReceiveVideo: true
-      optional: [
         DtlsSrtpKeyAgreement: true
-      ]
     unless MediaStream::getVideoTracks
       MediaStream::getVideoTracks = -> @videoTracks
       MediaStream::getAudioTracks = -> @audioTracks

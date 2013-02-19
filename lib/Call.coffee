@@ -121,8 +121,8 @@ class Call extends EventEmitter
 
     err = (e) -> throw e
 
-    return @pc.createOffer done, err if @isCaller
-    return @pc.createAnswer done, err if @pc.remoteDescription
+    return @pc.createOffer done, err, RTC.constraints if @isCaller
+    return @pc.createAnswer done, err, RTC.constraints if @pc.remoteDescription
     @once "sdp", =>
       @pc.createAnswer done, err
 

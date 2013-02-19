@@ -3674,10 +3674,10 @@ require.register("holla/dist/Call.js", function(exports, require, module){
         throw e;
       };
       if (this.isCaller) {
-        return this.pc.createOffer(done, err);
+        return this.pc.createOffer(done, err, RTC.constraints);
       }
       if (this.pc.remoteDescription) {
-        return this.pc.createAnswer(done, err);
+        return this.pc.createAnswer(done, err, RTC.constraints);
       }
       return this.once("sdp", function() {
         return _this.pc.createAnswer(done, err);
@@ -3821,18 +3821,17 @@ require.register("holla/dist/RTC.js", function(exports, require, module){
   };
 
   attachStream = function(uri, el) {
-    var e, srcAttr, _i, _len;
-    srcAttr = (browser === 'mozilla' ? 'mozSrcObject' : 'src');
+    var e, _i, _len;
     if (typeof el === "string") {
       return attachStream(uri, document.getElementById(el));
     } else if (el.jquery) {
-      el.attr(srcAttr, uri);
+      el.attr('src', uri);
       for (_i = 0, _len = el.length; _i < _len; _i++) {
         e = el[_i];
         e.play();
       }
     } else {
-      el[srcAttr] = uri;
+      el.src = uri;
       el.play();
     }
     return el;
@@ -3856,12 +3855,7 @@ require.register("holla/dist/RTC.js", function(exports, require, module){
           OfferToReceiveAudio: true,
           OfferToReceiveVideo: true,
           MozDontOfferDataChannel: true
-        },
-        optional: [
-          {
-            DtlsSrtpKeyAgreement: true
-          }
-        ]
+        }
       };
       MediaStream.prototype.getVideoTracks = function() {
         return [];
@@ -3880,13 +3874,9 @@ require.register("holla/dist/RTC.js", function(exports, require, module){
       mediaConstraints = {
         mandatory: {
           OfferToReceiveAudio: true,
-          OfferToReceiveVideo: true
-        },
-        optional: [
-          {
-            DtlsSrtpKeyAgreement: true
-          }
-        ]
+          OfferToReceiveVideo: true,
+          DtlsSrtpKeyAgreement: true
+        }
       };
       if (!MediaStream.prototype.getVideoTracks) {
         MediaStream.prototype.getVideoTracks = function() {
