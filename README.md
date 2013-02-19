@@ -17,6 +17,10 @@
 </tr>
 </table>
 
+## Support
+
+holla has full support for Chrome 24+ and Firefox 21+ (Currently Nightly)
+
 ## Example
 
 ### Server
