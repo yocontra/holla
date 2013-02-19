@@ -225,6 +225,10 @@ adapter =
 
 You can set req.name before calling cb to change the name (useful if you send up a cookie in .register then do a lookup for the real name)
 
+## Effects
+
+There is effects.css in the repository with some common CSS classes you will want when dealing with RTC video tags (flip, shadow, reflect, fadein, etc.). These are prefixed with rtc (example: .rtc-flip)
+
 ## LICENSE
 
 (MIT License)

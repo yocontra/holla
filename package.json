@@ -1,12 +1,19 @@
 {
    "name": "holla",
    "description": "A sugary abstraction layer over WebRTC and P2P calling",
-   "version": "0.6.0",
+   "version": "0.6.0-1",
    "homepage": "http://github.com/wearefractal/holla",
    "repository": "git://github.com/wearefractal/holla.git",
    "author": "Fractal <contact@wearefractal.com> (http://wearefractal.com/)",
    "main": "./index.js",
-   "keywords":["webrtc","rtc","calling","call","voip","p2p"],
+   "keywords": [
+      "webrtc",
+      "rtc",
+      "calling",
+      "call",
+      "voip",
+      "p2p"
+   ],
    "dependencies": {
       "coffee-script": "*",
       "async": "*",
