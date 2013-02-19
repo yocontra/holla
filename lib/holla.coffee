@@ -1,7 +1,6 @@
 Call = require './Call'
 ProtoSock = require 'protosock'
-URL = window.URL or window.webkitURL or window.msURL or window.oURL
-getUserMedia = navigator.getUserMedia or navigator.webkitGetUserMedia or navigator.mozGetUserMedia or navigator.msGetUserMedia
+RTC = require './RTC'
 
 client =
   options:
@@ -113,24 +112,18 @@ client =
 holla =
   createClient: ProtoSock.createClientWrapper client
   Call: Call
-  supported: PeerConnection? and getUserMedia?
+  supported: supported
 
-  streamToBlob: (s) -> URL.createObjectURL s
+  streamToBlob: (s) -> RTC.URL.createObjectURL s
   pipe: (stream, el) ->
     uri = holla.streamToBlob stream
-    if typeof el is "string"
-      document.getElementById(el).src
-    else if el.jquery
-      el.attr 'src', uri
-    else
-      el.src = uri
-    return holla
+    RTC.attachStream uri, el
 
   createStream: (opt, cb) ->
-    return cb "Missing getUserMedia" unless getUserMedia?
+    return cb "Missing getUserMedia" unless RTC.getUserMedia?
     err = cb
     succ = (s) -> cb null, s
-    getUserMedia.call navigator, opt, succ, err
+    RTC.getUserMedia opt, succ, err
     return holla
 
   createFullStream: (cb) -> holla.createStream {video:true,audio:true}, cb

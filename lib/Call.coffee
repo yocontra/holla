@@ -1,6 +1,5 @@
-PeerConnection = window.PeerConnection or window.webkitPeerConnection00 or window.webkitRTCPeerConnection or mozRTCPeerConnection
-IceCandidate = window.mozRTCIceCandidate or window.RTCIceCandidate
-SessionDescription = window.mozRTCSessionDescription or window.RTCSessionDescription
+RTC = require './RTC'
+
 EventEmitter = require 'emitter'
 
 class Call extends EventEmitter
@@ -21,10 +20,10 @@ class Call extends EventEmitter
       @initSDP()
 
     @parent.on "candidate.#{@user}", (candidate) =>
-      @pc.addIceCandidate new IceCandidate candidate
+      @pc.addIceCandidate new RTC.IceCandidate candidate
 
     @parent.on "sdp.#{@user}", (stuff) =>
-      @pc.setRemoteDescription new SessionDescription stuff
+      @pc.setRemoteDescription new RTC.SessionDescription stuff
       @emit "sdp"
 
     @parent.on "hangup.#{@user}", =>
@@ -34,7 +33,7 @@ class Call extends EventEmitter
       @emit "chat", msg
 
   createConnection: ->
-    pc = new PeerConnection iceServers: [url: "stun:stun.l.google.com:19302"]
+    pc = new RTC.PeerConnection PeerConnConfig
     pc.onconnecting = =>
       @emit 'connecting'
       return
@@ -111,6 +110,7 @@ class Call extends EventEmitter
 
   initSDP: ->
     done = (desc) =>
+      desc.sdp = RTC.processSDP desc.sdp
       @pc.setLocalDescription desc
       @socket.write
         type: "sdp"
