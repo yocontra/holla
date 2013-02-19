@@ -1,5 +1,7 @@
 Full firefox support (just needs some shims and encryption fixes)
 
+Mute/unmute/hold sugar
+
 Data channel support (easy)
 
 Easier way to access remote stream details (has audio, has video)

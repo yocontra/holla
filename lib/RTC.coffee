@@ -7,6 +7,10 @@ URL = window.URL or window.webkitURL or window.msURL or window.oURL
 
 browser = (if navigator.mozGetUserMedia then 'firefox' else 'chrome')
 supported = (PeerConnection? and getUserMedia?)
+mediaConstraints =
+  mandatory:
+    OfferToReceiveAudio: true
+    OfferToReceiveVideo: true
 
 # scope bind hax
 getUserMedia = getUserMedia.bind navigator
@@ -31,6 +35,16 @@ attachStream = (uri, el) ->
     el[srcAttr] = uri
     el.play()
   return el
+
+mergeConstraints = (a,b) ->
+  nu =
+    mandatory: {}
+    optional: []
+  nu.mandatory[k]=v for k,v of a.mandatory
+  nu.mandatory[k]=v for k,v of b.mandatory
+  nu = nu.optional.concat a.optional
+  nu = nu.optional.concat b.optional
+  return nu
 
 shim = ->
   return unless supported # no need to shim
@@ -71,6 +85,7 @@ shim = ->
     PeerConnConfig: PeerConnConfig
     browser: browser
     supported: supported
+    constraints: mediaConstraints
   return out
 
 module.exports = shim()

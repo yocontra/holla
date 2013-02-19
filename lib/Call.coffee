@@ -33,7 +33,7 @@ class Call extends EventEmitter
       @emit "chat", msg
 
   createConnection: ->
-    pc = new RTC.PeerConnection RTC.PeerConnConfig
+    pc = new RTC.PeerConnection RTC.PeerConnConfig, RTC.constraints
     pc.onconnecting = =>
       @emit 'connecting'
       return
@@ -110,14 +110,14 @@ class Call extends EventEmitter
 
   initSDP: ->
     done = (desc) =>
-      desc.sdp = RTC.processSDP desc.sdp
+      #desc.sdp = RTC.processSDP desc.sdp
       @pc.setLocalDescription desc
       @socket.write
         type: "sdp"
         to: @user
         args: desc
 
-    err = (e) -> console.log e
+    err = (e) -> throw e
 
     return @pc.createOffer done, err if @isCaller
     return @pc.createAnswer done, err if @pc.remoteDescription
