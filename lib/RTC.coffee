@@ -7,14 +7,6 @@ URL = window.URL or window.webkitURL or window.msURL or window.oURL
 
 browser = (if navigator.mozGetUserMedia then 'firefox' else 'chrome')
 supported = (PeerConnection? and getUserMedia?)
-mediaConstraints =
-  mandatory:
-    OfferToReceiveAudio: true
-    OfferToReceiveVideo: true
-    MozDontOfferDataChannel: true
-  optional: [
-    DtlsSrtpKeyAgreement: true
-  ]
 
 # scope bind hax
 getUserMedia = getUserMedia.bind navigator
@@ -88,16 +80,6 @@ attachStream = (uri, el) ->
     el.play()
   return el
 
-mergeConstraints = (a,b) ->
-  nu =
-    mandatory: {}
-    optional: []
-  nu.mandatory[k]=v for k,v of a.mandatory
-  nu.mandatory[k]=v for k,v of b.mandatory
-  nu = nu.optional.concat a.optional
-  nu = nu.optional.concat b.optional
-  return nu
-
 shim = ->
   return unless supported # no need to shim
   if browser is 'firefox'
@@ -106,12 +88,28 @@ shim = ->
         url: "stun:23.21.150.121"
       ]
 
+    mediaConstraints =
+      mandatory:
+        OfferToReceiveAudio: true
+        OfferToReceiveVideo: true
+        MozDontOfferDataChannel: true
+      optional: [
+        DtlsSrtpKeyAgreement: true
+      ]
+
     MediaStream::getVideoTracks = -> []
     MediaStream::getAudioTracks = -> []
   else
     PeerConnConfig = 
       iceServers: [
         url: "stun:stun.l.google.com:19302"
+      ]
+    mediaConstraints =
+      mandatory:
+        OfferToReceiveAudio: true
+        OfferToReceiveVideo: true
+      optional: [
+        DtlsSrtpKeyAgreement: true
       ]
     unless MediaStream::getVideoTracks
       MediaStream::getVideoTracks = -> @videoTracks
