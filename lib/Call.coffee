@@ -23,6 +23,7 @@ class Call extends EventEmitter
       @pc.addIceCandidate new RTC.IceCandidate candidate
 
     @parent.on "sdp.#{@user}", (stuff) =>
+      console.log stuff
       @pc.setRemoteDescription new RTC.SessionDescription stuff
       @emit "sdp"
 
@@ -110,7 +111,7 @@ class Call extends EventEmitter
 
   initSDP: ->
     done = (desc) =>
-      #desc.sdp = RTC.processSDP desc.sdp
+      desc.sdp = RTC.processSDP desc.sdp
       @pc.setLocalDescription desc
       @socket.write
         type: "sdp"

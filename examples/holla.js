@@ -3546,6 +3546,7 @@ require.register("holla/dist/Call.js", function(exports, require, module){
         return _this.pc.addIceCandidate(new RTC.IceCandidate(candidate));
       });
       this.parent.on("sdp." + this.user, function(stuff) {
+        console.log(stuff);
         _this.pc.setRemoteDescription(new RTC.SessionDescription(stuff));
         return _this.emit("sdp");
       });
@@ -3659,6 +3660,7 @@ require.register("holla/dist/Call.js", function(exports, require, module){
       var done, err,
         _this = this;
       done = function(desc) {
+        desc.sdp = RTC.processSDP(desc.sdp);
         _this.pc.setLocalDescription(desc);
         return _this.socket.write({
           type: "sdp",
@@ -3667,7 +3669,7 @@ require.register("holla/dist/Call.js", function(exports, require, module){
         });
       };
       err = function(e) {
-        return console.log(e);
+        throw e;
       };
       if (this.isCaller) {
         return this.pc.createOffer(done, err);
@@ -3731,7 +3733,7 @@ require.register("holla/dist/RTC.js", function(exports, require, module){
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       line = _ref[_i];
       out.push(line);
-      if ((__indexOf.call(search, 'm=') >= 0) !== -1) {
+      if ((__indexOf.call(line, 'm=') >= 0)) {
         out.push(addCrypto);
       }
     }

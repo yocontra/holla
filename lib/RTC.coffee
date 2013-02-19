@@ -21,7 +21,7 @@ processSDP = (sdp) ->
   out = []
   for line in sdp.split '\r\n'
     out.push line
-    out.push addCrypto if ('m=' in search) isnt -1
+    out.push addCrypto if ('m=' in line)
   return out.join '\r\n'
 
 attachStream = (uri, el) ->
