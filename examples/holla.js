@@ -3494,8 +3494,8 @@ require.register("holla/dist/holla.js", function(exports, require, module){
     },
     createAudioStream: function(cb) {
       return holla.createStream({
-        video: true,
-        audio: false
+        video: false,
+        audio: true
       }, cb);
     }
   };
@@ -3710,11 +3710,11 @@ require.register("holla/dist/RTC.js", function(exports, require, module){
 
   URL = window.URL || window.webkitURL || window.msURL || window.oURL;
 
+  getUserMedia = getUserMedia.bind(navigator);
+
   browser = (navigator.mozGetUserMedia ? 'firefox' : 'chrome');
 
   supported = (PeerConnection != null) && (getUserMedia != null);
-
-  getUserMedia = getUserMedia.bind(navigator);
 
   extract = function(str, reg) {
     var match;

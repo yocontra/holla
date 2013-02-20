@@ -128,6 +128,6 @@ holla =
 
   createFullStream: (cb) -> holla.createStream {video:true,audio:true}, cb
   createVideoStream: (cb) -> holla.createStream {video:true,audio:false}, cb
-  createAudioStream: (cb) -> holla.createStream {video:true,audio:false}, cb
+  createAudioStream: (cb) -> holla.createStream {video:false,audio:true}, cb
 
 module.exports = holla
