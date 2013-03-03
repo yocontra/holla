@@ -1,4 +1,4 @@
-RTC = require './RTC'
+shims = require './shims'
 
 EventEmitter = require 'emitter'
 
@@ -20,11 +20,11 @@ class Call extends EventEmitter
       @initSDP()
 
     @parent.on "candidate.#{@user}", (candidate) =>
-      @pc.addIceCandidate new RTC.IceCandidate candidate
+      @pc.addIceCandidate new shims.IceCandidate candidate
 
     @parent.on "sdp.#{@user}", (desc) =>
-      desc.sdp = RTC.processSDPIn desc.sdp
-      @pc.setRemoteDescription new RTC.SessionDescription desc
+      desc.sdp = shims.processSDPIn desc.sdp
+      @pc.setRemoteDescription new shims.SessionDescription desc
       @emit "sdp"
 
     @parent.on "hangup.#{@user}", =>
@@ -34,7 +34,7 @@ class Call extends EventEmitter
       @emit "chat", msg
 
   createConnection: ->
-    pc = new RTC.PeerConnection RTC.PeerConnConfig, RTC.constraints
+    pc = new shims.PeerConnection shims.PeerConnConfig, shims.constraints
     pc.onconnecting = =>
       @emit 'connecting'
       return
@@ -112,7 +112,7 @@ class Call extends EventEmitter
 
   initSDP: ->
     done = (desc) =>
-      desc.sdp = RTC.processSDPOut desc.sdp
+      desc.sdp = shims.processSDPOut desc.sdp
       @pc.setLocalDescription desc
       @socket.write
         type: "sdp"
@@ -121,8 +121,8 @@ class Call extends EventEmitter
 
     err = (e) -> throw e
 
-    return @pc.createOffer done, err, RTC.constraints if @isCaller
-    return @pc.createAnswer done, err, RTC.constraints if @pc.remoteDescription
+    return @pc.createOffer done, err, shims.constraints if @isCaller
+    return @pc.createAnswer done, err, shims.constraints if @pc.remoteDescription
     @once "sdp", =>
       @pc.createAnswer done, err
 

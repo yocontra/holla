@@ -9,6 +9,6 @@
   "scripts": [
     "dist/holla.js",
     "dist/Call.js",
-    "dist/RTC.js"
+    "dist/shims.js"
   ]
 }

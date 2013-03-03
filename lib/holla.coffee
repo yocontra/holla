@@ -1,5 +1,5 @@
 Call = require './Call'
-RTC = require './RTC'
+shims = require './shims'
 ProtoSock = require 'protosock'
 
 client =
@@ -112,18 +112,20 @@ client =
 holla =
   createClient: ProtoSock.createClientWrapper client
   Call: Call
-  supported: RTC.supported
-  config: RTC.PeerConnConfig
-  streamToBlob: (s) -> RTC.URL.createObjectURL s
+  supported: shims.supported
+  config: shims.PeerConnConfig
+  streamToBlob: (s) -> shims.URL.createObjectURL s
   pipe: (stream, el) ->
     uri = holla.streamToBlob stream
-    RTC.attachStream uri, el
+    shims.attachStream uri, el
 
+  record: shims.recordVideo
+  
   createStream: (opt, cb) ->
-    return cb "Missing getUserMedia" unless RTC.getUserMedia?
+    return cb "Missing getUserMedia" unless shims.getUserMedia?
     err = cb
     succ = (s) -> cb null, s
-    RTC.getUserMedia opt, succ, err
+    shims.getUserMedia opt, succ, err
     return holla
 
   createFullStream: (cb) -> holla.createStream {video:true,audio:true}, cb

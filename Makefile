@@ -1,7 +1,7 @@
 build: components lib
 	@rm -rf dist
 	@mkdir -p dist
-	@coffee -o dist -c lib/holla.coffee lib/Call.coffee lib/RTC.coffee
+	@coffee -o dist -c lib/holla.coffee lib/Call.coffee lib/shims.coffee
 	@component build --standalone holla
 	@mv build/build.js holla.js
 	@rm -rf build
