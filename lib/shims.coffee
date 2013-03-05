@@ -164,10 +164,10 @@ shim = ->
         url: "stun:stun.l.google.com:19302"
       ]
     mediaConstraints =
-      mandatory:
-        OfferToReceiveAudio: true
-        OfferToReceiveVideo: true
+      optional: [
         DtlsSrtpKeyAgreement: true
+      ]
+
     unless MediaStream::getVideoTracks
       MediaStream::getVideoTracks = -> @videoTracks
       MediaStream::getAudioTracks = -> @audioTracks
