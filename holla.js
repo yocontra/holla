@@ -3547,13 +3547,18 @@ require.register("holla/dist/Call.js", function(exports, require, module){
         return _this.pc.addIceCandidate(new shims.IceCandidate(candidate));
       });
       this.parent.on("sdp." + this.user, function(desc) {
+        var err, succ;
         desc.sdp = shims.processSDPIn(desc.sdp);
-        _this.pc.setRemoteDescription(new shims.SessionDescription(desc));
-        console.log(desc);
-        if (!_this.isCaller) {
-          _this.initSDP();
-        }
-        return _this.emit("sdp");
+        err = function(e) {
+          throw e;
+        };
+        succ = function() {
+          if (!_this.isCaller) {
+            _this.initSDP();
+          }
+          return _this.emit("sdp");
+        };
+        return _this.pc.setRemoteDescription(new shims.SessionDescription(desc), succ, err);
       });
       this.parent.on("hangup." + this.user, function() {
         return _this.emit("hangup");
@@ -3946,6 +3951,10 @@ require.register("holla/dist/shims.js", function(exports, require, module){
         ]
       };
       mediaConstraints = {
+        mandatory: {
+          OfferToReceiveAudio: true,
+          OfferToReceiveVideo: true
+        },
         optional: [
           {
             DtlsSrtpKeyAgreement: true

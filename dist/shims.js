@@ -246,6 +246,10 @@
         ]
       };
       mediaConstraints = {
+        mandatory: {
+          OfferToReceiveAudio: true,
+          OfferToReceiveVideo: true
+        },
         optional: [
           {
             DtlsSrtpKeyAgreement: true

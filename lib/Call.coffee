@@ -24,9 +24,11 @@ class Call extends EventEmitter
 
     @parent.on "sdp.#{@user}", (desc) =>
       desc.sdp = shims.processSDPIn desc.sdp
-      @pc.setRemoteDescription new shims.SessionDescription(desc)
-      @initSDP() unless @isCaller
-      @emit "sdp"
+      err = (e) -> throw e
+      succ = =>
+        @initSDP() unless @isCaller
+        @emit "sdp"
+      @pc.setRemoteDescription new shims.SessionDescription(desc), succ, err
 
     @parent.on "hangup.#{@user}", =>
       @emit "hangup"
