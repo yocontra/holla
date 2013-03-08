@@ -251,7 +251,7 @@ var err = { type: 'error', data: 'parser error' }
  */
 
 exports.encodePacket = function (packet) {
-  var encoded = packets[packet.type]
+  var encoded = packets[packet.type];
 
   // data fragment is optional
   if (undefined !== packet.data) {
@@ -314,37 +314,37 @@ exports.encodePayload = function (packets) {
 /*
  * Decodes data when a payload is maybe expected.
  *
- * @param {String} data
- * @return {Array} packets
+ * @param {String} data, callback method
+ * @return {NaN} 
  * @api public
  */
 
-exports.decodePayload = function (data) {
+exports.decodePayload = function (data, callback) {
+  var packet;
   if (data == '') {
     // parser error - ignoring payload
-    return [err];
+    return callback(err, 0, 1);
   }
 
-  var packets = []
-    , length = ''
-    , n, msg, packet
+  var length = ''
+    , n, msg;
 
   for (var i = 0, l = data.length; i < l; i++) {
-    var chr = data.charAt(i)
+    var chr = data.charAt(i);
 
     if (':' != chr) {
       length += chr;
     } else {
       if ('' == length || (length != (n = Number(length)))) {
         // parser error - ignoring payload
-        return [err];
+        return callback(err, 0, 1);
       }
 
       msg = data.substr(i + 1, n);
 
       if (length != msg.length) {
         // parser error - ignoring payload
-        return [err];
+        return callback(err, 0, 1);
       }
 
       if (msg.length) {
@@ -352,24 +352,23 @@ exports.decodePayload = function (data) {
 
         if (err.type == packet.type && err.data == packet.data) {
           // parser error in individual packet - ignoring payload
-          return [err];
+          return callback(err, 0, 1);
         }
 
-        packets.push(packet);
+        callback(packet, i + n, l);
       }
 
       // advance cursor
       i += n;
-      length = ''
+      length = '';
     }
   }
 
   if (length != '') {
     // parser error - ignoring payload
-    return [err];
+    return callback(err, 0, 1);
   }
 
-  return packets;
 };
 
 });
@@ -1717,25 +1716,32 @@ Polling.prototype.poll = function(){
  */
 
 Polling.prototype.onData = function(data){
+  var self = this;
   debug('polling got data %s', data);
   // decode payload
-  var packets = parser.decodePayload(data);
+  parser.decodePayload(data, function(packet, index, total) {self.onDataCallback(packet, index, total)});
+};
 
-  for (var i = 0, l = packets.length; i < l; i++) {
-    // if its the first message we consider the trnasport open
-    if ('opening' == this.readyState) {
-      this.onOpen();
-    }
-
-    // if its a close packet, we close the ongoing requests
-    if ('close' == packets[i].type) {
-      this.onClose();
-      return;
-    }
-
-    // otherwise bypass onData and handle the message
-    this.onPacket(packets[i]);
+/**
+ * Callback function for payloads
+ * 
+ * @api private
+ */
+ 
+Polling.prototype.onDataCallback = function(packet, index, total){
+  // if its the first message we consider the transport open
+  if ('opening' == this.readyState) {
+    this.onOpen();
   }
+
+  // if its a close packet, we close the ongoing requests
+  if ('close' == packet.type) {
+    this.onClose();
+    return;
+  }
+
+  // otherwise bypass onData and handle the message
+  this.onPacket(packet);
 
   // if we got data we're not polling
   this.polling = false;
@@ -2293,7 +2299,11 @@ JSONPPolling.prototype.doWrite = function (data, fn) {
 
   function initIframe () {
     if (self.iframe) {
-      self.form.removeChild(self.iframe);
+      try {
+        self.form.removeChild(self.iframe);
+      } catch (e) {
+        self.onError('jsonp polling iframe removal error', e);
+      }
     }
 
     try {
@@ -3205,6 +3215,14 @@ Emitter.prototype.off =
 Emitter.prototype.removeListener =
 Emitter.prototype.removeAllListeners = function(event, fn){
   this._callbacks = this._callbacks || {};
+
+  // all
+  if (0 == arguments.length) {
+    this._callbacks = {};
+    return this;
+  }
+
+  // specific event
   var callbacks = this._callbacks[event];
   if (!callbacks) return this;
 

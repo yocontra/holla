@@ -135,7 +135,7 @@ module.exports =
 
           req =
             name: socket.identity
-            socket: socket.identity
+            socket: socket
             to: msg.to
 
           @emit "offer", req
@@ -149,7 +149,7 @@ module.exports =
 
           req =
             name: socket.identity
-            socket: socket.identity
+            socket: socket
             to: msg.to
 
           @emit "hangup", req
@@ -165,7 +165,7 @@ module.exports =
 
           req =
             name: socket.identity
-            socket: socket.identity
+            socket: socket
             to: msg.to
             args:
               accepted: msg.args.accepted
@@ -202,7 +202,7 @@ module.exports =
 
           req =
             name: socket.identity
-            socket: socket.identity
+            socket: socket
             to: msg.to
             message: msg.args.message
 
