@@ -92,6 +92,7 @@
     };
 
     Call.prototype.addStream = function(s) {
+      this.localStream = s;
       this.pc.addStream(s);
       return this;
     };

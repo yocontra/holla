@@ -64,7 +64,8 @@ class Call extends EventEmitter
 
     return pc
 
-  addStream: (s) -> 
+  addStream: (s) ->
+    @localStream = s
     @pc.addStream s
     return @
 

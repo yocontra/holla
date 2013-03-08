@@ -3619,6 +3619,7 @@ require.register("holla/dist/Call.js", function(exports, require, module){
     };
 
     Call.prototype.addStream = function(s) {
+      this.localStream = s;
       this.pc.addStream(s);
       return this;
     };

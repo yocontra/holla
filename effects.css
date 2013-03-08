@@ -2,6 +2,15 @@
   -webkit-box-reflect: below 1 -webkit-gradient(linear, left top, left bottom, color-stop(0.5, transparent), color-stop(1.0, rgba(255, 255, 255, 0.5)));
 }
 
+.rtc-pip {
+  position: absolute;
+  height: 30%;
+  width: 30%;
+  bottom: 0;
+  right: 4px;
+  z-index: 100;
+}
+
 .rtc-fadein {
   -webkit-transition-property: opacity;
   -moz-transition-property: opacity;
