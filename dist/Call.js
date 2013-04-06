@@ -18,6 +18,18 @@
       this.parent = parent;
       this.user = user;
       this.isCaller = isCaller;
+      this.initSDP = __bind(this.initSDP, this);
+      this.unmute = __bind(this.unmute, this);
+      this.mute = __bind(this.mute, this);
+      this.end = __bind(this.end, this);
+      this.releaseStream = __bind(this.releaseStream, this);
+      this.decline = __bind(this.decline, this);
+      this.answer = __bind(this.answer, this);
+      this.chat = __bind(this.chat, this);
+      this.duration = __bind(this.duration, this);
+      this.ready = __bind(this.ready, this);
+      this.addStream = __bind(this.addStream, this);
+      this.createConnection = __bind(this.createConnection, this);
       this.processRemoteSDP = __bind(this.processRemoteSDP, this);
       this.startTime = new Date;
       this.socket = this.parent.ssocket;
@@ -162,6 +174,10 @@
       return this;
     };
 
+    Call.prototype.releaseStream = function() {
+      return this.localStream.stop();
+    };
+
     Call.prototype.end = function() {
       this.endTime = new Date;
       try {
@@ -173,6 +189,30 @@
       });
       this.emit("hangup");
       return this;
+    };
+
+    Call.prototype.mute = function() {
+      var track, _i, _len, _ref, _results;
+
+      _ref = this.localStream.getAudioTracks();
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        track = _ref[_i];
+        _results.push(track.enabled = false);
+      }
+      return _results;
+    };
+
+    Call.prototype.unmute = function() {
+      var track, _i, _len, _ref, _results;
+
+      _ref = this.localStream.getAudioTracks();
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        track = _ref[_i];
+        _results.push(track.enabled = true);
+      }
+      return _results;
     };
 
     Call.prototype.initSDP = function() {

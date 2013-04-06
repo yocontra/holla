@@ -1,8 +1,6 @@
-Mute/unmute/hold sugar
+hold sugar
 
 Data channel support
-
-Easier way to access remote stream details (has audio, has video)
 
 Support for multiple presence settings
 

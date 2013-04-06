@@ -41,7 +41,7 @@ class Call extends EventEmitter
       @initSDP() unless @isCaller
     @pc.setRemoteDescription new shims.SessionDescription(desc), succ, err
 
-  createConnection: ->
+  createConnection: =>
     pc = new shims.PeerConnection shims.PeerConnConfig, shims.constraints
     pc.onconnecting = =>
       @emit 'connecting'
@@ -71,29 +71,29 @@ class Call extends EventEmitter
 
     return pc
 
-  addStream: (s) ->
+  addStream: (s) =>
     @localStream = s
     @pc.addStream s
     return @
 
-  ready: (fn) ->
+  ready: (fn) =>
     if @_ready
       fn @remoteStream
     else
       @once 'ready', fn
     return @
 
-  duration: ->
+  duration: =>
     s = @endTime.getTime() if @endTime?
     s ?= Date.now()
     e = @startTime.getTime()
     return (s-e)/1000
 
-  chat: (msg) ->
+  chat: (msg) =>
     @parent.chat @user, msg
     return @
 
-  answer: ->
+  answer: =>
     @startTime = new Date
     @socket.write
       type: "answer"
@@ -102,7 +102,7 @@ class Call extends EventEmitter
         accepted: true
     return @
 
-  decline: ->
+  decline: =>
     @socket.write
       type: "answer"
       to: @user
@@ -110,7 +110,10 @@ class Call extends EventEmitter
         accepted: false
     return @
 
-  end: ->
+  releaseStream: =>
+    @localStream.stop()
+
+  end: =>
     @endTime = new Date
     try
       @pc.close()
@@ -120,7 +123,13 @@ class Call extends EventEmitter
     @emit "hangup"
     return @
 
-  initSDP: ->
+  mute: =>
+    track.enabled = false for track in @localStream.getAudioTracks()
+  
+  unmute: =>
+    track.enabled = true for track in @localStream.getAudioTracks()
+
+  initSDP: =>
     done = (desc) =>
       desc.sdp = shims.processSDPOut desc.sdp
       console.log "#{@isCaller} local", desc

@@ -146,6 +146,18 @@ Declines the call (inbound only)
 
 Ends the call (hangup and close connection)
 
+## releaseStream()
+
+Release use of the attached stream. Will make a users webcam light go off so they don't think you're spying.
+
+## mute()
+
+Mutes the local user's audio to the remote user
+
+## unmute()
+
+Unmutes the local user's audio to the remote user
+
 #### .ready(fn)
 
 Will call fn when the call has been connected and is ready to go or if it is already.
