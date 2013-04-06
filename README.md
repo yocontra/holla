@@ -209,9 +209,6 @@ You can set req.name before calling cb to change the name (useful if you send up
 
 There is effects.css in the repository with some common CSS classes you will want when dealing with RTC video tags (flip, shadow, reflect, fadein, etc.). These are prefixed with rtc (example: .rtc-flip)
 
-## Release History
-*   __04/07/2013 - 0.6.2__: pip effect and localStream
-
 ## LICENSE
 
 (MIT License)

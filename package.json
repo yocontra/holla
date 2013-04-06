@@ -1,7 +1,7 @@
 {
    "name": "holla",
    "description": "An abstraction over P2P video/voice/data connections using WebRTC",
-   "version": "0.6.2",
+   "version": "0.6.3",
    "homepage": "http://github.com/wearefractal/holla",
    "repository": "git://github.com/wearefractal/holla.git",
    "author": "Fractal <contact@wearefractal.com> (http://wearefractal.com/)",
