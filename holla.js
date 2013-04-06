@@ -1,12 +1,5 @@
 ;(function(){
 
-
-/**
- * hasOwnProperty.
- */
-
-var has = Object.prototype.hasOwnProperty;
-
 /**
  * Require the given path.
  *
@@ -83,10 +76,10 @@ require.resolve = function(path) {
 
   for (var i = 0; i < paths.length; i++) {
     var path = paths[i];
-    if (has.call(require.modules, path)) return path;
+    if (require.modules.hasOwnProperty(path)) return path;
   }
 
-  if (has.call(require.aliases, index)) {
+  if (require.aliases.hasOwnProperty(index)) {
     return require.aliases[index];
   }
 };
@@ -140,7 +133,7 @@ require.register = function(path, definition) {
  */
 
 require.alias = function(from, to) {
-  if (!has.call(require.modules, from)) {
+  if (!require.modules.hasOwnProperty(from)) {
     throw new Error('Failed to alias "' + from + '", it does not exist');
   }
   require.aliases[to] = from;
@@ -202,7 +195,7 @@ require.relative = function(parent) {
    */
 
   localRequire.exists = function(path) {
-    return has.call(require.modules, localRequire.resolve(path));
+    return require.modules.hasOwnProperty(localRequire.resolve(path));
   };
 
   return localRequire;
@@ -212,7 +205,12 @@ require.register("LearnBoost-engine.io-protocol/lib/index.js", function(exports,
  * Module dependencies.
  */
 
-var keys = require('./keys')
+var keys = require('./keys');
+
+/**
+ * Current protocol version.
+ */
+exports.protocol = 2;
 
 /**
  * Packet types.
@@ -234,7 +232,7 @@ var packetslist = keys(packets);
  * Premade error packet.
  */
 
-var err = { type: 'error', data: 'parser error' }
+var err = { type: 'error', data: 'parser error' };
 
 /**
  * Encodes a packet.
@@ -284,7 +282,7 @@ exports.decodePacket = function (data) {
 
 /**
  * Encodes multiple messages (payload).
- * 
+ *
  *     <length>:data
  *
  * Example:
@@ -300,8 +298,8 @@ exports.encodePayload = function (packets) {
     return '0:';
   }
 
-  var encoded = ''
-    , message
+  var encoded = '';
+  var message;
 
   for (var i = 0, l = packets.length; i < l; i++) {
     message = exports.encodePacket(packets[i]);
@@ -315,7 +313,6 @@ exports.encodePayload = function (packets) {
  * Decodes data when a payload is maybe expected.
  *
  * @param {String} data, callback method
- * @return {NaN} 
  * @api public
  */
 
@@ -355,7 +352,8 @@ exports.decodePayload = function (data, callback) {
           return callback(err, 0, 1);
         }
 
-        callback(packet, i + n, l);
+        var ret = callback(packet, i + n, l);
+        if (false === ret) return;
       }
 
       // advance cursor
@@ -550,7 +548,8 @@ require.register("LearnBoost-engine.io-client/lib/socket.js", function(exports, 
 var util = require('./util')
   , transports = require('./transports')
   , Emitter = require('./emitter')
-  , debug = require('debug')('engine-client:socket');
+  , debug = require('debug')('engine-client:socket')
+  , parser = require('engine.io-parser');
 
 /**
  * Module exports.
@@ -563,6 +562,14 @@ module.exports = Socket;
  */
 
 var global = util.global();
+
+/**
+ * Noop function.
+ *
+ * @api private
+ */
+
+function noop () {};
 
 /**
  * Socket constructor.
@@ -587,6 +594,7 @@ function Socket(uri, opts){
     opts.host = uri.host;
     opts.secure = uri.protocol == 'https' || uri.protocol == 'wss';
     opts.port = uri.port;
+    if (uri.query) opts.query = uri.query;
   }
 
   this.secure = null != opts.secure ? opts.secure :
@@ -604,6 +612,7 @@ function Socket(uri, opts){
        location.port :
        (this.secure ? 443 : 80));
   this.query = opts.query || {};
+  if ('string' == typeof this.query) this.query = util.qsParse(this.query);
   this.upgrade = false !== opts.upgrade;
   this.path = (opts.path || '/engine.io').replace(/\/$/, '') + '/';
   this.forceJSONP = !!opts.forceJSONP;
@@ -613,6 +622,7 @@ function Socket(uri, opts){
   this.transports = opts.transports || ['polling', 'websocket', 'flashsocket'];
   this.readyState = '';
   this.writeBuffer = [];
+  this.callbackBuffer = [];
   this.policyPort = opts.policyPort || 843;
   this.open();
 
@@ -632,7 +642,7 @@ Emitter(Socket.prototype);
  * @api public
  */
 
-Socket.protocol = 1;
+Socket.protocol = parser.protocol; // this is an int
 
 /**
  * Static EventEmitter.
@@ -664,11 +674,15 @@ Socket.parser = require('engine.io-parser');
 Socket.prototype.createTransport = function (name) {
   debug('creating transport "%s"', name);
   var query = clone(this.query);
+
+  // append engine.io protocol identifier
+  query.EIO = parser.protocol;
+
+  // transport name
   query.transport = name;
 
-  if (this.id) {
-    query.sid = this.id;
-  }
+  // session id if we already have one
+  if (this.id) query.sid = this.id;
 
   var transport = new transports[name]({
     hostname: this.hostname,
@@ -729,7 +743,7 @@ Socket.prototype.setTransport = function (transport) {
   // set up transport listeners
   transport
     .on('drain', function () {
-      self.flush();
+      self.onDrain();
     })
     .on('packet', function (packet) {
       self.onPacket(packet);
@@ -952,6 +966,41 @@ Socket.prototype.ping = function () {
 };
 
 /**
+ * Called on `drain` event
+ * 
+ * @api private
+ */
+
+ Socket.prototype.onDrain = function() {
+  this.callbacks();
+  this.writeBuffer.splice(0, this.prevBufferLen);
+  this.callbackBuffer.splice(0, this.prevBufferLen);
+  // setting prevBufferLen = 0 is very important
+  // for example, when upgrading, upgrade packet is sent over,
+  // and a nonzero prevBufferLen could cause problems on `drain`
+  this.prevBufferLen = 0;
+  if (this.writeBuffer.length == 0) {
+    this.emit('drain');
+  } else {
+    this.flush();
+  }
+ }
+
+/**
+ * Calls all the callback functions associated with sending packets
+ * 
+ * @api private
+ */
+
+Socket.prototype.callbacks = function() {
+  for (var i = 0; i < this.prevBufferLen; i++) {
+    if (this.callbackBuffer[i]) {
+      this.callbackBuffer[i]();
+    }
+  }
+}
+
+/**
  * Flush write buffers.
  *
  * @api private
@@ -962,7 +1011,10 @@ Socket.prototype.flush = function () {
     !this.upgrading && this.writeBuffer.length) {
     debug('flushing %d packets in socket', this.writeBuffer.length);
     this.transport.send(this.writeBuffer);
-    this.writeBuffer = [];
+    // keep track of current length of writeBuffer
+    // splice writeBuffer and callbackBuffer on `drain`
+    this.prevBufferLen = this.writeBuffer.length;
+    this.emit('flush');
   }
 };
 
@@ -970,13 +1022,14 @@ Socket.prototype.flush = function () {
  * Sends a message.
  *
  * @param {String} message.
+ * @param {Function} callback function.
  * @return {Socket} for chaining.
  * @api public
  */
 
 Socket.prototype.write =
-Socket.prototype.send = function (msg) {
-  this.sendPacket('message', msg);
+Socket.prototype.send = function (msg, fn) {
+  this.sendPacket('message', msg, fn);
   return this;
 };
 
@@ -985,13 +1038,15 @@ Socket.prototype.send = function (msg) {
  *
  * @param {String} packet type.
  * @param {String} data.
+ * @param {Function} callback function.
  * @api private
  */
 
-Socket.prototype.sendPacket = function (type, data) {
+Socket.prototype.sendPacket = function (type, data, fn) {
   var packet = { type: type, data: data };
   this.emit('packetCreate', packet);
   this.writeBuffer.push(packet);
+  this.callbackBuffer.push(fn);
   this.flush();
 };
 
@@ -1033,8 +1088,15 @@ Socket.prototype.onError = function (err) {
 Socket.prototype.onClose = function (reason, desc) {
   if ('opening' == this.readyState || 'open' == this.readyState) {
     debug('socket close with reason: "%s"', reason);
+    var self = this;
     clearTimeout(this.pingIntervalTimer);
     clearTimeout(this.pingTimeoutTimer);
+    // clean buffers in next tick, so developers can still
+    // grab the buffers on `close` event
+    setTimeout(function() {
+      self.writeBuffer = [];
+      self.callbackBuffer = [];
+    }, 0);
     this.readyState = 'closed';
     this.emit('close', reason, desc);
     this.onclose && this.onclose.call(this);
@@ -1044,7 +1106,7 @@ Socket.prototype.onClose = function (reason, desc) {
 
 /**
  * Filters upgrades, returning only those matching client transports.
- * 
+ *
  * @param {Array} server upgrades
  * @api private
  *
@@ -1057,6 +1119,7 @@ Socket.prototype.filterUpgrades = function (upgrades) {
   }
   return filteredUpgrades;
 };
+
 });
 require.register("LearnBoost-engine.io-client/lib/transport.js", function(exports, require, module){
 
@@ -1208,13 +1271,7 @@ require.register("LearnBoost-engine.io-client/lib/emitter.js", function(exports,
  * Module dependencies.
  */
 
-var Emitter;
-
-try {
-  Emitter = require('emitter');
-} catch(e){
-  Emitter = require('emitter-component');
-}
+var Emitter = require('emitter');
 
 /**
  * Module exports.
@@ -1245,16 +1302,6 @@ Emitter.prototype.removeEventListener = Emitter.prototype.off;
  */
 
 Emitter.prototype.removeListener = Emitter.prototype.off;
-
-/**
- * Node-compatible `EventEmitter#removeAllListeners`
- *
- * @api public
- */
-
-Emitter.prototype.removeAllListeners = function(){
-  this._callbacks = {};
-};
 
 });
 require.register("LearnBoost-engine.io-client/lib/util.js", function(exports, require, module){
@@ -1368,12 +1415,12 @@ exports.defer = function (fn) {
  * @api private
  */
 
-var rvalidchars = /^[\],:{}\s]*$/
-  , rvalidescape = /\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g
-  , rvalidtokens = /"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g
-  , rvalidbraces = /(?:^|:|,)(?:\s*\[)+/g
-  , rtrimLeft = /^\s+/
-  , rtrimRight = /\s+$/
+var rvalidchars = /^[\],:{}\s]*$/;
+var rvalidescape = /\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g;
+var rvalidtokens = /"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g;
+var rvalidbraces = /(?:^|:|,)(?:\s*\[)+/g;
+var rtrimLeft = /^\s+/;
+var rtrimRight = /\s+$/;
 
 exports.parseJSON = function (data) {
   var global = exports.global();
@@ -1411,8 +1458,9 @@ exports.ua = {};
  */
 
 exports.ua.hasCORS = 'undefined' != typeof XMLHttpRequest && (function () {
+  var a;
   try {
-    var a = new XMLHttpRequest();
+    a = new XMLHttpRequest();
   } catch (e) {
     return false;
   }
@@ -1461,10 +1509,10 @@ exports.ua.ios6 = exports.ua.ios && /OS 6_/.test(navigator.userAgent);
  */
 
 exports.request = function request (xdomain) {
-  if ('undefined' == typeof window) {
+  try {
     var _XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
     return new _XMLHttpRequest();
-  }
+  } catch (e) {}
 
   if (xdomain && 'undefined' != typeof XDomainRequest && !exports.ua.hasCORS) {
     return new XDomainRequest();
@@ -1523,11 +1571,28 @@ exports.qs = function (obj) {
   for (var i in obj) {
     if (obj.hasOwnProperty(i)) {
       if (str.length) str += '&';
-      str += i + '=' + encodeURIComponent(obj[i]);
+      str += encodeURIComponent(i) + '=' + encodeURIComponent(obj[i]);
     }
   }
 
   return str;
+};
+
+/**
+ * Parses a simple querystring.
+ *
+ * @param {String} qs
+ * @api private
+ */
+
+exports.qsParse = function(qs){
+  var qry = {};
+  var pairs = qs.split('&');
+  for (var i = 0, l = pairs.length; i < l; i++) {
+    var pair = pairs[i].split('=');
+    qry[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1]);
+  }
+  return qry;
 };
 
 });
@@ -1574,11 +1639,11 @@ function polling (opts) {
     var port = location.port;
 
     // some user agents have empty `location.port`
-    if (Number(port) != port) {
+    if (Number(port) !== port) {
       port = isSSL ? 443 : 80;
     }
 
-    xd = opts.host != location.hostname || port != opts.port;
+    xd = opts.hostname != location.hostname || port != opts.port;
     isXProtocol = opts.secure != isSSL;
   }
 
@@ -1718,39 +1783,35 @@ Polling.prototype.poll = function(){
 Polling.prototype.onData = function(data){
   var self = this;
   debug('polling got data %s', data);
+
   // decode payload
-  parser.decodePayload(data, function(packet, index, total) {self.onDataCallback(packet, index, total)});
-};
+  parser.decodePayload(data, function(packet, index, total) {
+    // if its the first message we consider the transport open
+    if ('opening' == self.readyState) {
+      self.onOpen();
+    }
 
-/**
- * Callback function for payloads
- * 
- * @api private
- */
- 
-Polling.prototype.onDataCallback = function(packet, index, total){
-  // if its the first message we consider the transport open
-  if ('opening' == this.readyState) {
-    this.onOpen();
-  }
+    // if its a close packet, we close the ongoing requests
+    if ('close' == packet.type) {
+      self.onClose();
+      return false;
+    }
 
-  // if its a close packet, we close the ongoing requests
-  if ('close' == packet.type) {
-    this.onClose();
-    return;
-  }
+    // otherwise bypass onData and handle the message
+    self.onPacket(packet);
+  });
 
-  // otherwise bypass onData and handle the message
-  this.onPacket(packet);
+  // if an event did not trigger closing
+  if ('closed' != this.readyState) {
+    // if we got data we're not polling
+    this.polling = false;
+    this.emit('pollComplete');
 
-  // if we got data we're not polling
-  this.polling = false;
-  this.emit('pollComplete');
-
-  if ('open' == this.readyState) {
-    this.poll();
-  } else {
-    debug('ignoring poll - transport state "%s"', this.readyState);
+    if ('open' == this.readyState) {
+      this.poll();
+    } else {
+      debug('ignoring poll - transport state "%s"', this.readyState);
+    }
   }
 };
 
@@ -1863,8 +1924,16 @@ function XHR(opts){
   Polling.call(this, opts);
 
   if (global.location) {
-    this.xd = opts.host != global.location.hostname ||
-      global.location.port != opts.port;
+    var isSSL = 'https:' == location.protocol;
+    var port = location.port;
+
+    // some user agents have empty `location.port`
+    if (Number(port) !== port) {
+      port = isSSL ? 443 : 80;
+    }
+
+    this.xd = opts.hostname != global.location.hostname ||
+      port != opts.port;
   }
 };
 
@@ -2067,6 +2136,9 @@ Request.prototype.onError = function(err){
  */
 
 Request.prototype.cleanup = function(){
+  if ('undefined' == typeof this.xhr ) {
+    return;
+  }
   // xmlhttprequest
   this.xhr.onreadystatechange = empty;
 
@@ -2344,7 +2416,6 @@ JSONPPolling.prototype.doWrite = function (data, fn) {
 
 });
 require.register("LearnBoost-engine.io-client/lib/transports/websocket.js", function(exports, require, module){
-
 /**
  * Module dependencies.
  */
@@ -2428,10 +2499,43 @@ WS.prototype.doOpen = function(){
  */
 
 WS.prototype.write = function(packets){
+  var self = this;
+  this.writable = false;
+  // encodePacket efficient as it uses WS framing
+  // no need for encodePayload
   for (var i = 0, l = packets.length; i < l; i++) {
     this.socket.send(parser.encodePacket(packets[i]));
   }
+  function ondrain() {
+    self.writable = true;
+    self.emit('drain');
+  }
+  // check periodically if we're done sending
+  if ('bufferedAmount' in this.socket) {
+    this.bufferedAmountId = setInterval(function() {
+      if (self.socket.bufferedAmount == 0) {
+        clearInterval(self.bufferedAmountId);
+        ondrain();
+      }
+    }, 50);
+  } else {
+    // fake drain
+    // defer to next tick to allow Socket to clear writeBuffer
+    setTimeout(ondrain, 0);
+  }
 };
+
+/**
+ * Called upon close
+ *
+ * @api private
+ */
+
+WS.prototype.onClose = function(){
+  // stop checking to see if websocket is done sending buffer
+  clearInterval(this.bufferedAmountId);
+  Transport.prototype.onClose.call(this);
+}
 
 /**
  * Closes socket.
@@ -3128,7 +3232,25 @@ require.register("wearefractal-protosock/dist/Client.js", function(exports, requ
 }).call(this);
 
 });
+require.register("component-indexof/index.js", function(exports, require, module){
+
+var indexOf = [].indexOf;
+
+module.exports = function(arr, obj){
+  if (indexOf) return arr.indexOf(obj);
+  for (var i = 0; i < arr.length; ++i) {
+    if (arr[i] === obj) return i;
+  }
+  return -1;
+};
+});
 require.register("component-emitter/index.js", function(exports, require, module){
+
+/**
+ * Module dependencies.
+ */
+
+var index = require('indexof');
 
 /**
  * Expose `Emitter`.
@@ -3233,7 +3355,7 @@ Emitter.prototype.removeAllListeners = function(event, fn){
   }
 
   // remove specific handler
-  var i = callbacks.indexOf(fn._off || fn);
+  var i = index(callbacks, fn._off || fn);
   if (~i) callbacks.splice(i, 1);
   return this;
 };
@@ -3288,7 +3410,7 @@ Emitter.prototype.hasListeners = function(event){
 
 });
 require.register("holla/dist/holla.js", function(exports, require, module){
-// Generated by CoffeeScript 1.6.1
+// Generated by CoffeeScript 1.6.2
 (function() {
   var Call, ProtoSock, client, holla, shims;
 
@@ -3306,6 +3428,7 @@ require.register("holla/dist/holla.js", function(exports, require, module){
     },
     register: function(name, cb) {
       var _this = this;
+
       this.ssocket.write({
         type: "register",
         args: {
@@ -3430,6 +3553,7 @@ require.register("holla/dist/holla.js", function(exports, require, module){
     },
     message: function(socket, msg) {
       var c;
+
       switch (msg.type) {
         case "register":
           return this.emit("register", msg.args.result);
@@ -3483,12 +3607,14 @@ require.register("holla/dist/holla.js", function(exports, require, module){
     },
     pipe: function(stream, el) {
       var uri;
+
       uri = holla.streamToBlob(stream);
       return shims.attachStream(uri, el);
     },
     record: shims.recordVideo,
     createStream: function(opt, cb) {
       var err, succ;
+
       if (shims.getUserMedia == null) {
         return cb("Missing getUserMedia");
       }
@@ -3525,9 +3651,10 @@ require.register("holla/dist/holla.js", function(exports, require, module){
 
 });
 require.register("holla/dist/Call.js", function(exports, require, module){
-// Generated by CoffeeScript 1.6.1
+// Generated by CoffeeScript 1.6.2
 (function() {
   var Call, EventEmitter, shims,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -3536,14 +3663,15 @@ require.register("holla/dist/Call.js", function(exports, require, module){
   EventEmitter = require('emitter');
 
   Call = (function(_super) {
-
     __extends(Call, _super);
 
     function Call(parent, user, isCaller) {
       var _this = this;
+
       this.parent = parent;
       this.user = user;
       this.isCaller = isCaller;
+      this.processRemoteSDP = __bind(this.processRemoteSDP, this);
       this.startTime = new Date;
       this.socket = this.parent.ssocket;
       this.pc = this.createConnection();
@@ -3559,25 +3687,14 @@ require.register("holla/dist/Call.js", function(exports, require, module){
           return _this.emit("rejected");
         }
         _this.emit("answered");
-        return _this.initSDP();
+        if (_this.isCaller) {
+          return _this.initSDP();
+        }
       });
       this.parent.on("candidate." + this.user, function(candidate) {
         return _this.pc.addIceCandidate(new shims.IceCandidate(candidate));
       });
-      this.parent.on("sdp." + this.user, function(desc) {
-        var err, succ;
-        desc.sdp = shims.processSDPIn(desc.sdp);
-        err = function(e) {
-          throw e;
-        };
-        succ = function() {
-          if (!_this.isCaller) {
-            _this.initSDP();
-          }
-          return _this.emit("sdp");
-        };
-        return _this.pc.setRemoteDescription(new shims.SessionDescription(desc), succ, err);
-      });
+      this.parent.on("sdp." + this.user, this.processRemoteSDP);
       this.parent.on("hangup." + this.user, function() {
         return _this.emit("hangup");
       });
@@ -3586,9 +3703,31 @@ require.register("holla/dist/Call.js", function(exports, require, module){
       });
     }
 
+    Call.prototype.processRemoteSDP = function(desc) {
+      var err, succ,
+        _this = this;
+
+      if (this.pc.remoteDescription) {
+        return;
+      }
+      console.log("" + this.isCaller + " remote", desc);
+      desc.sdp = shims.processSDPIn(desc.sdp);
+      err = function(e) {
+        throw e;
+      };
+      succ = function() {
+        _this.emit("sdp");
+        if (!_this.isCaller) {
+          return _this.initSDP();
+        }
+      };
+      return this.pc.setRemoteDescription(new shims.SessionDescription(desc), succ, err);
+    };
+
     Call.prototype.createConnection = function() {
       var pc,
         _this = this;
+
       pc = new shims.PeerConnection(shims.PeerConnConfig, shims.constraints);
       pc.onconnecting = function() {
         _this.emit('connecting');
@@ -3614,6 +3753,8 @@ require.register("holla/dist/Call.js", function(exports, require, module){
       };
       pc.onremovestream = function(evt) {
         console.log("removestream", evt);
+        _this.end();
+        _this.emit('hangup');
       };
       return pc;
     };
@@ -3635,6 +3776,7 @@ require.register("holla/dist/Call.js", function(exports, require, module){
 
     Call.prototype.duration = function() {
       var e, s;
+
       if (this.endTime != null) {
         s = this.endTime.getTime();
       }
@@ -3689,8 +3831,10 @@ require.register("holla/dist/Call.js", function(exports, require, module){
     Call.prototype.initSDP = function() {
       var done, err,
         _this = this;
+
       done = function(desc) {
         desc.sdp = shims.processSDPOut(desc.sdp);
+        console.log("" + _this.isCaller + " local", desc);
         _this.pc.setLocalDescription(desc);
         return _this.socket.write({
           type: "sdp",
@@ -3706,10 +3850,11 @@ require.register("holla/dist/Call.js", function(exports, require, module){
       }
       if (this.pc.remoteDescription) {
         return this.pc.createAnswer(done, err, shims.constraints);
+      } else {
+        return this.once("sdp", function() {
+          return _this.pc.createAnswer(done, err, shims.constraints);
+        });
       }
-      return this.once("sdp", function() {
-        return _this.pc.createAnswer(done, err);
-      });
     };
 
     return Call;
@@ -3722,7 +3867,7 @@ require.register("holla/dist/Call.js", function(exports, require, module){
 
 });
 require.register("holla/dist/shims.js", function(exports, require, module){
-// Generated by CoffeeScript 1.6.1
+// Generated by CoffeeScript 1.6.2
 (function() {
   var IceCandidate, MediaStream, PeerConnection, SessionDescription, URL, attachStream, browser, extract, getUserMedia, loadBlob, processSDPIn, processSDPOut, recordVideo, removeCN, replaceCodec, saveBlob, shim, supported, useOPUS;
 
@@ -3746,12 +3891,14 @@ require.register("holla/dist/shims.js", function(exports, require, module){
 
   extract = function(str, reg) {
     var match;
+
     match = str.match(reg);
     return (match != null ? match[1] : null);
   };
 
   replaceCodec = function(line, codec) {
     var el, els, idx, out, _i, _len;
+
     els = line.split(' ');
     out = [];
     for (idx = _i = 0, _len = els.length; _i < _len; idx = ++_i) {
@@ -3768,6 +3915,7 @@ require.register("holla/dist/shims.js", function(exports, require, module){
 
   removeCN = function(lines, mLineIdx) {
     var cnPos, idx, line, mLineEls, payload, _i, _len;
+
     mLineEls = lines[mLineIdx].split(' ');
     for (idx = _i = 0, _len = lines.length; _i < _len; idx = ++_i) {
       line = lines[idx];
@@ -3789,9 +3937,11 @@ require.register("holla/dist/shims.js", function(exports, require, module){
 
   useOPUS = function(sdp) {
     var idx, line, lines, mLineIdx, payload, _i, _len;
+
     lines = sdp.split('\r\n');
     mLineIdx = ((function() {
       var _i, _len, _results;
+
       _results = [];
       for (idx = _i = 0, _len = lines.length; _i < _len; idx = ++_i) {
         line = lines[idx];
@@ -3821,6 +3971,7 @@ require.register("holla/dist/shims.js", function(exports, require, module){
 
   processSDPOut = function(sdp) {
     var addCrypto, line, out, _i, _j, _len, _len1, _ref, _ref1;
+
     out = [];
     if (browser === 'firefox') {
       addCrypto = "a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:BAADBAADBAADBAADBAADBAADBAADBAADBAADBAAD";
@@ -3850,6 +4001,7 @@ require.register("holla/dist/shims.js", function(exports, require, module){
 
   attachStream = function(uri, el) {
     var e, _i, _len;
+
     if (typeof el === "string") {
       return attachStream(uri, document.getElementById(el));
     } else if (el.jquery) {
@@ -3867,6 +4019,7 @@ require.register("holla/dist/shims.js", function(exports, require, module){
 
   saveBlob = function(file, blob) {
     var evt, link;
+
     link = document.createElement("a");
     link.href = blob;
     link.target = "_blank";
@@ -3879,6 +4032,7 @@ require.register("holla/dist/shims.js", function(exports, require, module){
 
   loadBlob = function(blob, cb) {
     var reader;
+
     reader = new FileReader;
     reader.readAsDataURL(blob);
     return reader.onload = function(event) {
@@ -3888,6 +4042,7 @@ require.register("holla/dist/shims.js", function(exports, require, module){
 
   recordVideo = function(el) {
     var can, ctrl, ctx, end, frames, getBlob, grab, h, requested, save, w;
+
     if (el.jquery) {
       h = el.height();
       w = el.width();
@@ -3903,12 +4058,14 @@ require.register("holla/dist/shims.js", function(exports, require, module){
     frames = [];
     grab = function() {
       var requested;
+
       requested = requestAnimationFrame(grab);
       ctx.drawImage(el, 0, 0, w, h);
       frames.push(can.toDataURL('image/webp', 1));
     };
     getBlob = function(cb) {
       var blob;
+
       blob = Whammy.fromImageArray(frames, 1000 / 60);
       loadBlob(blob, cb);
       return ctrl;
@@ -3937,6 +4094,7 @@ require.register("holla/dist/shims.js", function(exports, require, module){
 
   shim = function() {
     var PeerConnConfig, mediaConstraints, out;
+
     if (!supported) {
       return;
     }
@@ -4065,6 +4223,7 @@ require.alias("wearefractal-protosock/dist/defaultClient.js", "holla/deps/protos
 require.alias("wearefractal-protosock/dist/Client.js", "holla/deps/protosock/dist/Client.js");
 require.alias("wearefractal-protosock/dist/main.js", "holla/deps/protosock/index.js");
 require.alias("component-emitter/index.js", "wearefractal-protosock/deps/emitter/index.js");
+require.alias("component-indexof/index.js", "component-emitter/deps/indexof/index.js");
 
 require.alias("LearnBoost-engine.io-client/lib/index.js", "wearefractal-protosock/deps/engine.io/lib/index.js");
 require.alias("LearnBoost-engine.io-client/lib/socket.js", "wearefractal-protosock/deps/engine.io/lib/socket.js");
@@ -4079,6 +4238,7 @@ require.alias("LearnBoost-engine.io-client/lib/transports/websocket.js", "wearef
 require.alias("LearnBoost-engine.io-client/lib/transports/flashsocket.js", "wearefractal-protosock/deps/engine.io/lib/transports/flashsocket.js");
 require.alias("LearnBoost-engine.io-client/lib/index.js", "wearefractal-protosock/deps/engine.io/index.js");
 require.alias("component-emitter/index.js", "LearnBoost-engine.io-client/deps/emitter/index.js");
+require.alias("component-indexof/index.js", "component-emitter/deps/indexof/index.js");
 
 require.alias("LearnBoost-engine.io-protocol/lib/index.js", "LearnBoost-engine.io-client/deps/engine.io-parser/lib/index.js");
 require.alias("LearnBoost-engine.io-protocol/lib/keys.js", "LearnBoost-engine.io-client/deps/engine.io-parser/lib/keys.js");
@@ -4093,6 +4253,7 @@ require.alias("LearnBoost-engine.io-client/lib/index.js", "LearnBoost-engine.io-
 require.alias("wearefractal-protosock/dist/main.js", "wearefractal-protosock/index.js");
 
 require.alias("component-emitter/index.js", "holla/deps/emitter/index.js");
+require.alias("component-indexof/index.js", "component-emitter/deps/indexof/index.js");
 
 require.alias("holla/dist/holla.js", "holla/index.js");
 

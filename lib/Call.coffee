@@ -17,24 +17,29 @@ class Call extends EventEmitter
     @parent.on "answer.#{@user}", (accepted) =>
       return @emit "rejected" unless accepted
       @emit "answered"
-      @initSDP()
+      if @isCaller
+        @initSDP()
 
     @parent.on "candidate.#{@user}", (candidate) =>
       @pc.addIceCandidate new shims.IceCandidate candidate
 
-    @parent.on "sdp.#{@user}", (desc) =>
-      desc.sdp = shims.processSDPIn desc.sdp
-      err = (e) -> throw e
-      succ = =>
-        @initSDP() unless @isCaller
-        @emit "sdp"
-      @pc.setRemoteDescription new shims.SessionDescription(desc), succ, err
+    @parent.on "sdp.#{@user}", @processRemoteSDP
 
     @parent.on "hangup.#{@user}", =>
       @emit "hangup"
 
     @parent.on "chat.#{@user}", (msg) =>
       @emit "chat", msg
+
+  processRemoteSDP: (desc) =>
+    return if @pc.remoteDescription
+    console.log "#{@isCaller} remote", desc
+    desc.sdp = shims.processSDPIn desc.sdp
+    err = (e) -> throw e
+    succ = =>
+      @emit "sdp"
+      @initSDP() unless @isCaller
+    @pc.setRemoteDescription new shims.SessionDescription(desc), succ, err
 
   createConnection: ->
     pc = new shims.PeerConnection shims.PeerConnConfig, shims.constraints
@@ -60,6 +65,8 @@ class Call extends EventEmitter
       return
     pc.onremovestream = (evt) =>
       console.log "removestream", evt
+      @end()
+      @emit 'hangup'
       return
 
     return pc
@@ -116,17 +123,23 @@ class Call extends EventEmitter
   initSDP: ->
     done = (desc) =>
       desc.sdp = shims.processSDPOut desc.sdp
+      console.log "#{@isCaller} local", desc
+
       @pc.setLocalDescription desc
+
       @socket.write
         type: "sdp"
         to: @user
         args: desc
 
     err = (e) -> throw e
-
-    return @pc.createOffer done, err, shims.constraints if @isCaller
-    return @pc.createAnswer done, err, shims.constraints if @pc.remoteDescription
-    @once "sdp", =>
-      @pc.createAnswer done, err
+    if @isCaller
+      return @pc.createOffer done, err, shims.constraints
+    
+    if @pc.remoteDescription
+      @pc.createAnswer done, err, shims.constraints
+    else
+      @once "sdp", =>
+        @pc.createAnswer done, err, shims.constraints
 
 module.exports = Call
