@@ -14,7 +14,9 @@
 
   URL = window.URL || window.webkitURL || window.msURL || window.oURL;
 
-  getUserMedia = getUserMedia.bind(navigator);
+  if (getUserMedia != null) {
+    getUserMedia = getUserMedia.bind(navigator);
+  }
 
   browser = (navigator.mozGetUserMedia ? 'firefox' : 'chrome');
 

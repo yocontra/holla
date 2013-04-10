@@ -6,7 +6,9 @@ SessionDescription = window.mozRTCSessionDescription or window.RTCSessionDescrip
 MediaStream = window.MediaStream or window.webkitMediaStream
 getUserMedia = navigator.mozGetUserMedia or navigator.getUserMedia or navigator.webkitGetUserMedia or navigator.msGetUserMedia
 URL = window.URL or window.webkitURL or window.msURL or window.oURL
-getUserMedia = getUserMedia.bind navigator
+
+if getUserMedia?
+  getUserMedia = getUserMedia.bind navigator
 
 browser = (if navigator.mozGetUserMedia then 'firefox' else 'chrome')
 supported = (PeerConnection? and getUserMedia?)
