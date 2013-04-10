@@ -9,6 +9,8 @@ build: components lib
 	@echo "File size (minified): " && cat holla.min.js | wc -c
 	@echo "File size (gzipped): " && cat holla.min.js | gzip -9f  | wc -c
 	@cp holla.js examples/holla.js
+	@cp effects.css examples/effects.css
+
 
 components: component.json
 	@component install --dev

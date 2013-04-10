@@ -10,14 +10,40 @@
       body {
         height: 100%;
         width: 100%;
-        background-color: #040;
-        background: url(http://subtlepatterns.subtlepatterns.netdna-cdn.com/patterns/low_contrast_linen.png);
+        background-color: #333;
+        position: absolute;
       }
+
+      .them {
+        height: 100%; /* TODO:  fix */
+        width: 100%;
+      }
+
+      .me {
+        z-index: 99;
+        bottom: 10px;
+      }
+      
       video {
-        width: 460px;
+        max-width: 100%;
+        height: auto;
       }
-      #videos {
-        float: left;
+      .video-container {
+        position: relative;
+        padding-bottom: 56.25%;
+        padding-top: 30px;
+        height: 0;
+        overflow: hidden;
+      }
+
+      .video-container iframe,  
+      .video-container object,  
+      .video-container embed {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
       }
     </style>
   </head>
@@ -26,15 +52,9 @@
     <input id="whoCall" type="text" placeholder="Who do you want to call?"></input>
     <button id="hangup">Hangup</button>
     <br/>
-    <div id="videos">
-      <video id="me" autoplay="true" muted="true"></video>
-      <br/>
-      <video id="them" autoplay="true"></video>
-    </div>
-    <div id="messages">
-      <pre><code id="chat"></code></pre>
-      <br/>
-      <input id="whatSay" type="text" placeholder="Type your chat message here"></input>
+    <div class="video-container">
+      <video class="them" autoplay="true"></video>
+      <video class="me rtc-pip" autoplay="true" muted="true"></video>
     </div>
   </body>
 </html>
