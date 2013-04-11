@@ -1,13 +1,13 @@
 {
   "name": "holla",
-  "version": "0.6.3",
+  "version": "0.7.0",
   "dependencies": {
-    "wearefractal/protosock": "*",
     "component/emitter": "*"
   },
   "main": "dist/holla.js",
   "scripts": [
     "dist/holla.js",
+    "dist/Client.js",
     "dist/Call.js",
     "dist/shims.js"
   ]

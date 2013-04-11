@@ -1,209 +1,96 @@
-defaultAdapter =
-  users: {}
-  register: (req, cb) ->
-    @users[req.name] = req.socket.id
-    cb()
+{EventEmitter} = require 'events'
+socketio = require 'socket.io'
+base64id = require 'base64id'
 
-  getId: (name, cb) -> 
-    cb @users[name]
+class Server extends EventEmitter
+  constructor: (@httpServer, @options={}) ->
+    @clients = {}
+    @calls = {}
+    @io = socketio.listen @httpServer
+    @io.sockets.on 'connection', @handleConnection
 
-  unregister: (req, cb) ->
-    delete @users[req.name]
-    cb()
+  handleConnection: (socket) =>
+    socket.on "register", @register.bind @, socket
+    socket.on "unregister", @unregister.bind @, socket
+    socket.on "createCall", @createCall.bind @, socket
+    socket.on "addUser", @addUser.bind @, socket
+    socket.on "disconnect", @userDisconnect.bind @, socket
 
-  getPresenceTargets: (req, cb) ->
-    cb (id for user, id of @users when user isnt req.name)
+  # exposed services
+  register: (socket, name, cb) =>
+    console.log "register", socket.id, name
+    return cb new Error "Invalid name" unless typeof name is 'string' and name.length > 0
+    return cb new Error "Name already taken" if @clients[name]?
+    @getIdentityFromSocket socket, (err, identity) =>
+      return cb new Error "Already registered" if identity?
+      return cb err if err? and err.message isnt "Not registered"
 
-module.exports =
-  options:
-    namespace: 'holla'
-    resource: 'default'
-    presence: true
-    debug: false
+      socket.set 'identity', name, (err) =>
+        return cb err if err?
+        @clients[name] = socket.id
+        cb()
 
-  start: ->
-    @adapter = {}
-    for k,v of defaultAdapter
-      if typeof v is "function"
-        @adapter[k]=v.bind @adapter
-      else
-        @adapter[k]=v
+  unregister: (socket, cb) =>
+    console.log "unregister", socket.id
+    @getIdentityFromSocket socket, (err, identity) =>
+      return cb err if err?
+      socket.del 'identity', (err) =>
+        return cb err if err?
+        delete @clients[identity]
+        cb()
 
-    if @options.adapter
-      for k,v of @options.adapter
-        if typeof v is "function"
-          @adapter[k]=v.bind @adapter
-        else
-          @adapter[k]=v
+  createCall: (socket, cb) =>
+    console.log "createCall", socket.id
+    @getIdentityFromSocket socket, (err, identity) =>
+      return cb err if err?
+      callId = @generateId()
+      return cb new Error "Call ID conflict" if @io.rooms[callId]?
+      socket.join callId
+      @calls[callId] = @io.rooms[callId]
+      cb null, callId
 
-    if @options.presence
-      @on 'register', (req) =>
-        @updatePresence
-          name: req.socket.identity
-          socket: req.socket
-          online: true
+  addUser: (socket, callId, userIdentity, cb) =>
+    console.log "addUser", socket.id, callId, userIdentity
+    @getIdentityFromSocket socket, (err, identity) =>
+      return cb err if err?
+      inRoom = @io.sockets.manager.roomClients[socket.id]?["/#{callId}"]
+      return cb new Error "Not in room" unless inRoom
+      @getSocketFromIdentity userIdentity, (err, socket) =>
+        return cb err if err?
+        roomInfo =
+          id: callId
+          caller: identity
+        @askSocketToJoin socket, roomInfo, (err, wantsToJoin) =>
+          return cb err if err?
+          return cb new Error "Call declined" unless wantsToJoin
+          socket.broadcast.to(callId).emit "#{callId}:userAdded", userIdentity
+          socket.join callId
+          cb()
 
-      @on 'unregister', (req) =>
-        @updatePresence
-          name: req.socket.identity
-          socket: req.socket
-          online: false
+  userDisconnect: (socket) =>
+    console.log "disconnect", socket.id
+    @unregister socket, (err) =>
 
-  updatePresence: (preq) ->
-    @adapter.getPresenceTargets preq, (sockets) =>
-      for id in sockets
-        @server.clients[id]?.write
-          type: "presence"
-          args:
-            name: preq.name
-            online: preq.online
-      return
+  # utility crap
+  generateId: => base64id.generateId()
+  getSocketById: (id, cb) =>
+    socket = @io.sockets.sockets[id]
+    return cb new Error "Socket does not exist" unless socket?
+    cb null, socket
 
-  validate: (socket, msg, done) ->
-    if @options.debug
-      console.log socket.id, socket.identity, msg
-    return done false unless typeof msg is 'object'
-    return done false unless typeof msg.type is 'string'
-    if msg.type is "register"
-      return done false unless typeof msg.args is 'object'
-      return done false unless typeof msg.args.name is 'string'
-    else if msg.type is "offer"
-      return done false unless typeof msg.to is 'string'
-      return done false unless socket.identity
-    else if msg.type is "hangup"
-      return done false unless typeof msg.to is 'string'
-      return done false unless socket.identity
-    else if msg.type is "answer"
-      return done false unless typeof msg.to is 'string'
-      return done false unless socket.identity
-      return done false unless typeof msg.args is 'object'
-      return done false unless typeof msg.args.accepted is 'boolean'
-    else if msg.type is "candidate"
-      return done false unless typeof msg.to is 'string'
-      return done false unless socket.identity
-      return done false unless typeof msg.args is 'object'
-      return done false unless typeof msg.args.candidate is 'object'
-    else if msg.type is "sdp"
-      return done false unless typeof msg.to is 'string'
-      return done false unless socket.identity
-      return done false unless typeof msg.args is 'object'
-      return done false unless msg.args.sdp
-      return done false unless msg.args.type
-    else if msg.type is "chat"
-      return done false unless typeof msg.to is 'string'
-      return done false unless socket.identity
-      return done false unless typeof msg.args is 'object'
-      return done false unless typeof msg.args.message is 'string'
-    else
-      return done false
-    return done true
-    
-  close: (socket, reason) ->
-    req =
-      name: socket.identity
-      reason: reason
-      socket: socket
+  getIdentityFromSocket: (socket, cb) =>
+    socket.get 'identity', (err, identity) ->
+      return cb err if err?
+      return cb new Error "Not registered" unless identity?
+      return cb null, identity
 
-    @emit "close", req
-    @adapter.unregister req, =>
-      @emit "unregister", req
+  getSocketFromIdentity: (identity, cb) =>
+    sid = @clients[identity]
+    return cb new Error "Request identity not registered" unless sid?
+    @getSocketById sid, cb
 
-  invalid: (socket, msg) -> socket.close()
-  error: (socket, msg) -> socket.close()
+  askSocketToJoin: (socket, roomInfo, cb) ->
+    socket.emit "callRequest", roomInfo
+    socket.once "#{roomInfo.id}:callResponse", (res) -> cb null, res
 
-  message: (socket, msg) ->
-    switch msg.type
-      when "register"
-        req =
-          name: msg.args.name
-          socket: socket
-        @adapter.register req, (err) =>
-          unless err?
-            socket.identity ?= msg.args.name
-            @emit "register", req
-          socket.write
-            type: "register"
-            args:
-              result: !err
-
-      when "offer"
-        @adapter.getId msg.to, (id) =>
-          return unless @server.clients[id]?
-          @server.clients[id].write
-            type: "offer"
-            from: socket.identity
-
-          req =
-            name: socket.identity
-            socket: socket
-            to: msg.to
-
-          @emit "offer", req
-
-      when "hangup"
-        @adapter.getId msg.to, (id) =>
-          return unless @server.clients[id]?
-          @server.clients[id].write
-            type: "hangup"
-            from: socket.identity
-
-          req =
-            name: socket.identity
-            socket: socket
-            to: msg.to
-
-          @emit "hangup", req
-
-      when "answer"
-        @adapter.getId msg.to, (id) =>
-          return unless @server.clients[id]?
-          @server.clients[id].write
-            type: "answer"
-            from: socket.identity
-            args:
-              accepted: msg.args.accepted
-
-          req =
-            name: socket.identity
-            socket: socket
-            to: msg.to
-            args:
-              accepted: msg.args.accepted
-
-          @emit "answer", req
-
-      when "candidate"
-        @adapter.getId msg.to, (id) =>
-          return unless @server.clients[id]?
-          @server.clients[id].write
-            type: "candidate"
-            from: socket.identity
-            args:
-              candidate: msg.args.candidate
-
-      when "sdp"
-        @adapter.getId msg.to, (id) =>
-          return unless @server.clients[id]?
-          @server.clients[id].write
-            type: "sdp"
-            from: socket.identity
-            args:
-              sdp: msg.args.sdp
-              type: msg.args.type
-
-      when "chat"
-        @adapter.getId msg.to, (id) =>
-          return unless @server.clients[id]?
-          @server.clients[id].write
-            type: "chat"
-            from: socket.identity
-            args:
-              message: msg.args.message
-
-          req =
-            name: socket.identity
-            socket: socket
-            to: msg.to
-            message: msg.args.message
-
-          @emit "chat", req
+module.exports = Server

@@ -1,154 +1,46 @@
 shims = require './shims'
+Emitter = require 'emitter'
 
-EventEmitter = require 'emitter'
+class User extends Emitter
+  constructor: (@call, @name) ->
 
-class Call extends EventEmitter
-  constructor: (@parent, @user, @isCaller) ->
-    @startTime = new Date
-    @socket = @parent.ssocket
+class Call extends Emitter
+  constructor: (@client, @id, @isCaller=false) ->
+    @client.io.on "#{@id}:userAdded", @addUser
 
-    @pc = @createConnection()
-    if @isCaller
-      @socket.write
-        type: "offer"
-        to: @user
-    @emit "calling"
-
-    @parent.on "answer.#{@user}", (accepted) =>
-      return @emit "rejected" unless accepted
-      @emit "answered"
-      if @isCaller
-        @initSDP()
-
-    @parent.on "candidate.#{@user}", (candidate) =>
-      @pc.addIceCandidate new shims.IceCandidate candidate
-
-    @parent.on "sdp.#{@user}", @processRemoteSDP
-
-    @parent.on "hangup.#{@user}", =>
-      @emit "hangup"
-
-    @parent.on "chat.#{@user}", (msg) =>
-      @emit "chat", msg
-
-  processRemoteSDP: (desc) =>
-    return if @pc.remoteDescription
-    console.log "#{@isCaller} remote", desc
-    desc.sdp = shims.processSDPIn desc.sdp
-    err = (e) -> throw e
-    succ = =>
-      @emit "sdp"
-      @initSDP() unless @isCaller
-    @pc.setRemoteDescription new shims.SessionDescription(desc), succ, err
-
-  createConnection: =>
-    pc = new shims.PeerConnection shims.PeerConnConfig, shims.constraints
-    pc.onconnecting = =>
-      @emit 'connecting'
-      return
-    pc.onopen = =>
-      @emit 'connected'
-      return
-    pc.onicecandidate = (evt) =>
-      if evt.candidate
-        @socket.write
-          type: "candidate"
-          to: @user
-          args:
-            candidate: evt.candidate
-      return
-
-    pc.onaddstream = (evt) =>
-      @remoteStream = evt.stream
-      @_ready = true
-      @emit "ready", @remoteStream
-      return
-    pc.onremovestream = (evt) =>
-      console.log "removestream", evt
-      @end()
-      @emit 'hangup'
-      return
-
-    return pc
-
-  addStream: (s) =>
-    @localStream = s
-    @pc.addStream s
-    return @
-
-  ready: (fn) =>
-    if @_ready
-      fn @remoteStream
-    else
-      @once 'ready', fn
-    return @
-
-  duration: =>
-    s = @endTime.getTime() if @endTime?
-    s ?= Date.now()
-    e = @startTime.getTime()
-    return (s-e)/1000
-
-  chat: (msg) =>
-    @parent.chat @user, msg
+  _addUser: (name) =>
+    @users[name] = new User @call, name
     return @
 
   answer: =>
-    @startTime = new Date
-    @socket.write
-      type: "answer"
-      to: @user
-      args:
-        accepted: true
+    @client.io.emit "#{@id}:callResponse", true
     return @
 
   decline: =>
-    @socket.write
-      type: "answer"
-      to: @user
-      args:
-        accepted: false
+    @client.io.emit "#{@id}:callResponse", false
     return @
 
-  releaseStream: =>
-    @localStream.stop()
+  add: (name, cb) =>
+    @client.io.emit "addUser", @id, name, cb
+    return @
 
-  end: =>
-    @endTime = new Date
-    try
-      @pc.close()
-    @socket.write
-      type: "hangup"
-      to: @user
-    @emit "hangup"
+  setLocalStream: (stream) =>
+    @localStream = stream
+    return @
+
+  releaseLocalStream: =>
+    @localStream.stop()
+    delete @localStream
     return @
 
   mute: =>
+    return @ unless @localStream
     track.enabled = false for track in @localStream.getAudioTracks()
+    return @
   
   unmute: =>
+    return @ unless @localStream
     track.enabled = true for track in @localStream.getAudioTracks()
-
-  initSDP: =>
-    done = (desc) =>
-      desc.sdp = shims.processSDPOut desc.sdp
-      console.log "#{@isCaller} local", desc
-
-      @pc.setLocalDescription desc
-
-      @socket.write
-        type: "sdp"
-        to: @user
-        args: desc
-
-    err = (e) -> throw e
-    if @isCaller
-      return @pc.createOffer done, err, shims.constraints
-    
-    if @pc.remoteDescription
-      @pc.createAnswer done, err, shims.constraints
-    else
-      @once "sdp", =>
-        @pc.createAnswer done, err, shims.constraints
+    return @
 
 module.exports = Call

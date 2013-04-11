@@ -1,7 +1,7 @@
 build: components lib
 	@rm -rf dist
 	@mkdir -p dist
-	@coffee -o dist -c lib/holla.coffee lib/Call.coffee lib/shims.coffee
+	@coffee -o dist -c lib/holla.coffee lib/Call.coffee lib/Client.coffee lib/shims.coffee
 	@component build --standalone holla
 	@mv build/build.js holla.js
 	@rm -rf build
@@ -10,6 +10,7 @@ build: components lib
 	@echo "File size (gzipped): " && cat holla.min.js | gzip -9f  | wc -c
 	@cp holla.js examples/holla.js
 	@cp effects.css examples/effects.css
+	@coffee -o examples -c examples/test.coffee
 
 
 components: component.json

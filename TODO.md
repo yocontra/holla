@@ -1,4 +1,8 @@
-hold sugar
+Rewrite: everything after both users are in the call
+
+Tests
+
+Hold sugar
 
 Data channel support
 
@@ -9,9 +13,3 @@ Release RTC stream on call.end() parameter
 Conference calls/chats
 
 Hooks for easier chat persistence
-
-Scalable communication using redis or something
-
-Unique call/room IDs
-
-Use vein RPC internally for reliable req/res cycles

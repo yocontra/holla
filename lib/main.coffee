@@ -1,5 +1,4 @@
-server = require './Server'
-ProtoSock = require 'protosock'
+Server = require './Server'
 
 module.exports =
-  createServer: ProtoSock.createServerWrapper server
+  createServer: (httpServer, opt={}) -> new Server httpServer, opt
