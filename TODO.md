@@ -13,3 +13,5 @@ Release RTC stream on call.end() parameter
 Conference calls/chats
 
 Hooks for easier chat persistence
+
+Support for screen sharing via experimental chrome features
