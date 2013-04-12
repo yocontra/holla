@@ -7,18 +7,26 @@
   });
 
   wireCall = function(call) {
-    call.ready(function() {
-      var stream, _i, _len, _ref, _results;
+    var name, user, _fn, _ref;
 
-      _ref = call.streams();
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        stream = _ref[_i];
-        _results.push(holla.pipe(stream, $(".them")));
-      }
-      return _results;
-    });
-    call.on("hangup", function() {
+    _ref = call.users();
+    _fn = function(user) {
+      user.ready(function() {
+        console.log("" + user.name + " ready");
+        return user.stream.pipe($(".them"));
+      });
+      user.on("answered", function() {
+        return console.log("" + user.name + " answered");
+      });
+      return user.on("declined", function() {
+        return console.log("" + user.name + " declined");
+      });
+    };
+    for (name in _ref) {
+      user = _ref[name];
+      _fn(user);
+    }
+    call.on("end", function() {
       return $(".them").attr("src", "");
     });
     return $("#hangup").click(function() {
@@ -44,7 +52,7 @@
         if (err) {
           throw err;
         }
-        holla.pipe(stream, $(".me"));
+        stream.pipe($(".me"));
         return rtc.register(name, function(err) {
           if (err) {
             throw err;
@@ -52,6 +60,9 @@
           console.log("Registered as " + name + "!");
           rtc.on("call", function(call) {
             console.log("Inbound call", call);
+            call.on('error', function(err) {
+              throw err;
+            });
             call.setLocalStream(stream);
             call.answer();
             return wireCall(call);
@@ -61,17 +72,18 @@
 
             toCall = $("#whoCall").val();
             return rtc.createCall(function(err, call) {
+              var user;
+
               if (err) {
                 throw err;
               }
               console.log("Created call", call);
-              call.setLocalStream(stream);
-              return call.add(toCall, function(err) {
-                if (err != null) {
-                  throw err;
-                }
-                return wireCall(call);
+              call.on('error', function(err) {
+                throw err;
               });
+              call.setLocalStream(stream);
+              user = call.add(toCall);
+              return wireCall(call);
             });
           });
         });

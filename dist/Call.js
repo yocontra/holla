@@ -17,6 +17,8 @@
       this.name = name;
     }
 
+    User.prototype.ready = function(fn) {};
+
     return User;
 
   })(Emitter);
@@ -24,10 +26,10 @@
   Call = (function(_super) {
     __extends(Call, _super);
 
-    function Call(client, id, isCaller) {
+    function Call(client, id, callerName) {
       this.client = client;
       this.id = id;
-      this.isCaller = isCaller != null ? isCaller : false;
+      this._handleUserResponse = __bind(this._handleUserResponse, this);
       this.unmute = __bind(this.unmute, this);
       this.mute = __bind(this.mute, this);
       this.releaseLocalStream = __bind(this.releaseLocalStream, this);
@@ -35,28 +37,40 @@
       this.add = __bind(this.add, this);
       this.decline = __bind(this.decline, this);
       this.answer = __bind(this.answer, this);
-      this._addUser = __bind(this._addUser, this);
-      this.client.io.on("" + this.id + ":userAdded", this.addUser);
+      this._users = {};
+      if (callerName) {
+        this.caller = new User(this, callerName);
+        this._users[callerName] = this.caller;
+      }
     }
-
-    Call.prototype._addUser = function(name) {
-      this.users[name] = new User(this.call, name);
-      return this;
-    };
 
     Call.prototype.answer = function() {
       this.client.io.emit("" + this.id + ":callResponse", true);
+      this.client.emit("callAnswered", this);
       return this;
     };
 
     Call.prototype.decline = function() {
       this.client.io.emit("" + this.id + ":callResponse", false);
+      this.client.emit("callDeclined", this);
       return this;
     };
 
-    Call.prototype.add = function(name, cb) {
-      this.client.io.emit("addUser", this.id, name, cb);
-      return this;
+    Call.prototype.add = function(name) {
+      var newUser;
+
+      newUser = new User(this, name);
+      this._users[name] = newUser;
+      this.client.io.emit("addUser", this.id, name, this._handleUserResponse(newUser));
+      return this._users[name];
+    };
+
+    Call.prototype.user = function(name) {
+      return this._users[name];
+    };
+
+    Call.prototype.users = function(name) {
+      return this._users;
     };
 
     Call.prototype.setLocalStream = function(stream) {
@@ -96,6 +110,26 @@
         track.enabled = true;
       }
       return this;
+    };
+
+    Call.prototype._handleUserResponse = function(user) {
+      var _this = this;
+
+      return function(err) {
+        if (err != null) {
+          if (err === "Call declined") {
+            user.accepted = false;
+            user.emit("declined");
+            return _this.emit("userDeclined", _this._users[name]);
+          } else {
+            user.emit("error", err);
+            return _this.emit("error", err);
+          }
+        } else {
+          user.accepted = true;
+          return user.emit("answered");
+        }
+      };
     };
 
     return Call;

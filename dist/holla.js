@@ -17,17 +17,9 @@
     },
     Call: Call,
     Client: Client,
+    shims: shims,
     supported: shims.supported,
     config: shims.PeerConnConfig,
-    streamToBlob: function(s) {
-      return shims.URL.createObjectURL(s);
-    },
-    pipe: function(stream, el) {
-      var uri;
-
-      uri = holla.streamToBlob(stream);
-      return shims.attachStream(uri, el);
-    },
     createStream: function(opt, cb) {
       var err, succ;
 

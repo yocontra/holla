@@ -6,12 +6,9 @@ holla =
   createClient: (opt={}) -> new Client opt
   Call: Call
   Client: Client
+  shims: shims
   supported: shims.supported
   config: shims.PeerConnConfig
-  streamToBlob: (s) -> shims.URL.createObjectURL s
-  pipe: (stream, el) ->
-    uri = holla.streamToBlob stream
-    shims.attachStream uri, el
 
   createStream: (opt, cb) ->
     return cb "Missing getUserMedia" unless shims.getUserMedia?

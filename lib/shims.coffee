@@ -117,6 +117,11 @@ shim = ->
     unless PeerConnection::getLocalStreams
       PeerConnection::getLocalStreams = -> @localStreams
       PeerConnection::getRemoteStreams = -> @remoteStreams
+  
+  MediaStream::pipe = (el) ->
+    uri = URL.createObjectURL @
+    attachStream uri, el
+    return @
 
   out = 
     PeerConnection: PeerConnection

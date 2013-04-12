@@ -213,6 +213,13 @@
         };
       }
     }
+    MediaStream.prototype.pipe = function(el) {
+      var uri;
+
+      uri = URL.createObjectURL(this);
+      attachStream(uri, el);
+      return this;
+    };
     out = {
       PeerConnection: PeerConnection,
       IceCandidate: IceCandidate,

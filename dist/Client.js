@@ -30,7 +30,7 @@
       this.io.on('callRequest', function(callInfo) {
         var call;
 
-        call = new Call(_this, callInfo.id);
+        call = new Call(_this, callInfo.id, callInfo.caller);
         return _this.emit("call", call);
       });
     }
@@ -44,7 +44,7 @@
         if (err != null) {
           return cb(err);
         }
-        call = new Call(_this, id, true);
+        call = new Call(_this, id);
         return cb(null, call);
       });
       return this;

@@ -9,13 +9,13 @@ class Client extends Emitter
     @io.on 'disconnect', => @emit 'disconnect'
     @io.on 'error', (err) => @emit 'error', err
     @io.on 'callRequest', (callInfo) =>
-      call = new Call @, callInfo.id
+      call = new Call @, callInfo.id, callInfo.caller
       @emit "call", call
 
   createCall: (cb) ->
     @io.emit 'createCall', (err, id) =>
       return cb err if err?
-      call = new Call @, id, true
+      call = new Call @, id
       cb null, call
     return @
 
