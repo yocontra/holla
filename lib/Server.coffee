@@ -14,6 +14,9 @@ class Server extends EventEmitter
     socket.on "unregister", @unregister.bind @, socket
     socket.on "createCall", @createCall.bind @, socket
     socket.on "addUser", @addUser.bind @, socket
+    socket.on "sendSDPOffer", @sendSDPOffer.bind @, socket
+    socket.on "sendSDPAnswer", @sendSDPAnswer.bind @, socket
+    socket.on "sendCandidate", @sendCandidate.bind @, socket
     socket.on "disconnect", @userDisconnect.bind @, socket
 
   # exposed services
@@ -66,6 +69,39 @@ class Server extends EventEmitter
           @io.sockets.in(callId).emit "#{callId}:userAdded", userIdentity
           socket.join callId
           cb()
+
+  sendSDPOffer: (socket, callId, userIdentity, desc, cb) =>
+    console.log "sendSDPOffer", socket.id, callId, userIdentity, desc
+    @getIdentityFromSocket socket, (err, identity) =>
+      return cb err if err?
+      inRoom = @io.sockets.manager.roomClients[socket.id]?["/#{callId}"]
+      return cb "Not in room" unless inRoom
+      @getSocketFromIdentity userIdentity, (err, socket) =>
+        return cb err if err?
+        socket.emit "#{callId}:#{identity}:sdp", desc
+        cb()
+  
+  sendSDPAnswer: (socket, callId, userIdentity, desc, cb) =>
+    console.log "sendSDPAnswer", socket.id, callId, userIdentity, desc
+    @getIdentityFromSocket socket, (err, identity) =>
+      return cb err if err?
+      inRoom = @io.sockets.manager.roomClients[socket.id]?["/#{callId}"]
+      return cb "Not in room" unless inRoom
+      @getSocketFromIdentity userIdentity, (err, socket) =>
+        return cb err if err?
+        socket.emit "#{callId}:#{identity}:sdp", desc
+        cb()
+
+  sendCandidate: (socket, callId, userIdentity, desc, cb) =>
+    console.log "sendCandidate", socket.id, callId, userIdentity, desc
+    @getIdentityFromSocket socket, (err, identity) =>
+      return cb err if err?
+      inRoom = @io.sockets.manager.roomClients[socket.id]?["/#{callId}"]
+      return cb "Not in room" unless inRoom
+      @getSocketFromIdentity userIdentity, (err, socket) =>
+        return cb err if err?
+        socket.emit "#{callId}:#{identity}:candidate", desc
+        cb()
 
   userDisconnect: (socket) =>
     console.log "disconnect", socket.id

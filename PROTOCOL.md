@@ -21,3 +21,11 @@ In this scenario we have three browsers (A, B, and C) and the server.
 4. A and B are notified via the room that C has accepted the call.
 5. Begin exchange sequence between A and C.
 6. Begin exchange sequence between B and C.
+
+# Exchange sequence
+
+1. User 1 creates new PeerConnection for User 2.
+2. User 2 creates new PeerConnection for User 1.
+3. User 1 sends SDP offer to User 2.
+4. User 2 sends SDP answer to User 1.
+5. User 1 and User 2 send eachother ICE candidates at will
