@@ -175,9 +175,9 @@ class Server extends EventEmitter
           if @options.redis
             @options.redis.store.hset "clients", name, socket.id, (err) =>
               return cb err if err?
-              cb()
+              cb null, name
           else
             @clients[name] = socket.id
-            cb()
+            cb null, name
 
 module.exports = Server
