@@ -8,13 +8,10 @@ class Call extends Emitter
       @_add callerName
       @caller = @user callerName
 
-    @client.io.on "#{@id}:end", => @emit "end"
-    @client.io.on "#{@id}:userAdded", (name) =>
-      @_add name
-      user = @user name
-      user.createConnection()
-      user.addLocalStream @localStream
-      user.sendOffer()
+    @client.io.on "#{@id}:end", =>
+      @empty()
+      @emit "end"
+    @client.io.on "#{@id}:userAdded", @_addNewUser
 
   answer: =>
     throw new Error "Must call setLocalStream first" unless @localStream
@@ -37,7 +34,7 @@ class Call extends Emitter
     return @user name
 
   user: (name) -> @_users[name]
-  users: (name) -> @_users
+  users: -> @_users
 
   setLocalStream: (stream) =>
     @localStream = stream
@@ -48,10 +45,13 @@ class Call extends Emitter
     delete @localStream
     return @
 
-  end: (releaseStream) =>
+  end: =>
     @client.io.emit "endCall", @id, (err) =>
       @emit "error", err if err?
-      @releaseLocalStream() if releaseStream
+    return @
+
+  empty: =>
+    @_removeUser user for name, user in @users()
     return @
 
   mute: =>
@@ -81,6 +81,20 @@ class Call extends Emitter
 
   _add: (name) =>
     @_users[name] ?= new User @, name
+    return @
+
+  _addNewUser: (name) =>
+    @_add name
+    user = @user name
+    user.createConnection()
+    user.addLocalStream @localStream
+    user.sendOffer()
+    return @
+
+  _removeUser: (name) =>
+    user = @user name
+    user.closeConnection()
+    delete @_users[name]
     return @
 
 module.exports = Call

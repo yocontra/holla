@@ -18,6 +18,12 @@ class User extends Emitter
     @connection.onremovestream = (evt) => @removeStream()
     return @
 
+  closeConnection: ->
+    return @ unless @connection?
+    @connection.close()
+    @connection = null
+    return @
+    
   addLocalStream: (stream) ->
     @connection.addStream stream
     return @

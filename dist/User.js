@@ -49,6 +49,15 @@
       return this;
     };
 
+    User.prototype.closeConnection = function() {
+      if (this.connection == null) {
+        return this;
+      }
+      this.connection.close();
+      this.connection = null;
+      return this;
+    };
+
     User.prototype.addLocalStream = function(stream) {
       this.connection.addStream(stream);
       return this;

@@ -528,10 +528,13 @@ require.register("holla/dist/Call.js", function(exports, require, module){
 
       this.client = client;
       this.id = id;
+      this._removeUser = __bind(this._removeUser, this);
+      this._addNewUser = __bind(this._addNewUser, this);
       this._add = __bind(this._add, this);
       this._handleUserResponse = __bind(this._handleUserResponse, this);
       this.unmute = __bind(this.unmute, this);
       this.mute = __bind(this.mute, this);
+      this.empty = __bind(this.empty, this);
       this.end = __bind(this.end, this);
       this.releaseLocalStream = __bind(this.releaseLocalStream, this);
       this.setLocalStream = __bind(this.setLocalStream, this);
@@ -544,17 +547,10 @@ require.register("holla/dist/Call.js", function(exports, require, module){
         this.caller = this.user(callerName);
       }
       this.client.io.on("" + this.id + ":end", function() {
+        _this.empty();
         return _this.emit("end");
       });
-      this.client.io.on("" + this.id + ":userAdded", function(name) {
-        var user;
-
-        _this._add(name);
-        user = _this.user(name);
-        user.createConnection();
-        user.addLocalStream(_this.localStream);
-        return user.sendOffer();
-      });
+      this.client.io.on("" + this.id + ":userAdded", this._addNewUser);
     }
 
     Call.prototype.answer = function() {
@@ -588,7 +584,7 @@ require.register("holla/dist/Call.js", function(exports, require, module){
       return this._users[name];
     };
 
-    Call.prototype.users = function(name) {
+    Call.prototype.users = function() {
       return this._users;
     };
 
@@ -607,17 +603,25 @@ require.register("holla/dist/Call.js", function(exports, require, module){
       return this;
     };
 
-    Call.prototype.end = function(releaseStream) {
+    Call.prototype.end = function() {
       var _this = this;
 
       this.client.io.emit("endCall", this.id, function(err) {
         if (err != null) {
-          _this.emit("error", err);
-        }
-        if (releaseStream) {
-          return _this.releaseLocalStream();
+          return _this.emit("error", err);
         }
       });
+      return this;
+    };
+
+    Call.prototype.empty = function() {
+      var name, user, _i, _len, _ref;
+
+      _ref = this.users();
+      for (user = _i = 0, _len = _ref.length; _i < _len; user = ++_i) {
+        name = _ref[user];
+        this._removeUser(user);
+      }
       return this;
     };
 
@@ -680,6 +684,26 @@ require.register("holla/dist/Call.js", function(exports, require, module){
       return this;
     };
 
+    Call.prototype._addNewUser = function(name) {
+      var user;
+
+      this._add(name);
+      user = this.user(name);
+      user.createConnection();
+      user.addLocalStream(this.localStream);
+      user.sendOffer();
+      return this;
+    };
+
+    Call.prototype._removeUser = function(name) {
+      var user;
+
+      user = this.user(name);
+      user.closeConnection();
+      delete this._users[name];
+      return this;
+    };
+
     return Call;
 
   })(Emitter);
@@ -738,6 +762,15 @@ require.register("holla/dist/User.js", function(exports, require, module){
       this.connection.onremovestream = function(evt) {
         return _this.removeStream();
       };
+      return this;
+    };
+
+    User.prototype.closeConnection = function() {
+      if (this.connection == null) {
+        return this;
+      }
+      this.connection.close();
+      this.connection = null;
       return this;
     };
 
