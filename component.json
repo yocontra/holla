@@ -9,6 +9,7 @@
     "dist/holla.js",
     "dist/Client.js",
     "dist/Call.js",
+    "dist/User.js",
     "dist/shims.js"
   ]
 }

@@ -1,5 +1,3 @@
-Rewrite: everything after both users are in the call
-
 Tests
 
 Hold sugar
@@ -10,7 +8,7 @@ Support for multiple presence settings
 
 Release RTC stream on call.end() parameter
 
-Conference calls/chats
+Finish conference calls/chats
 
 Hooks for easier chat persistence
 

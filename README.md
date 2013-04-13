@@ -27,11 +27,15 @@ Sending a call:
 ```javascript
 var rtc = holla.createClient();
 
-rtc.register("tom", function(worked) {
+rtc.register("tom", function(err) {
+
   holla.createFullStream(function(err, stream) {
-    var call = rtc.call("bob");
-    call.addStream(stream);
+    rtc.createCall(function(err, call){
+      call.setLocalStream(stream);
+      call.add("bob");
+    });
   });
+
 });
 ```
 
@@ -44,7 +48,7 @@ rtc.register("bob", function(worked) {
   rtc.on("call", function(call) {
 
     holla.createFullStream(function(err, stream) {
-      call.addStream(stream);
+      call.setLocalStream(stream);
       call.answer();
     });
 
@@ -62,11 +66,7 @@ true or false if WebRTC is supported in the browser
 
 #### .createClient(options)
 
-Takes some options to specify host (see source) - defaults to window.location.href. Returns an RTC instance
-
-#### .pipe(stream, el)
-
-Pipes a WebRTC video stream to a video element. el can be a string (id), jquery element, or dom node.
+Takes some options to specify host (see source) - defaults to window.location.href. Returns a Client instance
 
 #### .createStream(opt, cb)
 
@@ -85,54 +85,38 @@ Sugar for ```.createStream({video:true,audio:false}, cb)```
 Sugar for ```.createStream({video:false,audio:true}, cb)```
 
 
-### RTC
+### Client
 
 #### .register(name, cb)
 
-Registers your connection with the server under a name. cb receives true or false if it worked. cb is optional.
+Registers your connection with the server under a name. cb receives an error if there was a problem.
 
-#### .call(name)
+#### .createCall(cb)
 
-Creates a call to user with name. Returns a Call instance
-
-#### .ready(fn)
-
-fn gets called when connection is registered or if it already has been.
+Creates a call with the server. Callback receives an error and the call instance.
 
 #### Events
 
-RTC will emit connected, authorized, disconnected, error, presence, and call events.
+Client will emit reconnect, disconnect, call, and error events
 
 
 ### Call
 
-#### .isCaller
+#### .caller
 
-true or false if you started this call.
+User class for the caller. Will not exist if you started the call.
 
-#### .user
+#### .user(name)
 
-Name of the user on the other end.
+Gets a user in the call by name
 
-#### .startTime
+#### .users()
 
-Date of the call start.
+Returns all users in the call
 
-#### .endTime
-
-Date of the call end.
-
-#### .duration()
-
-Duration of the call.
-
-#### .addStream(stream)
+#### .setLocalStream(stream)
 
 Adds your WebRTC stream to the call. Must be done before answering or sending a call.
-
-#### .chat(msg)
-
-Sends a chat message
 
 #### .answer()
 
@@ -142,29 +126,29 @@ Accepts the call (inbound only)
 
 Declines the call (inbound only)
 
-#### .end()
+#### .end(release)
 
-Ends the call (hangup and close connection)
+Ends the call (hangup and close connection). If release is true it will call releaseLocalStream() on the call.
 
-## releaseStream()
+#### releaseLocalStream()
 
 Release use of the attached stream. Will make a users webcam light go off so they don't think you're spying.
 
-## mute()
+#### mute()
 
 Mutes the local user's audio to the remote user
 
-## unmute()
+#### unmute()
 
 Unmutes the local user's audio to the remote user
 
-#### .ready(fn)
-
-Will call fn when the call has been connected and is ready to go or if it is already.
-
 #### Events
 
-Call will emit calling, connecting, connected, hangup, and chat events
+Call will emit userAdded, userRemoved, userAnswered, userDeclined, end, and error events
+
+### User
+
+TODO
 
 ## Examples
 

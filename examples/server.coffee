@@ -6,6 +6,7 @@ redis  = require 'socket.io/node_modules/redis'
 
 port = process.argv[2] or 8080
 
+###
 pub = redis.createClient()
 sub = redis.createClient()
 norm = redis.createClient()
@@ -20,7 +21,9 @@ opt =
     pub: pub
     sub: sub
     store: norm
+###
 
+opt = debug: true
 app = express()
 app.use express.static __dirname
 server = http.createServer(app).listen port

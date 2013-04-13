@@ -87,6 +87,7 @@ class Server extends EventEmitter
     console.log "addUser", socket.id, callId, userIdentity
     @getIdentityFromSocket socket, (err, identity) =>
       return cb err if err?
+      return cb "Why would you try to call yourself?" if identity is userIdentity
       inRoom = @io.sockets.manager.roomClients[socket.id]?["/#{callId}"]
       return cb "Not in room" unless inRoom
       @getSocketFromIdentity userIdentity, (err, socket) =>

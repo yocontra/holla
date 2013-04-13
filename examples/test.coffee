@@ -29,7 +29,7 @@ $ ->
       $("#whoAmI").remove()
       $("#whoCall").show()
       $("#hangup").show()
-    
+
       holla.createFullStream (err, stream) ->
         throw err if err
         stream.pipe $(".me")
@@ -45,6 +45,8 @@ $ ->
         # place outbound
         $("#whoCall").change ->
           toCall = $("#whoCall").val()
+          return if toCall.length is 0
+          $("#whoCall").val ''
           rtc.createCall (err, call) ->
             throw err if err
             console.log "Created call", call

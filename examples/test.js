@@ -71,6 +71,10 @@
             var toCall;
 
             toCall = $("#whoCall").val();
+            if (toCall.length === 0) {
+              return;
+            }
+            $("#whoCall").val('');
             return rtc.createCall(function(err, call) {
               var user;
 
