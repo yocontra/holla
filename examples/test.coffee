@@ -10,6 +10,7 @@ wireCall = (call) ->
       user.on "declined", -> console.log "#{user.name} declined"
 
   call.on "end", -> $(".them").attr "src", ""
+
   $("#hangup").click -> call.end()
 
 $ ->

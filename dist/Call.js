@@ -144,13 +144,14 @@
 
       this.client = client;
       this.id = id;
+      this._add = __bind(this._add, this);
       this._handleUserResponse = __bind(this._handleUserResponse, this);
       this.unmute = __bind(this.unmute, this);
       this.mute = __bind(this.mute, this);
+      this.end = __bind(this.end, this);
       this.releaseLocalStream = __bind(this.releaseLocalStream, this);
       this.setLocalStream = __bind(this.setLocalStream, this);
       this.add = __bind(this.add, this);
-      this._add = __bind(this._add, this);
       this.decline = __bind(this.decline, this);
       this.answer = __bind(this.answer, this);
       this._users = {};
@@ -158,12 +159,14 @@
         this._add(callerName);
         this.caller = this.user(callerName);
       }
+      this.client.io.on("" + this.id + ":end", function() {
+        return _this.emit("end");
+      });
       this.client.io.on("" + this.id + ":userAdded", function(name) {
         var user;
 
         _this._add(name);
         user = _this.user(name);
-        console.log("userAdded", user);
         user.createConnection();
         user.addLocalStream(_this.localStream);
         return user.sendOffer();
@@ -185,15 +188,6 @@
     Call.prototype.decline = function() {
       this.client.io.emit("" + this.id + ":callResponse", false);
       this.client.emit("callDeclined", this);
-      return this;
-    };
-
-    Call.prototype._add = function(name) {
-      var _base, _ref;
-
-      if ((_ref = (_base = this._users)[name]) == null) {
-        _base[name] = new User(this, name);
-      }
       return this;
     };
 
@@ -220,8 +214,26 @@
     };
 
     Call.prototype.releaseLocalStream = function() {
-      this.localStream.stop();
+      var _ref;
+
+      if ((_ref = this.localStream) != null) {
+        _ref.stop();
+      }
       delete this.localStream;
+      return this;
+    };
+
+    Call.prototype.end = function(releaseStream) {
+      var _this = this;
+
+      this.client.io.emit("endCall", this.id, function(err) {
+        if (err != null) {
+          _this.emit("error", err);
+        }
+        if (releaseStream) {
+          return _this.releaseLocalStream();
+        }
+      });
       return this;
     };
 
@@ -261,17 +273,27 @@
           if (err === "Call declined") {
             user.accepted = false;
             user.emit("declined");
-            return _this.emit("userDeclined", user);
+            _this.emit("userDeclined", user);
           } else {
             user.emit("error", err);
-            return _this.emit("error", err);
+            _this.emit("error", err);
           }
         } else {
           user.accepted = true;
           user.emit("answered");
-          return _this.emit("userAnswered", user);
+          _this.emit("userAnswered", user);
         }
+        return _this;
       };
+    };
+
+    Call.prototype._add = function(name) {
+      var _base, _ref;
+
+      if ((_ref = (_base = this._users)[name]) == null) {
+        _base[name] = new User(this, name);
+      }
+      return this;
     };
 
     return Call;

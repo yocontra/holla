@@ -13,6 +13,7 @@ class Server extends EventEmitter
     socket.on "register", @register.bind @, socket
     socket.on "unregister", @unregister.bind @, socket
     socket.on "createCall", @createCall.bind @, socket
+    socket.on "endCall", @endCall.bind @, socket
     socket.on "addUser", @addUser.bind @, socket
     socket.on "sendSDPOffer", @sendSDPOffer.bind @, socket
     socket.on "sendSDPAnswer", @sendSDPAnswer.bind @, socket
@@ -51,6 +52,18 @@ class Server extends EventEmitter
       socket.join callId
       @calls[callId] = @io.rooms[callId]
       cb null, callId
+
+  endCall: (socket, callId, cb) =>
+    console.log "addUser", socket.id, callId
+    @getIdentityFromSocket socket, (err, identity) =>
+      return cb err if err?
+      inRoom = @io.sockets.manager.roomClients[socket.id]?["/#{callId}"]
+      return cb "Not in room" unless inRoom
+      @io.sockets.in(callId).emit "#{callId}:end"
+      sock.leave(callId) for sock in @io.sockets.in(callId).clients()
+      delete @calls[callId]
+
+      cb()
 
   addUser: (socket, callId, userIdentity, cb) =>
     console.log "addUser", socket.id, callId, userIdentity
