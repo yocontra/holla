@@ -43,21 +43,21 @@
       var name;
 
       name = $("#whoAmI").val();
-      $(".me").show();
-      $(".them").show();
-      $("#whoAmI").remove();
-      $("#whoCall").show();
-      $("#hangup").show();
-      return holla.createFullStream(function(err, stream) {
+      return rtc.register(name, function(err) {
         if (err) {
           throw err;
         }
-        stream.pipe($(".me"));
-        return rtc.register(name, function(err) {
+        console.log("Registered as " + name + "!");
+        $(".me").show();
+        $(".them").show();
+        $("#whoAmI").remove();
+        $("#whoCall").show();
+        $("#hangup").show();
+        return holla.createFullStream(function(err, stream) {
           if (err) {
             throw err;
           }
-          console.log("Registered as " + name + "!");
+          stream.pipe($(".me"));
           rtc.on("call", function(call) {
             console.log("Inbound call", call);
             call.on('error', function(err) {

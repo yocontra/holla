@@ -20,19 +20,19 @@ $ ->
   $("#hangup").hide()
   $("#whoAmI").change ->
     name = $("#whoAmI").val()
-    $(".me").show()
-    $(".them").show()
-    $("#whoAmI").remove()
-    $("#whoCall").show()
-    $("#hangup").show()
 
-    holla.createFullStream (err, stream) ->
+    rtc.register name, (err) ->
       throw err if err
-      stream.pipe $(".me")
-      
-      rtc.register name, (err) ->
+      console.log "Registered as #{name}!"
+      $(".me").show()
+      $(".them").show()
+      $("#whoAmI").remove()
+      $("#whoCall").show()
+      $("#hangup").show()
+    
+      holla.createFullStream (err, stream) ->
         throw err if err
-        console.log "Registered as #{name}!"
+        stream.pipe $(".me")
 
         # accept inbound
         rtc.on "call", (call) ->

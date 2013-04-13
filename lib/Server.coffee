@@ -1,12 +1,20 @@
 {EventEmitter} = require 'events'
 socketio = require 'socket.io'
 base64id = require 'base64id'
+RedisStore = require 'socket.io/lib/stores/redis'
+redis  = require 'socket.io/node_modules/redis'
 
 class Server extends EventEmitter
   constructor: (@httpServer, @options={}) ->
-    @clients = {}
-    @calls = {}
     @io = socketio.listen @httpServer
+    if @options.redis
+      @io.set 'store', new RedisStore
+        redis: redis
+        redisPub: @options.redis.pub
+        redisSub: @options.redis.sub
+        redisClient: @options.redis.store
+    else
+      @clients = {}
     @io.sockets.on 'connection', @handleConnection
 
   handleConnection: (socket) =>
@@ -24,15 +32,23 @@ class Server extends EventEmitter
   register: (socket, name, cb) =>
     console.log "register", socket.id, name
     return cb "Invalid name" unless typeof name is 'string' and name.length > 0
-    return cb "Name already taken" if @clients[name]?
-    @getIdentityFromSocket socket, (err, identity) =>
-      return cb "Already registered" if identity?
-      return cb err if err? and err isnt "Not registered"
+    @getSocketFromIdentity name, (err, sock) =>
+      good = err? and ((err is "Socket does not exist") or (err is "Requested identity not registered"))
+      return cb err if !good
+      return cb "Name already taken" if sock?
+      @getIdentityFromSocket socket, (err, identity) =>
+        return cb "Already registered" if identity?
+        return cb err if err? and err isnt "Not registered"
 
-      socket.set 'identity', name, (err) =>
-        return cb err if err?
-        @clients[name] = socket.id
-        cb()
+        socket.set 'identity', name, (err) =>
+          return cb err if err?
+          if @options.redis
+            @options.redis.store.hset "clients", name, socket.id, (err) =>
+              return cb err if err?
+              cb()
+          else
+            @clients[name] = socket.id
+            cb()
 
   unregister: (socket, cb) =>
     console.log "unregister", socket.id
@@ -40,8 +56,13 @@ class Server extends EventEmitter
       return cb err if err?
       socket.del 'identity', (err) =>
         return cb err if err?
-        delete @clients[identity]
-        cb()
+        if @options.redis
+          @options.redis.store.hdel "clients", identity, (err) =>
+            return cb err if err?
+            cb()
+        else
+          delete @clients[identity]
+          cb()
 
   createCall: (socket, cb) =>
     console.log "createCall", socket.id
@@ -50,7 +71,6 @@ class Server extends EventEmitter
       callId = @generateId()
       return cb "Call ID conflict" if @io.rooms[callId]?
       socket.join callId
-      @calls[callId] = @io.rooms[callId]
       cb null, callId
 
   endCall: (socket, callId, cb) =>
@@ -61,8 +81,6 @@ class Server extends EventEmitter
       return cb "Not in room" unless inRoom
       @io.sockets.in(callId).emit "#{callId}:end"
       sock.leave(callId) for sock in @io.sockets.in(callId).clients()
-      delete @calls[callId]
-
       cb()
 
   addUser: (socket, callId, userIdentity, cb) =>
@@ -134,9 +152,15 @@ class Server extends EventEmitter
       return cb null, identity
 
   getSocketFromIdentity: (identity, cb) =>
-    sid = @clients[identity]
-    return cb "Requested identity not registered" unless sid?
-    @getSocketById sid, cb
+    if @options.redis
+      @options.redis.store.hget "clients", identity, (err, sid) =>
+        return cb err if err?
+        return cb "Requested identity not registered" unless sid?
+        @getSocketById sid, cb
+    else
+      sid = @clients[identity]
+      return cb "Requested identity not registered" unless sid?
+      @getSocketById sid, cb
 
   askSocketToJoin: (socket, roomInfo, cb) ->
     socket.emit "callRequest", roomInfo
