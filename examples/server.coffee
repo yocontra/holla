@@ -23,7 +23,13 @@ opt =
     store: norm
 ###
 
-opt = debug: true
+transform = (socket, name, cb) ->
+  name = "test" if name is "test2"
+  cb null, name
+
+opt =
+  debug: true
+  identityProvider: transform
 app = express()
 app.use express.static __dirname
 server = http.createServer(app).listen port
