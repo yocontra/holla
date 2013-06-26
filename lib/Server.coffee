@@ -136,6 +136,7 @@ class Server extends EventEmitter
   # utility crap
   generateId: => base64id.generateId()
   getSocketById: (id, cb) =>
+    console.log @io.sockets
     socket = @io.sockets.sockets[id]
     return cb "Socket does not exist" unless socket?
     cb null, socket
