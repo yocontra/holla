@@ -47,6 +47,12 @@ class Server extends EventEmitter
     console.log "unregister", socket.id if @options.debug
     @getIdentityFromSocket socket, (err, identity) =>
       return cb err if err?
+      rooms = @io.sockets.manager.roomClients[socket.id]
+      if rooms?
+        for name, room of rooms
+          callId = name[1..]
+          @io.sockets.in(callId).emit "#{callId}:end"
+
       socket.del 'identity', (err) =>
         return cb err if err?
         if @options.redis
