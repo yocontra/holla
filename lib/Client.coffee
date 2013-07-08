@@ -12,6 +12,9 @@ class Client extends Emitter
       call = new Call @, callInfo.id, callInfo.caller
       @emit "call", call
 
+    @io.on 'presenceChange', (user, status) =>
+      @emit 'presence', user, status
+
   createCall: (cb) ->
     @io.emit 'createCall', (err, id) =>
       return cb err if err?

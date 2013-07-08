@@ -29,7 +29,8 @@
       "mocha": "*",
       "should": "*",
       "connect": "*",
-      "uglify-js": "*"
+      "uglify-js": "*",
+      "express": "*"
    },
    "scripts": {
       "test": "mocha --compilers coffee:coffee-script --reporter spec",

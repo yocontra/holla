@@ -31,6 +31,9 @@
         call = new Call(_this, callInfo.id, callInfo.caller);
         return _this.emit("call", call);
       });
+      this.io.on('presenceChange', function(user, status) {
+        return _this.emit('presence', user, status);
+      });
     }
 
     Client.prototype.createCall = function(cb) {

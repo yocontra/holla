@@ -13,6 +13,9 @@ wireCall = (call) ->
 
   $("#hangup").click -> call.end()
 
+rtc.on 'presence', (user, status) ->
+  console.log "#{user} is now #{status}"
+
 $ ->
   $("#me").hide()
   $("#them").hide()

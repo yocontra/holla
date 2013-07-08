@@ -33,6 +33,10 @@
     });
   };
 
+  rtc.on('presence', function(user, status) {
+    return console.log("" + user + " is now " + status);
+  });
+
   $(function() {
     $("#me").hide();
     $("#them").hide();

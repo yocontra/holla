@@ -129,8 +129,16 @@ class Server extends EventEmitter
         socket.emit "#{callId}:#{identity}:candidate", desc
         cb()
 
+  sendPresence: (socket, status, cb) =>
+    console.log "sendPresence", socket.id, status if @options.debug
+    @getIdentityFromSocket socket, (err, identity) =>
+      return cb err if err?
+      socket.broadcast.emit 'presenceChange', identity, status
+      cb()
+
   userDisconnect: (socket) =>
     console.log "disconnect", socket.id if @options.debug
+    @sendPresence socket, 'offline', (err) =>
     @unregister socket, (err) =>
 
   # utility crap
@@ -180,5 +188,7 @@ class Server extends EventEmitter
           else
             @clients[name] = socket.id
             cb null, name
+
+          @sendPresence socket, 'online', (err) =>
 
 module.exports = Server
