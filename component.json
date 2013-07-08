@@ -10,6 +10,7 @@
     "dist/Client.js",
     "dist/Call.js",
     "dist/User.js",
+    "dist/Channel.js",
     "dist/shims.js"
   ]
 }

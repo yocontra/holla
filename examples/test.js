@@ -8,11 +8,18 @@
 
   wireCall = function(call) {
     var name, user, _fn, _ref;
+    window.call = call;
     _ref = call.users();
     _fn = function(user) {
       user.ready(function() {
         console.log("" + user.name + " ready");
         return user.stream.pipe($(".them"));
+      });
+      user.on('data:chat', function(chan) {
+        console.log("data channel", chan);
+        return chan.on('data', function(msg) {
+          return console.log(msg);
+        });
       });
       user.on("answered", function() {
         return console.log("" + user.name + " answered");
@@ -87,7 +94,8 @@
               });
               call.setLocalStream(stream);
               user = call.add(toCall);
-              return wireCall(call);
+              wireCall(call);
+              return user.channel('chat').connect();
             });
           });
         });

@@ -1,5 +1,6 @@
 shims = require './shims'
 Emitter = require 'emitter'
+Channel = require './Channel'
 
 class User extends Emitter
   connection: null
@@ -9,6 +10,7 @@ class User extends Emitter
     @call.client.io.on "#{call.id}:#{name}:candidate", @_handleRemoteCandidate
 
   createConnection: ->
+    @channels = {}
     @connection = new shims.PeerConnection shims.PeerConnConfig, shims.constraints
     @connection.onconnecting = => @emit "connecting"
     @connection.onopen = => @emit "connected"
@@ -16,12 +18,24 @@ class User extends Emitter
       @sendCandidate evt.candidate if evt?.candidate?
     @connection.onaddstream = (evt) => @addStream evt.stream
     @connection.onremovestream = (evt) => @removeStream()
+    @connection.oniceconnectionstatechange = @connection.onicechange = =>
+      if @connection.iceConnectionState is 'disconnected'
+        @closeConnection()
+
+    @connection.ondatachannel = (evt) =>
+      chan = evt.channel
+      @channels[chan.label] = new Channel(@connection, chan.label).setChannel chan
+      @emit 'data:#{chan.label}', @channels[chan.label]
     return @
 
   closeConnection: ->
     return @ unless @connection?
+    for name, chan of @channels
+      chan.end()
     @connection.close()
     @connection = null
+    @channels = null
+    @emit 'disconnected'
     return @
     
   addLocalStream: (stream) ->
@@ -35,7 +49,7 @@ class User extends Emitter
     return @
 
   removeStream: ->
-    @end()
+    @closeConnection()
     return @
 
   ready: (fn) ->
@@ -44,6 +58,12 @@ class User extends Emitter
     else
       @once 'ready', fn
     return @
+
+  channel: (name) ->
+    unless @channels[name]?
+      @channels[name] = new Channel @connection, name
+      @emit 'data:#{name}', @channels[name]
+    return @channels[name]
 
   sendCandidate: (candidate) ->
     @call.client.io.emit "sendCandidate", @call.id, @name, candidate, @_handleError
