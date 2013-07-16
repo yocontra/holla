@@ -139,8 +139,8 @@ class Server extends EventEmitter
     console.log "sendPresence", socket.id, status if @options.debug
     @getIdentityFromSocket socket, (err, identity) =>
       return cb err if err?
-      socket.broadcast.emit 'presenceChange', identity, status
-      @emit "presenceChange", identity, status, socket
+      #socket.broadcast.emit 'presenceChange', identity, status
+      @emit "presence", identity, status, socket
       cb()
 
   userDisconnect: (socket) =>
