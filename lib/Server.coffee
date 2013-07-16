@@ -140,6 +140,7 @@ class Server extends EventEmitter
     @getIdentityFromSocket socket, (err, identity) =>
       return cb err if err?
       socket.broadcast.emit 'presenceChange', identity, status
+      @emit "presenceChange", identity, status, socket
       cb()
 
   userDisconnect: (socket) =>
@@ -150,7 +151,7 @@ class Server extends EventEmitter
   # utility crap
   generateId: => base64id.generateId()
   getSocketById: (id, cb) =>
-    console.log @io.sockets
+    #console.log @io.sockets if @options.debug
     socket = @io.sockets.sockets[id]
     return cb "Socket does not exist" unless socket?
     cb null, socket
