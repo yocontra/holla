@@ -12,16 +12,18 @@
 
     Channel.prototype.open = false;
 
-    function Channel(connection, name) {
+    function Channel(connection, name, options) {
+      var _base;
       this.connection = connection;
       this.name = name;
+      this.options = options != null ? options : {};
       this.end = __bind(this.end, this);
       this.send = __bind(this.send, this);
       this.connect = __bind(this.connect, this);
       this.setChannel = __bind(this.setChannel, this);
-      this.options = {
-        reliable: false
-      };
+      if ((_base = this.options).reliable == null) {
+        _base.reliable = false;
+      }
     }
 
     Channel.prototype.setChannel = function(chan) {

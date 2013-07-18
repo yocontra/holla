@@ -2,9 +2,8 @@ Emitter = require 'emitter'
 
 class Channel extends Emitter
   open: false
-  constructor: (@connection, @name) ->
-    @options =
-      reliable: false
+  constructor: (@connection, @name, @options={}) ->
+    @options.reliable ?= false
 
   setChannel: (chan) =>
     @dc = chan
