@@ -23,13 +23,11 @@ class Channel extends Emitter
     return @
 
   send: (data) =>
-    if @open
-      @dc.send JSON.stringify data
+    @dc.send JSON.stringify data if @open
     return @
 
   end: =>
-    if @open
-      @dc.close()
+    @dc.close() if @open
     return @
 
 module.exports = Channel
