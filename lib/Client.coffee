@@ -4,7 +4,7 @@ Call = require './Call'
 
 class Client extends Emitter
   constructor: (@options={}) ->
-    @io = socketio.connect @options.host
+    @io = socketio.connect @options.host, @options.socketio
     @io.on 'reconnect', => @emit 'reconnect'
     @io.on 'disconnect', => @emit 'disconnect'
     @io.on 'error', (err) => @emit 'error', err

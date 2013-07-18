@@ -16,7 +16,7 @@
     function Client(options) {
       var _this = this;
       this.options = options != null ? options : {};
-      this.io = socketio.connect(this.options.host);
+      this.io = socketio.connect(this.options.host, this.options.socketio);
       this.io.on('reconnect', function() {
         return _this.emit('reconnect');
       });
