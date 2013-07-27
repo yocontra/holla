@@ -146,15 +146,15 @@ Declines the call (inbound only)
 
 Ends the call (hangup and close connection)
 
-## releaseStream()
+#### releaseStream()
 
 Release use of the attached stream. Will make a users webcam light go off so they don't think you're spying.
 
-## mute()
+#### mute()
 
 Mutes the local user's audio to the remote user
 
-## unmute()
+#### unmute()
 
 Unmutes the local user's audio to the remote user
 
