@@ -56,7 +56,7 @@ rtc.register("bob", function(worked) {
 });
 ```
 
-## Client
+## Browser
 
 ### holla
 
