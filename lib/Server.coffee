@@ -101,14 +101,14 @@ class Server extends hookify
         roomInfo =
           id: callId
           caller: identity
-        @runPre 'addUser', [socket, identity, callId], =>
+        @runPre 'addUser', [socket, identity, userIdentity, callId], =>
           @askSocketToJoin socket, roomInfo, (err, wantsToJoin) =>
             return cb err if err?
             return cb "Call declined" unless wantsToJoin
             @io.sockets.in(callId).emit "#{callId}:userAdded", userIdentity
             socket.join callId
             cb()
-            @runPost 'addUser', [socket, identity, callId, wantsToJoin], =>
+            @runPost 'addUser', [socket, identity, userIdentity, callId, wantsToJoin], =>
 
   sendSDPOffer: (socket, callId, userIdentity, desc, cb) =>
     @getIdentityFromSocket socket, (err, identity) =>
