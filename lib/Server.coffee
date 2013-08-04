@@ -108,7 +108,7 @@ class Server extends hookify
             @io.sockets.in(callId).emit "#{callId}:userAdded", userIdentity
             socket.join callId
             cb()
-            @runPost 'addUser', [socket, identity, userIdentity, callId, wantsToJoin], =>
+            @runPost 'addUser', [socket, identity, userIdentity, callId], =>
 
   sendSDPOffer: (socket, callId, userIdentity, desc, cb) =>
     @getIdentityFromSocket socket, (err, identity) =>
