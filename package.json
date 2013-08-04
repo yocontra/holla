@@ -23,7 +23,8 @@
       "coffee-script": "*",
       "async": "*",
       "socket.io": "0.9.14",
-      "base64id": "*"
+      "base64id": "*",
+      "hookify": "*"
    },
    "devDependencies": {
       "mocha": "*",

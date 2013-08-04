@@ -30,6 +30,7 @@ transform = (socket, name, cb) ->
 opt =
   debug: true
   identityProvider: transform
+
 app = express()
 app.use express.static __dirname
 server = http.createServer(app).listen port

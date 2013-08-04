@@ -1,11 +1,12 @@
-{EventEmitter} = require 'events'
 socketio = require 'socket.io'
 base64id = require 'base64id'
 RedisStore = require 'socket.io/lib/stores/redis'
 redis  = require 'socket.io/node_modules/redis'
+hookify = require 'hookify'
 
-class Server extends EventEmitter
+class Server extends hookify
   constructor: (@httpServer, @options={}) ->
+    super
     @io = socketio.listen @httpServer
     @io.set 'log level', (if @options.debug then 3 else 0)
     @io.set 'browser client minification', !@options.debug
@@ -19,71 +20,77 @@ class Server extends EventEmitter
         redisClient: @options.redis.store
     else
       @clients = {}
+
     @io.sockets.on 'connection', @handleConnection
 
   handleConnection: (socket) =>
-    socket.on "register", @register.bind @, socket
-    socket.on "unregister", @unregister.bind @, socket
-    socket.on "createCall", @createCall.bind @, socket
-    socket.on "endCall", @endCall.bind @, socket
-    socket.on "addUser", @addUser.bind @, socket
-    socket.on "sendSDPOffer", @sendSDPOffer.bind @, socket
-    socket.on "sendSDPAnswer", @sendSDPAnswer.bind @, socket
-    socket.on "sendCandidate", @sendCandidate.bind @, socket
-    socket.on "disconnect", @userDisconnect.bind @, socket
+    @runPre 'handle', [socket], =>
+      socket.on "register", @register.bind @, socket
+      socket.on "unregister", @unregister.bind @, socket
+      socket.on "createCall", @createCall.bind @, socket
+      socket.on "endCall", @endCall.bind @, socket
+      socket.on "addUser", @addUser.bind @, socket
+      socket.on "sendSDPOffer", @sendSDPOffer.bind @, socket
+      socket.on "sendSDPAnswer", @sendSDPAnswer.bind @, socket
+      socket.on "sendCandidate", @sendCandidate.bind @, socket
+      socket.on "disconnect", @userDisconnect.bind @, socket
+      @runPost 'handle', [socket], =>
 
   # exposed services
   register: (socket, name, cb) =>
-    console.log "register", socket.id, name if @options.debug
     return cb "Invalid name" unless typeof name is 'string' and name.length > 0
-    if @options.identityProvider
-      @options.identityProvider socket, name, (err, newName) =>
-        return cb err if err?
-        @registerSocket socket, newName, cb
-    else
-      @registerSocket socket, name, cb
+    @runPre 'register', [socket, name], =>
+      if @options.identityProvider
+        @options.identityProvider socket, name, (err, newName) =>
+          return cb err if err?
+          @registerSocket socket, newName, cb
+      else
+        @registerSocket socket, name, cb
 
   unregister: (socket, cb) =>
-    console.log "unregister", socket.id if @options.debug
     @getIdentityFromSocket socket, (err, identity) =>
       return cb err if err?
-      rooms = @io.sockets.manager.roomClients[socket.id]
-      if rooms?
-        for name, room of rooms
-          callId = name[1..]
-          @io.sockets.in(callId).emit "#{callId}:end"
+      @runPre 'unregister', [socket, identity], =>
+        rooms = @io.sockets.manager.roomClients[socket.id]
+        if rooms?
+          for name, room of rooms
+            callId = name[1..]
+            @io.sockets.in(callId).emit "#{callId}:end"
 
-      socket.del 'identity', (err) =>
-        return cb err if err?
-        if @options.redis
-          @options.redis.store.hdel "clients", identity, (err) =>
-            return cb err if err?
+        socket.del 'identity', (err) =>
+          return cb err if err?
+          if @options.redis
+            @options.redis.store.hdel "clients", identity, (err) =>
+              return cb err if err?
+              cb()
+          else
+            delete @clients[identity]
             cb()
-        else
-          delete @clients[identity]
-          cb()
+
+          @runPost 'unregister', [socket, identity], =>
 
   createCall: (socket, cb) =>
-    console.log "createCall", socket.id if @options.debug
     @getIdentityFromSocket socket, (err, identity) =>
       return cb err if err?
-      callId = @generateId()
-      return cb "Call ID conflict" if @io.rooms[callId]?
-      socket.join callId
-      cb null, callId
+      @runPre 'call', [socket, identity], =>
+        callId = @generateId()
+        return cb "Call ID conflict" if @io.rooms[callId]?
+        socket.join callId
+        cb null, callId
+        @runPost 'call', [socket, identity, callId], =>
 
   endCall: (socket, callId, cb) =>
-    console.log "addUser", socket.id, callId if @options.debug
     @getIdentityFromSocket socket, (err, identity) =>
       return cb err if err?
       inRoom = @io.sockets.manager.roomClients[socket.id]?["/#{callId}"]
       return cb "Not in room" unless inRoom
-      @io.sockets.in(callId).emit "#{callId}:end"
-      sock.leave(callId) for sock in @io.sockets.in(callId).clients()
-      cb()
+      @runPre 'endCall', [socket, identity, callId], =>
+        @io.sockets.in(callId).emit "#{callId}:end"
+        sock.leave(callId) for sock in @io.sockets.in(callId).clients()
+        cb()
+        @runPost 'endCall', [socket, identity, callId], =>
 
   addUser: (socket, callId, userIdentity, cb) =>
-    console.log "addUser", socket.id, callId, userIdentity if @options.debug
     @getIdentityFromSocket socket, (err, identity) =>
       return cb err if err?
       return cb "Why would you try to call yourself?" if identity is userIdentity
@@ -94,16 +101,16 @@ class Server extends EventEmitter
         roomInfo =
           id: callId
           caller: identity
-        @askSocketToJoin socket, roomInfo, (err, wantsToJoin) =>
-          return cb err if err?
-          return cb "Call declined" unless wantsToJoin
-          @io.sockets.in(callId).emit "#{callId}:userAdded", userIdentity
-          socket.join callId
-          @emit "call", callId, identity, userIdentity
-          cb()
+        @runPre 'addUser', [socket, identity, callId], =>
+          @askSocketToJoin socket, roomInfo, (err, wantsToJoin) =>
+            return cb err if err?
+            return cb "Call declined" unless wantsToJoin
+            @io.sockets.in(callId).emit "#{callId}:userAdded", userIdentity
+            socket.join callId
+            cb()
+            @runPost 'addUser', [socket, identity, callId, wantsToJoin], =>
 
   sendSDPOffer: (socket, callId, userIdentity, desc, cb) =>
-    console.log "sendSDPOffer", socket.id, callId, userIdentity, desc if @options.debug
     @getIdentityFromSocket socket, (err, identity) =>
       return cb err if err?
       inRoom = @io.sockets.manager.roomClients[socket.id]?["/#{callId}"]
@@ -114,7 +121,6 @@ class Server extends EventEmitter
         cb()
   
   sendSDPAnswer: (socket, callId, userIdentity, desc, cb) =>
-    console.log "sendSDPAnswer", socket.id, callId, userIdentity, desc if @options.debug
     @getIdentityFromSocket socket, (err, identity) =>
       return cb err if err?
       inRoom = @io.sockets.manager.roomClients[socket.id]?["/#{callId}"]
@@ -125,7 +131,6 @@ class Server extends EventEmitter
         cb()
 
   sendCandidate: (socket, callId, userIdentity, desc, cb) =>
-    console.log "sendCandidate", socket.id, callId, userIdentity, desc if @options.debug
     @getIdentityFromSocket socket, (err, identity) =>
       return cb err if err?
       inRoom = @io.sockets.manager.roomClients[socket.id]?["/#{callId}"]
@@ -136,22 +141,20 @@ class Server extends EventEmitter
         cb()
 
   sendPresence: (socket, status, cb) =>
-    console.log "sendPresence", socket.id, status if @options.debug
     @getIdentityFromSocket socket, (err, identity) =>
       return cb err if err?
       #socket.broadcast.emit 'presenceChange', identity, status
-      @emit "presence", identity, status, socket
-      cb()
+      @runPre 'presence', [socket, identity, status], =>
+        cb()
+        @runPost 'presence', [socket, identity, status], =>
 
   userDisconnect: (socket) =>
-    console.log "disconnect", socket.id if @options.debug
     @sendPresence socket, 'offline', (err) =>
     @unregister socket, (err) =>
 
   # utility crap
   generateId: => base64id.generateId()
   getSocketById: (id, cb) =>
-    #console.log @io.sockets if @options.debug
     socket = @io.sockets.sockets[id]
     return cb "Socket does not exist" unless socket?
     cb null, socket
@@ -197,5 +200,6 @@ class Server extends EventEmitter
             cb null, name
 
           @sendPresence socket, 'online', (err) =>
+            @runPost 'register', [socket, name], =>
 
 module.exports = Server
