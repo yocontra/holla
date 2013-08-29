@@ -49,7 +49,7 @@ class Server extends hookify
 
   unregister: (socket, cb) =>
     @getIdentityFromSocket socket, (err, identity) =>
-      return cb err if err?
+      return cb? err if err?
       @runPre 'unregister', [socket, identity], =>
         rooms = @io.sockets.manager.roomClients[socket.id]
         if rooms?
@@ -58,94 +58,94 @@ class Server extends hookify
             @io.sockets.in(callId).emit "#{callId}:end"
 
         socket.del 'identity', (err) =>
-          return cb err if err?
+          return cb? err if err?
           if @options.redis
             @options.redis.store.hdel "clients", identity, (err) =>
               return cb err if err?
-              cb()
+              cb?()
           else
             delete @clients[identity]
-            cb()
+            cb?()
 
           @runPost 'unregister', [socket, identity], =>
 
   createCall: (socket, cb) =>
     @getIdentityFromSocket socket, (err, identity) =>
-      return cb err if err?
+      return cb? err if err?
       @runPre 'call', [socket, identity], =>
         callId = @generateId()
-        return cb "Call ID conflict" if @io.rooms[callId]?
+        return cb? "Call ID conflict" if @io.rooms[callId]?
         socket.join callId
-        cb null, callId
+        cb? null, callId
         @runPost 'call', [socket, identity, callId], =>
 
   endCall: (socket, callId, cb) =>
     @getIdentityFromSocket socket, (err, identity) =>
-      return cb err if err?
+      return cb? err if err?
       inRoom = @io.sockets.manager.roomClients[socket.id]?["/#{callId}"]
-      return cb "Not in room" unless inRoom
+      return cb? "Not in room" unless inRoom
       @runPre 'endCall', [socket, identity, callId], =>
         @io.sockets.in(callId).emit "#{callId}:end"
         sock.leave(callId) for sock in @io.sockets.in(callId).clients()
-        cb()
+        cb?()
         @runPost 'endCall', [socket, identity, callId], =>
 
   addUser: (socket, callId, userIdentity, cb) =>
     @getIdentityFromSocket socket, (err, identity) =>
-      return cb err if err?
-      return cb "Why would you try to call yourself?" if identity is userIdentity
+      return cb? err if err?
+      return cb? "Why would you try to call yourself?" if identity is userIdentity
       inRoom = @io.sockets.manager.roomClients[socket.id]?["/#{callId}"]
-      return cb "Not in room" unless inRoom
+      return cb? "Not in room" unless inRoom
       @getSocketFromIdentity userIdentity, (err, socket) =>
-        return cb err if err?
+        return cb? err if err?
         roomInfo =
           id: callId
           caller: identity
         @runPre 'addUser', [socket, identity, userIdentity, callId], =>
           @askSocketToJoin socket, roomInfo, (err, wantsToJoin) =>
-            return cb err if err?
-            return cb "Call declined" unless wantsToJoin
+            return cb? err if err?
+            return cb? "Call declined" unless wantsToJoin
             @io.sockets.in(callId).emit "#{callId}:userAdded", userIdentity
             socket.join callId
-            cb()
+            cb?()
             @runPost 'addUser', [socket, identity, userIdentity, callId], =>
 
   sendSDPOffer: (socket, callId, userIdentity, desc, cb) =>
     @getIdentityFromSocket socket, (err, identity) =>
-      return cb err if err?
+      return cb? err if err?
       inRoom = @io.sockets.manager.roomClients[socket.id]?["/#{callId}"]
-      return cb "Not in room" unless inRoom
+      return cb? "Not in room" unless inRoom
       @getSocketFromIdentity userIdentity, (err, socket) =>
-        return cb err if err?
+        return cb? err if err?
         socket.emit "#{callId}:#{identity}:sdp", desc
-        cb()
+        cb?()
   
   sendSDPAnswer: (socket, callId, userIdentity, desc, cb) =>
     @getIdentityFromSocket socket, (err, identity) =>
-      return cb err if err?
+      return cb? err if err?
       inRoom = @io.sockets.manager.roomClients[socket.id]?["/#{callId}"]
-      return cb "Not in room" unless inRoom
+      return cb? "Not in room" unless inRoom
       @getSocketFromIdentity userIdentity, (err, socket) =>
-        return cb err if err?
+        return cb? err if err?
         socket.emit "#{callId}:#{identity}:sdp", desc
-        cb()
+        cb?()
 
   sendCandidate: (socket, callId, userIdentity, desc, cb) =>
     @getIdentityFromSocket socket, (err, identity) =>
-      return cb err if err?
+      return cb? err if err?
       inRoom = @io.sockets.manager.roomClients[socket.id]?["/#{callId}"]
-      return cb "Not in room" unless inRoom
+      return cb? "Not in room" unless inRoom
       @getSocketFromIdentity userIdentity, (err, socket) =>
-        return cb err if err?
+        return cb? err if err?
         socket.emit "#{callId}:#{identity}:candidate", desc
-        cb()
+        cb?()
 
   sendPresence: (socket, status, cb) =>
     @getIdentityFromSocket socket, (err, identity) =>
-      return cb err if err?
+      return cb? err if err?
       #socket.broadcast.emit 'presenceChange', identity, status
       @runPre 'presence', [socket, identity, status], =>
-        cb()
+        cb?()
         @runPost 'presence', [socket, identity, status], =>
 
   userDisconnect: (socket) =>
@@ -156,48 +156,48 @@ class Server extends hookify
   generateId: => base64id.generateId()
   getSocketById: (id, cb) =>
     socket = @io.sockets.sockets[id]
-    return cb "Socket does not exist" unless socket?
-    cb null, socket
+    return cb? "Socket does not exist" unless socket?
+    cb? null, socket
 
   getIdentityFromSocket: (socket, cb) =>
     socket.get 'identity', (err, identity) ->
-      return cb err if err?
-      return cb "Not registered" unless identity?
-      return cb null, identity
+      return cb? err if err?
+      return cb? "Not registered" unless identity?
+      return cb? null, identity
 
   getSocketFromIdentity: (identity, cb) =>
     if @options.redis
       @options.redis.store.hget "clients", identity, (err, sid) =>
-        return cb err if err?
-        return cb "Requested identity not registered" unless sid?
+        return cb? err if err?
+        return cb? "Requested identity not registered" unless sid?
         @getSocketById sid, cb
     else
       sid = @clients[identity]
-      return cb "Requested identity not registered" unless sid?
+      return cb? "Requested identity not registered" unless sid?
       @getSocketById sid, cb
 
   askSocketToJoin: (socket, roomInfo, cb) ->
     socket.emit "callRequest", roomInfo
-    socket.once "#{roomInfo.id}:callResponse", (res) -> cb null, res
+    socket.once "#{roomInfo.id}:callResponse", (res) -> cb? null, res
 
   registerSocket: (socket, name, cb) ->
     @getSocketFromIdentity name, (err, sock) =>
       good = err? and ((err is "Socket does not exist") or (err is "Requested identity not registered"))
-      return cb err if !good
-      return cb "Name already taken" if sock?
+      return cb? err if !good
+      return cb? "Name already taken" if sock?
       @getIdentityFromSocket socket, (err, identity) =>
-        return cb "Already registered" if identity?
-        return cb err if err? and err isnt "Not registered"
+        return cb? "Already registered" if identity?
+        return cb? err if err? and err isnt "Not registered"
 
         socket.set 'identity', name, (err) =>
-          return cb err if err?
+          return cb? err if err?
           if @options.redis
             @options.redis.store.hset "clients", name, socket.id, (err) =>
-              return cb err if err?
-              cb null, name
+              return cb? err if err?
+              cb? null, name
           else
             @clients[name] = socket.id
-            cb null, name
+            cb? null, name
 
           @sendPresence socket, 'online', (err) =>
             @runPost 'register', [socket, name], =>
