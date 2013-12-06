@@ -1,6 +1,7 @@
 {
   "name": "holla",
   "version": "0.6.3",
+  "description": "An abstraction over P2P video/voice/data connections using WebRTC",
   "dependencies": {
     "wearefractal/protosock": "*",
     "component/emitter": "*"
