@@ -20,7 +20,7 @@
       "peer"
    ],
    "dependencies": {
-      "coffee-script": "*",
+      "coffee-script": "1.7.x",
       "async": "*",
       "protosock": "*",
       "express": "*"
