@@ -5,7 +5,7 @@ IceCandidate = window.mozRTCIceCandidate or window.RTCIceCandidate
 SessionDescription = window.mozRTCSessionDescription or window.RTCSessionDescription
 MediaStream = window.MediaStream or window.webkitMediaStream
 getUserMedia = navigator.mozGetUserMedia or navigator.getUserMedia or navigator.webkitGetUserMedia or navigator.msGetUserMedia
-URL = window.URL or window.webkitURL or window.msURL or window.oURL
+URL =  window.webkitURL or window.URL or window.msURL or window.oURL
 
 if getUserMedia?
   getUserMedia = getUserMedia.bind navigator
