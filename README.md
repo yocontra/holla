@@ -1,3 +1,7 @@
+## Warning
+
+This module may not work. It is currently being rewritten and will be out again soon.
+
 ## Support
 
 holla has full support for Chrome 24+ and Firefox 21+ (Currently Nightly)
