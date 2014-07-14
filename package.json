@@ -1,50 +1,50 @@
 {
-   "name": "holla",
-   "description": "An abstraction over P2P video/voice/data connections using WebRTC",
-   "version": "0.7.0",
-   "homepage": "http://github.com/wearefractal/holla",
-   "repository": "git://github.com/wearefractal/holla.git",
-   "author": "Fractal <contact@wearefractal.com> (http://wearefractal.com/)",
-   "main": "./index.js",
-   "keywords": [
-      "webrtc",
-      "rtc",
-      "calling",
-      "call",
-      "voip",
-      "p2p",
-      "data",
-      "sip",
-      "voice",
-      "phone",
-      "peer"
-   ],
-   "dependencies": {
-      "coffee-script": "*",
-      "async": "*",
-      "socket.io": "0.9.14",
-      "base64id": "*",
-      "hookify": "*"
-   },
-   "devDependencies": {
-      "mocha": "*",
-      "should": "*",
-      "connect": "*",
-      "uglify-js": "*",
-      "express": "*"
-   },
-   "scripts": {
-      "test": "mocha --compilers coffee:coffee-script --reporter spec",
-      "start": "examples/server.coffee"
-   },
-   "engines": {
-      "node": ">= 0.6.0"
-   },
-   "licenses": [
-      {
-         "type": "MIT",
-         "url": "http://github.com/wearefractal/holla/raw/master/LICENSE"
-      }
-   ],
-   "subdomain": "holla"
+  "name": "holla",
+  "description": "An abstraction over P2P video/voice/data connections using WebRTC",
+  "version": "0.7.0",
+  "homepage": "http://github.com/wearefractal/holla",
+  "repository": "git://github.com/wearefractal/holla.git",
+  "author": "Fractal <contact@wearefractal.com> (http://wearefractal.com/)",
+  "main": "./index.js",
+  "keywords": [
+    "webrtc",
+    "rtc",
+    "calling",
+    "call",
+    "voip",
+    "p2p",
+    "data",
+    "sip",
+    "voice",
+    "phone",
+    "peer"
+  ],
+  "dependencies": {
+    "async": "^0.9.0",
+    "base64id": "^0.1.0",
+    "coffee-script": "^1.7.1",
+    "hookify": "0.0.1",
+    "socket.io": "^0.9.14"
+  },
+  "devDependencies": {
+    "mocha": "*",
+    "should": "*",
+    "connect": "*",
+    "uglify-js": "*",
+    "express": "*"
+  },
+  "scripts": {
+    "test": "mocha --compilers coffee:coffee-script --reporter spec",
+    "start": "examples/server.coffee"
+  },
+  "engines": {
+    "node": ">= 0.6.0"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://github.com/wearefractal/holla/raw/master/LICENSE"
+    }
+  ],
+  "subdomain": "holla"
 }
