@@ -1,48 +1,48 @@
 {
-   "name": "holla",
-   "description": "An abstraction over P2P video/voice/data connections using WebRTC",
-   "version": "0.6.3-2",
-   "homepage": "http://github.com/wearefractal/holla",
-   "repository": "git://github.com/wearefractal/holla.git",
-   "author": "Fractal <contact@wearefractal.com> (http://wearefractal.com/)",
-   "main": "./index.js",
-   "keywords": [
-      "webrtc",
-      "rtc",
-      "calling",
-      "call",
-      "voip",
-      "p2p",
-      "data",
-      "sip",
-      "voice",
-      "phone",
-      "peer"
-   ],
-   "dependencies": {
-      "coffee-script": "1.7.x",
-      "async": "*",
-      "protosock": "*",
-      "express": "*"
-   },
-   "devDependencies": {
-      "mocha": "*",
-      "should": "*",
-      "connect": "*",
-      "uglify-js": "*"
-   },
-   "scripts": {
-      "test": "mocha --compilers coffee:coffee-script --reporter spec",
-      "start": "examples/server.coffee"
-   },
-   "engines": {
-      "node": ">= 0.6.0"
-   },
-   "licenses": [
-      {
-         "type": "MIT",
-         "url": "http://github.com/wearefractal/holla/raw/master/LICENSE"
-      }
-   ],
-   "subdomain": "holla"
+  "name": "holla",
+  "description": "An abstraction over P2P video/voice/data connections using WebRTC",
+  "version": "0.6.3-2",
+  "homepage": "http://github.com/wearefractal/holla",
+  "repository": "git://github.com/wearefractal/holla.git",
+  "author": "Fractal <contact@wearefractal.com> (http://wearefractal.com/)",
+  "main": "./index.js",
+  "keywords": [
+    "webrtc",
+    "rtc",
+    "calling",
+    "call",
+    "voip",
+    "p2p",
+    "data",
+    "sip",
+    "voice",
+    "phone",
+    "peer"
+  ],
+  "dependencies": {
+    "async": "^0.9.0",
+    "coffee-script": "1.7.x",
+    "express": "^3.0.0",
+    "protosock": "^0.2.4"
+  },
+  "devDependencies": {
+    "mocha": "*",
+    "should": "*",
+    "connect": "*",
+    "uglify-js": "*"
+  },
+  "scripts": {
+    "test": "mocha --compilers coffee:coffee-script --reporter spec",
+    "start": "examples/server.coffee"
+  },
+  "engines": {
+    "node": ">= 0.6.0"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://github.com/wearefractal/holla/raw/master/LICENSE"
+    }
+  ],
+  "subdomain": "holla"
 }
