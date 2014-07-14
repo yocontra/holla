@@ -32,7 +32,6 @@
     "uglify-js": "*"
   },
   "scripts": {
-    "test": "mocha --compilers coffee:coffee-script --reporter spec",
     "start": "examples/server.coffee"
   },
   "engines": {
