@@ -1,10 +1,6 @@
-## Warning
+## DEPRECATED
 
-This module may not work. It is currently being rewritten and will be out again soon.
-
-## Support
-
-holla has full support for Chrome 24+ and Firefox 21+ (Currently Nightly)
+This module is years old and may not work, use [this other one instead](https://github.com/contra/rtc-everywhere)!
 
 ## Example
 
